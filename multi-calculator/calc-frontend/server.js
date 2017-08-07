@@ -31,13 +31,18 @@ app.post('/api/square', function(req, res) {
         number: req.headers.number
     };
     var options = { 
-        'url': config.endpoint,
+        'url': config.endpoint + '/api/sqare',
         'form': formData,
         'headers': req.headers
     };    
     request.post(options, function(innererr, innerres, body) {
         var endDate = new Date();
         var duration = endDate - startDate;
+        if (innererr){
+            console.log("error:");
+            console.log(innererr);
+            insightsClient.trackException(innererr);
+        }
         insightsClient.trackEvent("calculation-client-call-received", { value: body });
         insightsClient.trackMetric("calculation-client-call-duration", duration);
         console.log(body);
