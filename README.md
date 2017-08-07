@@ -53,3 +53,5 @@ ssh-keygen -t rsa -b 4096
 
 1. [Container hello world](ContainerHelloWorld.md)
 2. [Container CI CD to ACI](ContainerCICDACI.md)
+3. [Multi Container Apps to ACI](MultiContainerACI.md)
+4. [Kubernetes setup](KubernetesSetup.md)

@@ -1,0 +1,31 @@
+﻿<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Calc</title>
+    <!-- Latest compiled and minified CSS -->
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.2/angular.min.js"></script> -->
+        <link rel="stylesheet" href="bootstrap.min.css">
+    <script src="angular.min.js"></script>
+    <script src="client.js"></script>
+</head>
+<body>
+    <h1>Hello calculator!</h1>
+    <div class="container">
+
+        <div class="starter-template">
+            <div ng-app="CalculatorApp" ng-controller="CalculatorController">
+                <p>First<input type="number" ng-model="id"></p>
+                <p>
+                    <input ng-click="Calculate()" type="button" value="Square" />
+                </p>
+                <p>Result {{ result }}</p>
+            </div>
+        </div>
+
+    </div><!-- /.container -->
+    
+</body>
+</html>
