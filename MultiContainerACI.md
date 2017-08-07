@@ -19,4 +19,8 @@ az group create --name "$RESOURCE_GROUP" --location westeurope
 CONTAINER_NAME="multicalculator"
 az group deployment create --name $CONTAINER_NAME --resource-group $RESOURCE_GROUP --template-file multi-calculator/deploymultiaci.json
 ```
+or use  environment variables
+```
+az container create --name "$CONTAINER_NAME" --image microsoft/aci-helloworld --resource-group "$RESOURCE_GROUP" --ip-address public --environment-variables "INSTRUMENTATIONKEY="
 
+```
