@@ -10,6 +10,8 @@
 *.user
 *.sln.docstates
 
+Setup.md
+
 # Build results
 [Dd]ebug/
 [Rr]elease/

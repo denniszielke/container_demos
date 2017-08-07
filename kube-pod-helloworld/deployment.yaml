@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+    name: hello # Name of the deployment, just for reference purposes
+spec:
+    replicas: 1 # Number of instances for the given application
+    template:
+    metadata:
+        labels:
+            app: hello
+    spec:
+        containers:
+        - name: ner-uk-ms # Name of container, could be anything you like
+          image: chaliy/ner-ms:uk # Docker image to run
+          ports:
+          - containerPort: 8080

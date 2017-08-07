@@ -69,6 +69,14 @@ DOCKER_SERVER=$(az acr show --name "$REGISTRY_NAME" --query loginServer)
 DOCKER_PASSWORD=$(az acr credential show --name "$REGISTRY_NAME" --query passwords[0].value)
 eval "docker login --username="$REGISTRY_NAME" --password=$DOCKER_PASSWORD $DOCKER_SERVER"
 `
+
+or
+`
+az acr credential show -n myveryownregistry \
+    --query "join(' ', ['docker login myveryownregistry-on.azurecr.io', '-u', username, '-p', password])" \
+    --output tsv \
+    | sh`
+`
  
 4. Pull, tag and push the latest image to the registry
 

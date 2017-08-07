@@ -25,6 +25,7 @@ To install the CLI on Windows and use it in the Windows command-line, download a
    ```bash
    echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ wheezy main" | \
         sudo tee /etc/apt/sources.list.d/azure-cli.list
+         echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ wheezy main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
    ```
 
 4. Run the following sudo commands:
@@ -35,7 +36,7 @@ To install the CLI on Windows and use it in the Windows command-line, download a
    sudo apt-get update && sudo apt-get install azure-cli
    ```
 
-5.  Run the CLI from the command prompt with the `az` command.
+5. Run the CLI from the command prompt with the `az` command.
 
 > [!NOTE]
 > When you install with apt-get, [`az component`](/cli/azure/component) isn't supported.
@@ -43,8 +44,12 @@ To install the CLI on Windows and use it in the Windows command-line, download a
 > 
 > To uninstall, run `sudo apt-get remove azure-cli`.
 
-
+6. Create private keypair
+`
+ssh-keygen -t rsa -b 4096
+`
 
 ## Run the following tutorials
 
 1. [Container hello world](ContainerHelloWorld.md)
+2. [Container CI CD to ACI](ContainerCICDACI.md)

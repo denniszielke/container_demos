@@ -30,6 +30,7 @@ az container logs --name "$CONTAINER_NAME" --resource-group "$RESOURCE_GROUP"
 6. Cleanup the resource group
 `
 az group delete --name "$RESOURCE_GROUP" --yes
+az container delete --resource-group "$RESOURCE_GROUP" --name "$CONTAINER_NAME" --yes
 `
 
 ## Build a container, push it to registry and launch it
@@ -97,3 +98,34 @@ eval "docker push $DOCKER_SERVER/aci-tut-app:v1"
 CONTAINER_APP_NAME="acihelloworldapp"
 az container create -g $RESOURCE_GROUP --name $CONTAINER_APP_NAME --image hellodemo345.azurecr.io/aci-tut-app:v1 --registry-password $DOCKER_PASSWORD
 
+## Automate it by using VSTS
+## Create a build process template
+
+1. Create a build process for your git repo
+![](/img/2017-08-07-07-44-35.png)
+
+2. Get sources task
+![](/img/2017-08-07-07-47-29.png)
+
+3. Build an image task
+![](/img/2017-08-07-07-48-22.png)
+
+4. Push an image task
+![](/img/2017-08-07-07-48-47.png)
+
+5. Configure the trigger for git repo changes
+![](/img/2017-08-07-07-49-50.png)
+
+## Create release process template
+Since this has to run on a private agent go for [VSTS Build Agent Setup](VstsSetup.md) and configure one.
+The overall launch task is very simple:
+![](/img/2017-08-07-07-52-31.png)
+
+1. Take a azure cli task from the marketplace and configure it to use your agent.
+![](/img/2017-08-07-07-55-16.png)
+
+2. Configure the azure cli task to use the following arguments:
+![](/img/2017-08-07-07-55-56.png)
+
+3. Configure the variables and registry password (put lock on it):
+![](/img/2017-08-07-07-56-37.png)

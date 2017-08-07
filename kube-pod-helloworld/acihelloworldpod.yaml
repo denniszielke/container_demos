@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: aci-helloworld
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: aci-helloworld
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: aci-helloworld
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: router
+    spec:
+      containers:
+      - image: myveryownregistry-on.azurecr.io/image:latest
+        name: aci-helloworld
+        ports:
+        - containerPort: 80
+      imagePullSecrets:
+      - name: registrykey
