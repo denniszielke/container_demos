@@ -37,6 +37,14 @@ az group deployment create --name $CONTAINER_NAME --resource-group $RESOURCE_GRO
 ```
 or use  environment variables
 ```
-az container create --name "$CONTAINER_NAME" --image microsoft/aci-helloworld --resource-group "$RESOURCE_GROUP" --ip-address public --environment-variables "INSTRUMENTATIONKEY=$INSTRUMENTATIONKEY"
+az container create --name "$CONTAINER_NAME" --image dzkubedemo4.azurecr.io/calc-backend:v1 --resource-group "$RESOURCE_GROUP" --ip-address public --environment-variables INSTRUMENTATIONKEY=$INSTRUMENTATIONKEY PORT=80
+az container logs --name "$CONTAINER_NAME" -g "$RESOURCE_GROUP"
+az container show --name "$CONTAINER_NAME" -g "$RESOURCE_GROUP" --query ipAddress.ip
+
+az container create --name "$CONTAINER_NAME" --image dzkubedemo4.azurecr.io/calc-frontend:v1 --resource-group "$RESOURCE_GROUP" --ip-address public --environment-variables INSTRUMENTATIONKEY=$INSTRUMENTATIONKEY PORT=80 ENDPOINT=http://52.232.96.183
+
+az container logs --name "$CONTAINER_NAME" -g "$RESOURCE_GROUP"
+az container show --name "$CONTAINER_NAME" -g "$RESOURCE_GROUP" --query ipAddress.ip
+
 
 ```

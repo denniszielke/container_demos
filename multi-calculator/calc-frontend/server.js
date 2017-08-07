@@ -31,7 +31,7 @@ app.post('/api/square', function(req, res) {
         number: req.headers.number
     };
     var options = { 
-        'url': config.endpoint + '/api/sqare',
+        'url': config.endpoint + '/api/square',
         'form': formData,
         'headers': req.headers
     };    
