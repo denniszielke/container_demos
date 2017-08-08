@@ -6,5 +6,5 @@
 3. [Multi Container Apps to ACI](MultiContainerACI.md)
 4. [Kubernetes setup](KubernetesSetup.md)
 5. [Kubernetes CI CD using VSTS](KubernetesCICD.md)
-6. [Ingress Controller](KubernetesIngress)
-7. [Kubernetes ACI Connector](KubeACIConnector)
+6. [Ingress Controller](KubernetesIngress.md)
+7. [Kubernetes ACI Connector](KubeACIConnector.md)
