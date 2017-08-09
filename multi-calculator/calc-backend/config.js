@@ -1,6 +1,6 @@
 var config = {}
 
 config.instrumentationKey = process.env.INSTRUMENTATIONKEY;
-config.noInsights = process.env.NOINSIGHTS || false;
+config.insights = process.env.INSIGHTS || false;
 
 module.exports = config;

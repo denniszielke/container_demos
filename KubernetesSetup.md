@@ -3,8 +3,8 @@ https://docs.microsoft.com/en-us/azure/container-service/kubernetes/container-se
 
 1. Create the resource group
 ```
-KUBE_GROUP="KubesDemo4"
-KUBE_NAME="dzkube4"
+KUBE_GROUP="KubesDemo2"
+KUBE_NAME="dzkube2"
 az group create -n $KUBE_GROUP -l "westeurope"
 ```
 
@@ -61,11 +61,14 @@ kubectl expose deployment hello --type="LoadBalancer" --port=80 --target-port=80
 kubectl describe svc hello-svc
 ```
 
+Check yaml file config
+https://kubernetes.io/docs/resources-reference/v1.5/
+
 # Create Azure Container Registry secret in Kubernetes
 https://medium.com/devoops-and-universe/your-very-own-private-docker-registry-for-kubernetes-cluster-on-azure-acr-ed6c9efdeb51
 
 ```
-kubectl create secret docker-registry registrykey --docker-server myveryownregistry-on.azurecr.io', '--docker-username', username, '--docker-password', password, '--docker-email example@example.com']
+kubectl create secret docker-registry kuberegistry --docker-server 'myveryownregistry-on.azurecr.io' --docker-username 'username' --docker-password 'password' --docker-email 'example@example.com'
 
 ```
 

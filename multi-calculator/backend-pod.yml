@@ -1,0 +1,21 @@
+apiVersion: "v1"
+kind: Pod
+metadata:
+  name: calcbackend
+  labels:
+    name: calcbackend
+    app: calculator
+spec:
+  containers:
+    - name: calcbackend
+      image: hellodemodz234.azurecr.io/calcbackend:latest:latest
+      ports:
+        - containerPort: 3001         
+          protocol: TCP
+      env: 
+        - 
+          name: "INSIGHTS"
+          value: "false"
+  imagePullSecrets:
+    - name: kuberegistry
+    

@@ -17,16 +17,16 @@ az group create --name "$RESOURCE_GROUP" --location westeurope
 INSTRUMENTATIONKEY=""
 git clone https://github.com/denniszielke/kube_lab.git
 cd kube_lab/multi-calculator/calc-backend/
-docker build -t calc-backend .
-eval "docker tag calc-backend $DOCKER_SERVER/calc-backend:v1"
-eval "docker push $DOCKER_SERVER/calc-backend:v1"
-docker run -p 8080:80 -e "INSTRUMENTATIONKEY=$INSTRUMENTATIONKEY" -e "PORT=80" calc-backend
+docker build -t calcbackend .
+eval "docker tag calcbackend $DOCKER_SERVER/calcbackend:v1"
+eval "docker push $DOCKER_SERVER/calcbackend:v1"
+docker run -p 8080:80 -e "INSTRUMENTATIONKEY=$INSTRUMENTATIONKEY" -e "PORT=80" calcbackend
 
 cd kube_lab/multi-calculator/calc-frontend/
-docker build -t calc-frontend .
-eval "docker tag calc-frontend $DOCKER_SERVER/calc-frontend:v1"
-eval "docker push $DOCKER_SERVER/calc-frontend:v1"
-docker run -e "INSTRUMENTATIONKEY=$INSTRUMENTATIONKEY" -e"ENDPOINT=http://localhost:8080" -e "PORT=80" -p 8081:80 calc-frontend
+docker build -t calcfrontend .
+eval "docker tag calcfrontend $DOCKER_SERVER/calcfrontend:v1"
+eval "docker push $DOCKER_SERVER/calcfrontend:v1"
+docker run -e "INSTRUMENTATIONKEY=$INSTRUMENTATIONKEY" -e"ENDPOINT=http://localhost:8080" -e "PORT=80" -p 8081:80 calcfrontend
 
 ```
 
@@ -37,11 +37,11 @@ az group deployment create --name $CONTAINER_NAME --resource-group $RESOURCE_GRO
 ```
 or use  environment variables
 ```
-az container create --name "$CONTAINER_NAME" --image dzkubedemo4.azurecr.io/calc-backend:v1 --resource-group "$RESOURCE_GROUP" --ip-address public --environment-variables INSTRUMENTATIONKEY=$INSTRUMENTATIONKEY PORT=80
+az container create --name "$CONTAINER_NAME" --image hellodemodz234.azurecr.io/calcbackend:v1 --resource-group "$RESOURCE_GROUP" --ip-address public --environment-variables INSTRUMENTATIONKEY=$INSTRUMENTATIONKEY PORT=80
 az container logs --name "$CONTAINER_NAME" -g "$RESOURCE_GROUP"
 az container show --name "$CONTAINER_NAME" -g "$RESOURCE_GROUP" --query ipAddress.ip
 
-az container create --name "$CONTAINER_NAME" --image dzkubedemo4.azurecr.io/calc-frontend:v1 --resource-group "$RESOURCE_GROUP" --ip-address public --environment-variables INSTRUMENTATIONKEY=$INSTRUMENTATIONKEY PORT=80 ENDPOINT=http://52.232.96.183
+az container create --name "$CONTAINER_NAME" --image hellodemodz234.azurecr.io/calcfrontend:v1 --resource-group "$RESOURCE_GROUP" --ip-address public --environment-variables INSTRUMENTATIONKEY=$INSTRUMENTATIONKEY PORT=80 ENDPOINT=http://52.232.96.183
 
 az container logs --name "$CONTAINER_NAME" -g "$RESOURCE_GROUP"
 az container show --name "$CONTAINER_NAME" -g "$RESOURCE_GROUP" --query ipAddress.ip

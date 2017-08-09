@@ -48,7 +48,7 @@ export DOCKER_HOST=tcp://127.0.0.1:2375
 
 2. Create container registry
 ```
-REGISTRY_NAME="hellodemo345"
+REGISTRY_NAME="hellodemodz234"
 az acr create --resource-group "$RESOURCE_GROUP" --name "$REGISTRY_NAME" --sku Basic --admin-enabled true
 ```
 
