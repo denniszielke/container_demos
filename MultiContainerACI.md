@@ -20,13 +20,13 @@ cd kube_lab/multi-calculator/calc-backend/
 docker build -t calcbackend .
 eval "docker tag calcbackend $DOCKER_SERVER/calcbackend:v1"
 eval "docker push $DOCKER_SERVER/calcbackend:v1"
-docker run -p 8080:80 -e "INSTRUMENTATIONKEY=$INSTRUMENTATIONKEY" -e "PORT=80" calcbackend
+docker run -p 8080:80 -e "INSTRUMENTATIONKEY=$INSTRUMENTATIONKEY" -e "PORT=3001" calcbackend
 
 cd kube_lab/multi-calculator/calc-frontend/
 docker build -t calcfrontend .
 eval "docker tag calcfrontend $DOCKER_SERVER/calcfrontend:v1"
 eval "docker push $DOCKER_SERVER/calcfrontend:v1"
-docker run -e "INSTRUMENTATIONKEY=$INSTRUMENTATIONKEY" -e"ENDPOINT=http://localhost:8080" -e "PORT=80" -p 8081:80 calcfrontend
+docker run -e "INSTRUMENTATIONKEY=$INSTRUMENTATIONKEY" -e"ENDPOINT=http://localhost:8080" -e "PORT=3000" -p 80:3000 calcfrontend
 
 ```
 

@@ -14,7 +14,7 @@ spec:
     spec:
         containers:
           - name: calcfrontend
-            image: hellodemodz234.azurecr.io/calcfrontend:latest:latest
+            image: hellodemodz234.azurecr.io/calcfrontend:latest
             ports:
               - containerPort: 3000
                 name: http

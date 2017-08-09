@@ -8,7 +8,7 @@ metadata:
 spec:
   containers:
     - name: calcbackend
-      image: hellodemodz234.azurecr.io/calcbackend:latest:latest
+      image: hellodemodz234.azurecr.io/calcbackend:latest
       ports:
         - containerPort: 3001         
           protocol: TCP

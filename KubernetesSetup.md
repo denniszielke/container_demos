@@ -72,3 +72,9 @@ kubectl create secret docker-registry kuberegistry --docker-server 'myveryownreg
 
 ```
 
+# Deploy
+
+kubectl create -f backend-pod.yml
+kubectl create -f backend-svc.yml
+kubectl create -f frontend-pod.yml
+kubectl create -f frontend-svc.yml
