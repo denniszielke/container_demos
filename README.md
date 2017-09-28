@@ -1,9 +1,17 @@
 
-Kubernetes on Azure setup:
+## Kubernetes on Azure
 ![](/img/kubernetes.png)
 
-Kubernetes CI/CD:
+## DevOps on Azure
+
 ![](/img/kubernetes_on_azure.png)
+
+## Agenda (demos only)
+- Container 101
+- Container WebApps, ACI
+- Azure Container Service
+- Kubernetes on Azure
+- Automation, Scaling, Networking
 
 ## Run the following tutorials
 0. [Setup azure cli on ubuntu bash](BashCliSetup.md)
