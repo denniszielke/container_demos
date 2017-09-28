@@ -9,7 +9,7 @@ metadata:
 spec:
   containers:
     - name: green
-      image: hellodemodz234.azurecr.io/green:latest
+      image: dzregistry.azurecr.io/green:latest
       ports:
         - containerPort: 80
           name: http
