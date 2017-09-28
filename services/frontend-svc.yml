@@ -6,7 +6,7 @@ metadata:
     name: colorservice
 spec:
   selector:
-    name: servicedemo 
+    demo: colorsdemo 
   type: LoadBalancer
   ports:
    - port: 80

@@ -1,10 +1,11 @@
 apiVersion: "v1"
 kind: Pod
 metadata:
-  name: bluedemo
+  name: greendemo
   labels:
-    name: blueservicedemo
+    name: servicedemo
     color: green
+    demo: colorsdemo
 spec:
   containers:
     - name: blue
