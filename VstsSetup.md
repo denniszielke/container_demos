@@ -9,3 +9,4 @@ Bash script
 
 BUILD_SOURCESDIRECTORY
 
+az group create --name "acicd" --location westeurope

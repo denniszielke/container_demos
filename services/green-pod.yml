@@ -10,7 +10,7 @@ spec:
     - name: green
       image: hellodemodz234.azurecr.io/green:latest
       ports:
-        - containerPort: 3000
+        - containerPort: 80
           name: http
           protocol: TCP
   imagePullSecrets:

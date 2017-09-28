@@ -1,16 +1,16 @@
 apiVersion: "v1"
 kind: Pod
 metadata:
-  name: greendemo
+  name: bluedemo
   labels:
-    name: servicedemo
+    name: blueservicedemo
     color: green
 spec:
   containers:
     - name: blue
       image: hellodemodz234.azurecr.io/blue:latest
       ports:
-        - containerPort: 3000
+        - containerPort: 80
           name: http
           protocol: TCP 
   imagePullSecrets:
