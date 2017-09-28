@@ -1,7 +1,17 @@
+# Kubernetes CICD
 
 
-Create Namespace
+## Install Istio
+https://readon.ly/post/2017-05-25-deploy-istio-to-azure-container-service/
+
+Verify installation
 ```
-kubectl create namespace production
-kubectl create namespace staging
+export PODNAME=$(kubectl get pods | grep "grafana" | awk '{print $1}')
+kubectl port-forward $PODNAME 3000:3000
 ```
+http://localhost:3000/dashboard/db/istio-dashboard
+
+
+## Configure VSTS CICD
+https://blogs.technet.microsoft.com/livedevopsinjapan/2017/07/19/istio-cicd-pipeline-for-vsts/
+

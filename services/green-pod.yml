@@ -1,0 +1,17 @@
+apiVersion: "v1"
+kind: Pod
+metadata:
+  name: greendemo
+  labels:
+    name: servicedemo
+    color: green
+spec:
+  containers:
+    - name: green
+      image: hellodemodz234.azurecr.io/green:latest
+      ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+  imagePullSecrets:
+    - name: kuberegistry                 

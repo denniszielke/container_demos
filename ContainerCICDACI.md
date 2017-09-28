@@ -8,30 +8,28 @@ az login
 
 2. Create a resource group
 ```
-RESOURCE_GROUP="helloworld"
-az group create --name "$RESOURCE_GROUP" --location westeurope
+az group create --name "$ACI_GROUP" --location $LOCATION
 ```
 
 3. Create a container instance
 ```
-CONTAINER_NAME="acihelloworld"
-az container create --name "$CONTAINER_NAME" --image microsoft/aci-helloworld --resource-group "$RESOURCE_GROUP" --ip-address public
+az container create --name "$ACI_HELLO_NAME" --image microsoft/aci-helloworld --resource-group "$ACI_GROUP" --ip-address public
 ```
 
 4. Confirm creation
 ```
-az container show --name "$CONTAINER_NAME" --resource-group "$RESOURCE_GROUP"
+az container show --name "$ACI_HELLO_NAME" --resource-group "$ACI_GROUP"
 ```
 
 5. Pull container logs
 ```
-az container logs --name "$CONTAINER_NAME" --resource-group "$RESOURCE_GROUP"
+az container logs --name "$ACI_HELLO_NAME" --resource-group "$ACI_GROUP"
 ```
 
 6. Cleanup the resource group
 ```
-az group delete --name "$RESOURCE_GROUP" --yes
-az container delete --resource-group "$RESOURCE_GROUP" --name "$CONTAINER_NAME" --yes
+az group delete --name "$ACI_GROUP" --yes
+az container delete --resource-group "$ACI_GROUP" --name "$ACI_HELLO_NAME" --yes
 ```
 
 ## Build a container, push it to registry and launch it
@@ -47,6 +45,8 @@ export DOCKER_HOST=tcp://127.0.0.1:2375
 ```
 
 2. Create container registry
+https://docs.microsoft.com/en-us/azure/container-registry/container-registry-intro
+
 ```
 REGISTRY_NAME="hellodemodz234"
 az acr create --resource-group "$RESOURCE_GROUP" --name "$REGISTRY_NAME" --sku Basic --admin-enabled true
@@ -56,7 +56,9 @@ az acr create --resource-group "$RESOURCE_GROUP" --name "$REGISTRY_NAME" --sku B
 
 Get the registry login server
 ```
-az acr show --name "$REGISTRY_NAME" --query loginServer`
+az acr show --name "$REGISTRY_NAME" --query loginServer
+REGISTRY_URL=$(az acr show --name "$REGISTRY_NAME" --query loginServ
+er)
 ```
 
 Get the login password
@@ -67,18 +69,19 @@ az acr credential show --name "$REGISTRY_NAME" --query passwords[0].value
 or automate it
 
 ```
-DOCKER_SERVER=$(az acr show --name "$REGISTRY_NAME" --query loginServer)
-DOCKER_PASSWORD=$(az acr credential show --name "$REGISTRY_NAME" --query passwords[0].value)
-eval "docker login --username="$REGISTRY_NAME" --password=$DOCKER_PASSWORD $DOCKER_SERVER"
+REGISTRY_URL=$(az acr show --name "$REGISTRY_NAME" --query loginServer)
+REGISTRY_PASSWORD=$(az acr credential show --name "$REGISTRY_NAME" --query passwords[0].value)
+eval "docker login --username="$REGISTRY_NAME" --password=$REGISTRY_PASSWORD $REGISTRY_URL"
 ```
  
 4. Pull, tag and push the latest image to the registry
 
 ```
 docker pull microsoft/aci-helloworld
-eval "docker tag microsoft/aci-helloworld $DOCKER_SERVER/aci-helloworld:v1"
-eval "docker push $DOCKER_SERVER/aci-helloworld:v1"
+eval "docker tag microsoft/aci-helloworld $REGISTRY_URL/aci-helloworld:v1"
+eval "docker push $REGISTRY_URL/aci-helloworld:v1"
 ```
+
 or
 
 ```
@@ -93,8 +96,8 @@ cd aci-helloworld
 less Dockerfile
 docker build -t aci-tut-app .
 docker images
-eval "docker tag aci-tut-app $DOCKER_SERVER/aci-tut-app:v1"
-eval "docker push $DOCKER_SERVER/aci-tut-app:v1"
+eval "docker tag aci-tut-app $REGISTRY_URL/aci-tut-app:v1"
+eval "docker push $REGISTRY_URL/aci-tut-app:v1"
 CONTAINER_APP_NAME="acihelloworldapp"
 az container create -g $RESOURCE_GROUP --name $CONTAINER_APP_NAME --image hellodemo345.azurecr.io/aci-tut-app:v1 --registry-password $DOCKER_PASSWORD
 ```

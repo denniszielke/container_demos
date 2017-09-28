@@ -3,9 +3,7 @@ https://docs.microsoft.com/en-us/azure/container-service/kubernetes/container-se
 
 1. Create the resource group
 ```
-KUBE_GROUP="KubesDemo2"
-KUBE_NAME="dzkube2"
-az group create -n $KUBE_GROUP -l "westeurope"
+az group create -n $KUBE_GROUP -l $LOCATION
 ```
 
 2. Create the acs cluster
@@ -28,6 +26,12 @@ scp azureuser@$KUBE_NAMEmgmt.westeurope.cloudapp.azure.com:.kube/config $HOME/.k
 4. Check that everything is running ok
 ```
 kubectl version
+kubectl config current-contex
+```
+
+Use flag to use context
+```
+kubectl --kube-context
 ```
 
 # Deploy pod
@@ -49,6 +53,7 @@ kubectl edit svc/nginx
 `
 This will launch VIM - go to position - use "i" to insert and change ClusterIP to LoadBalancer.
 Exit CTRL-C edit mode, write and quit with ":wq" 
+:syntax off
 ```
 kubectl expose deployments nginx --port=80 --type=LoadBalancer
 ```
@@ -72,7 +77,15 @@ kubectl create secret docker-registry kuberegistry --docker-server 'myveryownreg
 
 ```
 
+or
+
+```
+kubectl create secret docker-registry kuberegistry --docker-server $REGISTRY_URL --docker-username $REGISTRY_NAME --docker-password $REGISTRY_PASSWORD --docker-email 'example@example.com'
+```
+
+
 # Deploy
+https://kubernetes.io/docs/user-guide/kubectl-cheatsheet/
 
 kubectl create -f backend-pod.yml
 kubectl create -f backend-svc.yml

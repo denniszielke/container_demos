@@ -1,5 +1,6 @@
 # Kubernetes ingress controller
 https://kubernetes.io/docs/concepts/services-networking/ingress/
+https://dgkanatsios.com/2017/07/07/using-ssl-for-a-service-hosted-on-a-kubernetes-cluster/
 
 https://blogs.technet.microsoft.com/livedevopsinjapan/2017/02/28/configure-nginx-ingress-controller-for-tls-termination-on-kubernetes-on-azure-2/
 

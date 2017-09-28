@@ -45,6 +45,12 @@ sudo apt install docker.io
 export DOCKER_HOST=tcp://127.0.0.1:2375
 ```
 
+On Ubuntu make sure that the current user is part of the docker group
+```
+sudo usermod -aG docker $USER
+```
+Log in and out to re-evaluate your group membership
+
 2. Create container registry
 ```
 REGISTRY_NAME="hellodemo345"
@@ -55,7 +61,7 @@ az acr create --resource-group "$RESOURCE_GROUP" --name "$REGISTRY_NAME" --sku B
 
 Get the registry login server
 ```
-az acr show --name "$REGISTRY_NAME" --query loginServer`
+az acr show --name "$REGISTRY_NAME" --query loginServer
 ```
 
 Get the login password
