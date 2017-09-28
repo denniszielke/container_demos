@@ -18,7 +18,7 @@ spec:
         demo: colorsdemo
     spec:
       containers:
-        - name: green
+        - name: blue
           image: dzregistry.azurecr.io/green:latest
           ports:
           - containerPort: 80
