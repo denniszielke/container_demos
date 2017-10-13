@@ -6,7 +6,7 @@
 # exclude patterns (uncomment them if you want to use them):
 # *.[oa]
 # *~
-
+.env
 # Logs
 logs
 *.log

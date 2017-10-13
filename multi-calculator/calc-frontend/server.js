@@ -1,16 +1,18 @@
-var express = require('express');
-var app = express();
-var morgan = require('morgan');
-var request = require('request');
+require('dotenv-extended').load();
 
-var config = require('./config');
+const express = require('express');
+const app = express();
+const morgan = require('morgan');
+const request = require('request');
 
-if (config.insights){ 
-    var appInsights = require('applicationinsights');
+const config = require('./config');
+
+const appInsights = require("applicationinsights");
+
+if (config.instrumentationKey){ 
     appInsights.setup(config.instrumentationKey).setAutoCollectRequests(true).start();
 }
 
-var port = process.env.PORT || 3000;
 var publicDir = require('path').join(__dirname, '/public');
 
 // add logging middleware
@@ -19,23 +21,24 @@ app.use(express.static(publicDir));
 
 // Routes
 app.get('/ping', function(req, res) {
+    appInsights.defaultClient.trackEvent('ping-frontend-received');
     console.log('received ping');
     res.send('Pong');
 });
 
-app.post('/api/square', function(req, res) {
-    console.log("received client request:");
+app.post('/api/calculation', function(req, res) {
+    console.log("received frontend request:");
     console.log(req.headers);
-    if (config.insights){ 
+    if (config.instrumentationKey){ 
         var startDate = new Date();
-        insightsClient.trackEvent("square-client-call", { value: req.headers.number });
+        appInsights.defaultClient.trackEvent("calculation-frontend-call", { value: req.headers.number });
     }
     var formData = {
         received: new Date().toLocaleString(), 
         number: req.headers.number
     };
     var options = { 
-        'url': config.endpoint + '/api/square',
+        'url': config.endpoint + '/api/calculation',
         'form': formData,
         'headers': req.headers
     };    
@@ -45,13 +48,13 @@ app.post('/api/square', function(req, res) {
         if (innererr){
             console.log("error:");
             console.log(innererr);
-            if (config.insights){ 
-                insightsClient.trackException(innererr);
+            if (config.instrumentationKey){ 
+                appInsights.defaultClient.trackException(innererr);
             }
         }
-        if (config.insights){ 
-            insightsClient.trackEvent("calculation-client-call-received", { value: body });
-            insightsClient.trackMetric("calculation-client-call-duration", duration);
+        if (config.instrumentationKey){ 
+            appInsights.defaultClient.trackEvent("calculation-frontend-call-received", { value: body });
+            appInsights.defaultClient.trackMetric("calculation-frontend-call-duration", duration);
         }
         console.log(body);
         res.send(body);
@@ -62,16 +65,15 @@ app.post('/api/square', function(req, res) {
 app.post('/api/dummy', function(req, res) {
     console.log("received dummy request:");
     console.log(req.headers);
-    if (config.insights){ 
-        insightsClient.trackEvent("dummy-data-call");
+    if (config.instrumentationKey){ 
+        appInsights.defaultClient.trackEvent("dummy-data-call");
     }
     res.send('42');
 });
 
 // Listen
-if (config.insights){ 
-    var insightsClient = appInsights.getClient(config.instrumentationKey);
-    insightsClient.trackEvent('app-initializing');
+if (config.instrumentationKey){ 
+    appInsights.defaultClient.trackEvent('frontend-initializing');
 }
-app.listen(port);
-console.log('Listening on localhost:'+ port);
+app.listen(config.port);
+console.log('Listening on localhost:'+ config.port);

@@ -1,48 +1,56 @@
-var express = require('express');
-var app = express();
-var morgan = require('morgan');
+require('dotenv-extended').load();
 
-var config = require('./config');
+const express = require('express');
+const app = express();
+const morgan = require('morgan');
 
-if (config.insights){ 
-    var appInsights = require('applicationinsights');   
+const config = require('./config');
+const appInsights = require("applicationinsights");
+
+if (config.instrumentationKey){ 
     appInsights.setup(config.instrumentationKey).setAutoCollectRequests(true).start();
 }
-
-var port = process.env.PORT || 3001;
 
 // add logging middleware
 app.use(morgan('dev'));
 
 // Routes
+
+app.get('/', function(req, res) {
+    console.log('received request');
+    res.send('Hi');
+});
 app.get('/ping', function(req, res) {
+    appInsights.defaultClient.trackEvent('ping-backend-received');
     console.log('received ping');
     res.send('Pong');
 });
 
-app.post('/api/square', function(req, res) {
+// curl -X POST --header "number: 3" http://localhost:3001/api/calculation
+app.post('/api/calculation', function(req, res) {
     console.log("received client request:");
     console.log(req.headers);
-    if (config.insights){ 
+    if (config.instrumentationKey){ 
         var startDate = new Date();
-        insightsClient.trackEvent("square-server-call", { value: req.headers.number });
+        appInsights.defaultClient.trackEvent("calculation-backend-call-start", { value: req.headers.number });
     }
     var resultValue = 0;
     try{
+        var randomWait = Math.random() * 20;
         var number = parseInt(req.headers.number);
-        resultValue = number * number;
+        resultValue = number * number * randomWait;
     }catch(e){
         console.log(e);
-        if (config.insights){ 
-            insightsClient.trackException(e);
+        if (config.instrumentationKey){ 
+            appInsights.defaultClient.trackException(e);
         }
         resultValue = 0;
     }
-    if (config.insights){ 
+    if (config.instrumentationKey){ 
         var endDate = new Date();
         var duration = endDate - startDate;
-        insightsClient.trackEvent("calculation-server-call", { value: resultValue });
-        insightsClient.trackMetric("calculation-call-duration", duration);
+        appInsights.defaultClient.trackEvent("calculation-backend-call-end", { value: resultValue });
+        appInsights.defaultClient.trackMetric("calculation-backend-duration", duration);
     }
     console.log(resultValue);
     res.send(resultValue.toString());
@@ -51,16 +59,15 @@ app.post('/api/square', function(req, res) {
 app.post('/api/dummy', function(req, res) {
     console.log("received dummy request:");
     console.log(req.headers)
-    if (config.insights){ 
-        insightsClient.trackEvent("dummy-data-call");
+    if (config.instrumentationKey){ 
+        appInsights.defaultClient.trackEvent("dummy-data-call");
     }
     res.send('42');
 });
 
 // Listen
-if (config.insights){ 
-    var insightsClient = appInsights.getClient(config.instrumentationKey);
-    insightsClient.trackEvent('app-initializing');
+if (config.instrumentationKey){ 
+    appInsights.defaultClient.trackEvent('backend-initializing');
 }
-app.listen(port);
-console.log('Listening on localhost:'+ port);
+app.listen(config.port);
+console.log('Listening on localhost:'+ config.port);

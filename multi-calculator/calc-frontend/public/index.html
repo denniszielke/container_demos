@@ -17,9 +17,13 @@
 
         <div class="starter-template">
             <div ng-app="CalculatorApp" ng-controller="CalculatorController">
-                <p>First<input type="number" ng-model="id"></p>
+                <p>Random Number<input type="number" value="2" ng-model="id"></p>
                 <p>
-                    <input ng-click="Calculate()" type="button" value="Square" />
+                    <input type="checkbox" ng-model="loop" value"loop" checked="true" name="loop">keep posting in a loop</input>
+                    <input type="range" ng-model="frequency" min="50" max="2000" value="500" step="50" width="200">loop frequency {{ frequency }} ms</input>
+                </p>
+                <p>
+                    <input ng-click="Calculate()" type="button" id="triggerButton" value="Calculate" />
                 </p>
                 <p>Result {{ result }}</p>
             </div>
