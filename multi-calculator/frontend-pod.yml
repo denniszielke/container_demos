@@ -4,15 +4,24 @@ metadata:
   name: calcfrontend
   labels:
     name: calcfrontend
-    app: calcfrontend
+    app: calculator
 spec:
   containers:
     - name: calcfrontend
-      image: hellodemodz234.azurecr.io/calcfrontend:latest
+      image: dzregistry.azurecr.io/calc/calc-frontend:latest
       ports:
         - containerPort: 3000
           name: http
           protocol: TCP
       env:       
         - name: "ENDPOINT"
-          value: "calcbackend"                  
+          value: "calcbackendsvc"
+        - name: "INSTRUMENTATIONKEY"
+          valueFrom:
+            secretKeyRef:
+              name: appinsightsecret
+              key: appinsightskey
+        - name: "PORT"
+          value: "3000"  
+  imagePullSecrets:
+    - name: kuberegistry              

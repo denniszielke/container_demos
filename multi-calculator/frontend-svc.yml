@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: calcfrontend
+  name: calcfrontendsvc
   labels:
-    name: calcfrontend
-    app: calcfrontend
+    name: calcfrontendsvc
+    app: calculator
 spec:
   selector:
     name: calcfrontend 
-  type: NodePort
+  type: LoadBalancer
   ports:
    - port: 80
      name: http

@@ -83,6 +83,17 @@ or
 kubectl create secret docker-registry kuberegistry --docker-server $REGISTRY_URL --docker-username $REGISTRY_NAME --docker-password $REGISTRY_PASSWORD --docker-email 'example@example.com'
 ```
 
+# Deploying additional secrets
+https://kubernetes.io/docs/concepts/configuration/secret/
+
+Secrets must be base64 encoded.
+echo -n "1f2d1e2e67df" | base64
+
+Deploy secret to cluster
+```
+kubectl create -f appinsightsecret.yml
+```
+
 
 # Deploy
 https://kubernetes.io/docs/user-guide/kubectl-cheatsheet/
