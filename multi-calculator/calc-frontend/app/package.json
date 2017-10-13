@@ -1,6 +1,6 @@
 {
   "name": "calc-frontend-node",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "calculator frontend node",
   "main": "server.js",
   "scripts": {
