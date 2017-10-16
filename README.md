@@ -13,14 +13,22 @@
 - Kubernetes on Azure (Pods, Services, RCs, Deployments)
 - Automation, Scaling, Networking, Monitoring
 
-## Run the following tutorials
+## The multicalculator demo app
+![](/img/multicalculator.png)
+
+## Prep your environment
 0. [Setup azure cli on ubuntu bash](BashCliSetup.md)
+
+## Run the following tutorials
+0. [Set the environment variables](Variables.md)
 1. [Containers on a web app](WebApp.md)
-2a. [Container hello world](ContainerHelloWorld.md)
-2b. [Container CI CD to ACI using VSTS](ContainerCICDACI.md)
-2c. [Multi Container Apps to ACI](MultiContainerACI.md)
-3. [Kubernetes setup](KubernetesSetup.md)
-4. [Kubernetes CI CD using VSTS](KubernetesCICD.md)
-5. [Kubernetes Toolchain Helm, Draft](KubernetesToolchain.md)
-6. [Ingress Controller](KubernetesIngress.md)
-7. [Kubernetes ACI Connector](KubeACIConnector.md)
+2. [Container hello world](ContainerHelloWorld.md)
+3. [Container CI CD to ACI using VSTS](ContainerCICDACI.md)
+4. [Multi Container Apps to ACI](MultiContainerACI.md)
+5. [Kubernetes setup](KubernetesSetup.md)
+6. [Kubernetes CI CD using VSTS](KubernetesCICD.md)
+7. [Kubernetes Services](KubernetesServices.md)
+8. [Kubernetes Multicontainer](KubernetesMultiCalculator.md)
+9. [Kubernetes Toolchain Helm, Draft](KubernetesToolchain.md)
+10. [Ingress Controller](KubernetesIngress.md)
+11. [Kubernetes ACI Connector](KubeACIConnector.md)
