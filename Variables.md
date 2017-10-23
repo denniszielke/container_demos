@@ -6,6 +6,8 @@ Here the list of the required environment variables for the tutorials
 SUBSCRIPTION_ID=""
 LOCATION="northeurope"
 
+export DOCKER_HOST=tcp://127.0.0.1:2375
+
 REGISTRY_NAME="dzregistry"
 REGISTRY_PASSWORD="here be"
 REGISTRY_URL="someregistry.azurecr.io"
