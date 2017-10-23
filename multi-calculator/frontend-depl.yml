@@ -12,7 +12,7 @@ spec:
   ports:
    - port: 80
      name: http
-     targetPort: 3000
+     targetPort: 3001
      protocol: TCP
 ---
 apiVersion: extensions/v1beta1
