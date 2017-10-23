@@ -23,7 +23,6 @@ func main() {
 	var appInsightsKey = os.Getenv("INSTRUMENTATIONKEY")
 	client := appinsights.NewTelemetryClient(appInsightsKey)
 	client.TrackEvent("gobackend-initializing")
-	client.TrackMetric("custom metric", 123)
 	router := mux.NewRouter()
 	router.HandleFunc("/ping", GetPing).Methods("GET")
 	router.HandleFunc("/api/dummy", GetPing).Methods("GET")
