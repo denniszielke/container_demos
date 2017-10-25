@@ -90,9 +90,10 @@ func GetCalculation(res http.ResponseWriter, req *http.Request) {
 	fmt.Println(primestr)
 	var calcResult = Calculation{Value: "[" + primestr + "]",  Timestamp: time.Now()}
 	elapsed := time.Since(start)
-	var nanoseconds = elapsed.Nanoseconds()
+	var milliseconds =  int64(elapsed / time.Millisecond)
 	client.TrackEvent("calculation-gobackend-result")
-	client.TrackMetric("calculation-gobackend-result", float32(nanoseconds));
+	client.TrackMetric("calculation-gobackend-duration", float32(milliseconds));
+	fmt.Println("Responded with [" + primestr + "] in " + strconv.FormatInt(milliseconds, 10) +"ms")
 	outgoingJSON, error := json.Marshal(calcResult)
 	if error != nil {
 		log.Println(error.Error())
