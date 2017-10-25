@@ -1,6 +1,8 @@
 FROM golang:latest 
-RUN mkdir -p /usr/src/app
-COPY ./app/* /usr/src/app/
-WORKDIR /usr/src/app
+RUN mkdir /app 
+COPY ./app/* /app/
+WORKDIR /app 
+RUN go get github.com/gorilla/mux
+RUN go get github.com/Microsoft/ApplicationInsights-Go/appinsights
 RUN go build -o main . 
-CMD ["/usr/src/app/main"]
+CMD ["/app/main"]

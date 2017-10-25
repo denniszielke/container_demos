@@ -29,7 +29,7 @@ docker push dzregistry.azurecr.io/web/django
 https://docs.microsoft.com/en-us/azure/app-service/scripts/app-service-cli-linux-docker-aspnetcore?toc=%2fcli%2fazure%2ftoc.json
 
 az account set --subscription $SUBSCRIPTION_ID
-docker login $REGISTRY_URL -u $REGISTRY_NAME -p $REGISTRY_PASSWORD
+docker login -u $REGISTRY_NAME -p $REGISTRY_PASSWORD $REGISTRY_URL
 
 az group create --name $WEBAPP_GROUP --location $LOCATION
 
