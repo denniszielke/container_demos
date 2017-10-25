@@ -83,6 +83,13 @@ or
 kubectl create secret docker-registry kuberegistry --docker-server $REGISTRY_URL --docker-username $REGISTRY_NAME --docker-password $REGISTRY_PASSWORD --docker-email 'example@example.com'
 ```
 
+or
+
+```
+
+
+```
+
 # Deploying additional secrets
 https://kubernetes.io/docs/concepts/configuration/secret/
 

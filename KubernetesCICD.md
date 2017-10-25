@@ -1,5 +1,7 @@
 # Kubernetes CICD
 
+## Kubernetes deployment via VSTS
+https://dgkanatsios.com/2017/05/29/creating-a-cicd-pipeline-on-azure-container-services-with-kubernetes-and-visual-studio-team-services/
 
 ## Install Istio
 https://readon.ly/post/2017-05-25-deploy-istio-to-azure-container-service/

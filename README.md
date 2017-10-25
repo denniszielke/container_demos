@@ -26,6 +26,7 @@
 3. [Container CI CD to ACI using VSTS](ContainerCICDACI.md)
 4. [Multi Container Apps to ACI](MultiContainerACI.md)
 5. [Kubernetes setup](KubernetesSetup.md)
+6. [Kubernetes setup using AKS](KubernetesClusterAKS.md)
 6. [Kubernetes CI CD using VSTS](KubernetesCICD.md)
 7. [Kubernetes Services](KubernetesServices.md)
 8. [Kubernetes Multicontainer](KubernetesMultiCalculator.md)

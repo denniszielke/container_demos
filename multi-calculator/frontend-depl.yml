@@ -12,7 +12,7 @@ spec:
   ports:
    - port: 80
      name: http
-     targetPort: 3001
+     targetPort: 3000
      protocol: TCP
 ---
 apiVersion: extensions/v1beta1
@@ -37,7 +37,7 @@ spec:
       - name: calcfrontend
         image: dzregistry.azurecr.io/calc/calc-frontend:latest
         ports:
-          - containerPort: 3001
+          - containerPort: 3000
             name: http         
             protocol: TCP
         env: 
@@ -49,6 +49,6 @@ spec:
                 name: appinsightsecret
                 key: appinsightskey
           - name: "PORT"
-            value: "3001"
+            value: "3000"
       imagePullSecrets:
       - name: kuberegistry

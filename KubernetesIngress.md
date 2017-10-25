@@ -1,4 +1,14 @@
 # Kubernetes ingress controller
+
+## Ingress controller
+
+
+Test it
+```
+curl -H 'Host:mysite.com' [ALB_IP]
+```
+
+## Ingress & SSL Termination
 https://kubernetes.io/docs/concepts/services-networking/ingress/
 https://dgkanatsios.com/2017/07/07/using-ssl-for-a-service-hosted-on-a-kubernetes-cluster/
 
