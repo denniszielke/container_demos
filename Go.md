@@ -13,6 +13,10 @@ sudo apt-get install golang-go
 
 ## Running the demo
 
-docker run -e "INSTRUMENTATIONKEY=4c3d38bd-58e3-480e-9fe1-fabd9217b33b" -e "PORT=3001" -p 3001:8080 gocal2
+docker run -e "INSTRUMENTATIONKEY=4c3d38bd-58e3-480e-9fe1" -e "PORT=3001" -p 8080:3001 gocalcbackend
 
-docker run nginx -p 80:8080
+docker ps
+
+docker stop
+
+
