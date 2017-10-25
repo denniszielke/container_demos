@@ -14,7 +14,7 @@
 - Automation, Scaling, Networking, Monitoring
 
 ## The multicalculator demo app
-![](/img/multicalculator.png)
+![](/img/multicalculatorarch.png)
 
 ## Prep your environment
 0. [Setup azure cli on ubuntu bash](BashCliSetup.md)
