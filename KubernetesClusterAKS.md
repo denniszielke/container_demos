@@ -11,6 +11,11 @@ REGISTRY_NAME=""
 APPINSIGHTS_KEY=""
 ```
 
+Select subscription
+```
+az account set --subscription $SUBSCRIPTION_ID
+```
+
 1. Create the resource group
 ```
 az group create -n $KUBE_GROUP -l $LOCATION
