@@ -4,6 +4,7 @@ const express = require('express');
 const app = express();
 const morgan = require('morgan');
 const request = require('request');
+const OS = require('os');
 
 const config = require('./config');
 
@@ -12,6 +13,7 @@ var appInsights = require("applicationinsights");
 if (config.instrumentationKey){ 
     appInsights.setup(config.instrumentationKey);
     appInsights.start();
+    appInsights.defaultClient.context.keys.cloudRole = "frontend";
 }
 var client = appInsights.defaultClient;
 
@@ -88,6 +90,8 @@ app.post('/api/dummy', function(req, res) {
     res.send('42');
 });
 
+console.log(config);
+console.log(OS.hostname());
 // Listen
 if (config.instrumentationKey){ 
     client.trackEvent({ name: "jsfrontend-initializing"});
