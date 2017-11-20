@@ -23,7 +23,7 @@ az group create -n $KUBE_GROUP -l $LOCATION
 
 2. Create the aks cluster
 ```
-az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --agent-count 3 --generate-ssh-keys
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3 --generate-ssh-keys
 ```
 
 ```
