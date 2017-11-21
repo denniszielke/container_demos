@@ -1,6 +1,19 @@
 # Create container cluster
 https://docs.microsoft.com/en-us/azure/container-service/kubernetes/container-service-kubernetes-walkthrough
 
+0. Variables
+```
+SUBSCRIPTION_ID=""
+KUBE_GROUP="kubeacs"
+KUBE_NAME="dzkubeacs"
+LOCATION="northeurope"
+```
+
+Select subscription
+```
+az account set --subscription $SUBSCRIPTION_ID
+```
+
 1. Create the resource group
 ```
 az group create -n $KUBE_GROUP -l $LOCATION

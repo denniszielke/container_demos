@@ -9,8 +9,10 @@ const OS = require('os');
 var appInsights = require("applicationinsights");
 
 if (config.instrumentationKey){ 
-    appInsights.setup(config.instrumentationKey);
-    appInsights.start();
+    appInsights.setup(config.instrumentationKey)
+    .setAutoDependencyCorrelation(true)
+    .setAutoCollectDependencies(true)
+    .start();
     appInsights.defaultClient.context.keys.cloudRole = "jscalcbackend";
 }
 var client = appInsights.defaultClient;
