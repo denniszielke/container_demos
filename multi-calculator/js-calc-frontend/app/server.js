@@ -57,7 +57,7 @@ app.post('/api/calculation', function(req, res) {
 
     if (redisClient){
         var cachedResult = redisClient.get(req.headers.number, function(err, reply) {
-            if (reply){
+            if (reply && !err){
                 if (config.instrumentationKey){ 
                     var endDate = new Date();
                     var duration = endDate - startDate;
@@ -72,6 +72,13 @@ app.post('/api/calculation', function(req, res) {
                 res.send(reply);            
                 console.log(reply);                
             }else{
+                // if (err){
+                //     console.log("cache error:");
+                //     console.log(err);
+                //     if (config.instrumentationKey){ 
+                //         client.trackException(err);
+                //     }
+                // }
                 console.log("cache miss");
                 var formData = {
                     received: new Date().toLocaleString(), 
