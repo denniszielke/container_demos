@@ -1,0 +1,67 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+ name: omsagent
+spec:
+ template:
+  metadata:
+   labels:
+    app: omsagent
+    agentVersion: 1.4.0-12
+    dockerProviderVersion: 10.0.0-25
+  spec:
+   containers:
+     - name: omsagent
+       image: "microsoft/oms"
+       imagePullPolicy: Always
+       env:
+       - name: WSID
+         valueFrom:
+          secretKeyRef:
+            name: omsecret
+            key: omsid
+       - name: KEY
+         valueFrom:
+          secretKeyRef:
+            name: omsecret
+            key: omskey
+       securityContext:
+         privileged: true
+       ports:
+       - containerPort: 25225
+         protocol: TCP
+       - containerPort: 25224
+         protocol: UDP
+       volumeMounts:
+        - mountPath: /var/run/docker.sock
+          name: docker-sock
+        - mountPath: /var/opt/microsoft/omsagent/state/containerhostname
+          name: container-hostname
+        - mountPath: /var/log
+          name: host-log
+       livenessProbe:
+        exec:
+         command:
+         - /bin/bash
+         - -c
+         - ps -ef | grep omsagent | grep -v "grep"
+        initialDelaySeconds: 60
+        periodSeconds: 60
+   nodeSelector:
+    beta.kubernetes.io/os: linux
+   # Tolerate a NoSchedule taint on master that ACS Engine sets.
+   tolerations:
+    - key: "node-role.kubernetes.io/master"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
+   volumes:
+    - name: docker-sock
+      hostPath:
+       path: /var/run/docker.sock
+    - name: container-hostname
+      hostPath:
+       path: /etc/hostname
+    - name: host-log
+      hostPath:
+       path: /var/log

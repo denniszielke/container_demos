@@ -18,6 +18,7 @@ kubectl run $DEPL_NAME --image nginx -n $NS_NAME
 Check pods
 ```
 kubectl get pods --all-namespaces
+kubectl get pods -o wide
 ```
 3. Delete pod from namespace
 ```

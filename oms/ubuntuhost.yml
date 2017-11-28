@@ -1,0 +1,10 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: ubuntuhost
+spec:
+  containers:
+    - name: ubuntu
+      image: tutum/curl
+      command: ["tail"]
+      args: ["-f", "/dev/null"]
