@@ -11,6 +11,8 @@ or on ubuntu
 https://github.com/golang/go/wiki/Ubuntu
 ```
 sudo apt-get install golang-go
+export GOPATH=$HOME/go
+export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
 ```
 
 ## Running the demo
