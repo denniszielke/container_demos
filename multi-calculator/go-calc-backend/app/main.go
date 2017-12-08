@@ -39,7 +39,7 @@ func main() {
 	fmt.Println("hostname:", hostname)
 	fmt.Println("Listening on " + port)
 	if (len(port) > 0 ) {
-		port = 80
+		port = "80"
 		http.ListenAndServe(":" + port, router)
 	}
 }
