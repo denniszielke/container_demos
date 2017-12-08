@@ -39,6 +39,7 @@ func main() {
 	fmt.Println("hostname:", hostname)
 	fmt.Println("Listening on " + port)
 	if (len(port) > 0 ) {
+		port = 80
 		http.ListenAndServe(":" + port, router)
 	}
 }
@@ -90,7 +91,6 @@ func GetCalculation(res http.ResponseWriter, req *http.Request) {
 	var appInsightsKey = os.Getenv("INSTRUMENTATIONKEY")
 	client := appinsights.NewTelemetryClient(appInsightsKey)
 	client.TrackEvent("calculation-gobackend-call")
-	client.Context().Cloud().SetRoleName("gocalcbackend")
 	var input int
 	var numberString string
 	numberString = req.Header.Get("number")
@@ -108,7 +108,7 @@ func GetCalculation(res http.ResponseWriter, req *http.Request) {
 	elapsed := time.Since(start)
 	var milliseconds =  int64(elapsed / time.Millisecond)
 	client.TrackEvent("calculation-gobackend-result")
-	client.TrackMetric("calculation-gobackend-duration", float32(milliseconds));
+	client.TrackMetric("calculation-gobackend-duration", float64(milliseconds));
 	fmt.Println("Responded with [" + primestr + "] in " + strconv.FormatInt(milliseconds, 10) +"ms")
 	outgoingJSON, error := json.Marshal(calcResult)
 	if error != nil {
