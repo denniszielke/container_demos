@@ -33,3 +33,4 @@
 9. [Kubernetes Toolchain Helm, Draft](KubernetesToolchain.md)
 10. [Ingress Controller](KubernetesIngress.md)
 11. [Kubernetes ACI Connector](KubeACIConnector.md)
+12. [Kubernetes OMS Integration](KubernetesOMSAKS.md)

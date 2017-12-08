@@ -23,8 +23,11 @@ type Calculation struct {
 func main() {
 	var appInsightsKey = os.Getenv("INSTRUMENTATIONKEY")
 	var port = os.Getenv("PORT")
-	client := appinsights.NewTelemetryClient(appInsightsKey)
-	client.TrackEvent("gobackend-initializing")
+
+	if (len(appInsightsKey) > 0) {
+		client := appinsights.NewTelemetryClient(appInsightsKey)
+		client.TrackEvent("gobackend-initializing")
+	}
 	router := mux.NewRouter()
 	router.HandleFunc("/ping", GetPing).Methods("GET")
 	router.HandleFunc("/api/dummy", GetPing).Methods("GET")
@@ -35,7 +38,9 @@ func main() {
 	}
 	fmt.Println("hostname:", hostname)
 	fmt.Println("Listening on " + port)
-	http.ListenAndServe(":" + port, router)
+	if (len(port) > 0 ) {
+		http.ListenAndServe(":" + port, router)
+	}
 }
 
 func GetPing(res http.ResponseWriter, req *http.Request) {

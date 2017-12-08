@@ -6,7 +6,7 @@ https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough
 SUBSCRIPTION_ID=""
 KUBE_GROUP="kubesaks"
 KUBE_NAME="dzkubes"
-LOCATION="westus2"
+LOCATION="westeurope"
 REGISTRY_NAME=""
 APPINSIGHTS_KEY=""
 ```
