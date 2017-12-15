@@ -14,7 +14,7 @@
 - Automation, Scaling, Networking, Monitoring
 
 ## The multicalculator demo app
-![](/img/multicalculatorarch.png)
+![](/img/osba_multicalculator.png)
 
 ## Prep your environment
 0. [Setup azure cli on ubuntu bash](BashCliSetup.md)
@@ -34,3 +34,4 @@
 10. [Ingress Controller](KubernetesIngress.md)
 11. [Kubernetes ACI Connector](KubeACIConnector.md)
 12. [Kubernetes OMS Integration](KubernetesOMSAKS.md)
+13. [Kubernetes Open Service Broker API](KubernetesServiceBroker.md)

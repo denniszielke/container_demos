@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
       - name: jscalcfrontend
-        image: dzregistry.azurecr.io/calc/js-calc-frontend:latest
+        image: dzkubereg.azurecr.io/calc/js-calc-frontend:redis
         ports:
           - containerPort: 3000
             name: http         
@@ -103,7 +103,7 @@ spec:
     spec:
       containers:
       - name: gocalcbackend
-        image: dzregistry.azurecr.io/calc/go-calc-backend:latest
+        image: dzkubereg.azurecr.io/calc/go-calc-backend:redis
         ports:
           - containerPort: 3001
             name: http         
