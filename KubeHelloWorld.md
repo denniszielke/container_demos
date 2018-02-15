@@ -1,4 +1,5 @@
 # Create Demo
+https://kubernetes.io/docs/tasks/access-application-cluster/service-access-application-cluster/
 
 0. Variabeles
 ```
@@ -24,3 +25,4 @@ kubectl get pods -o wide
 ```
 kubectl delete pod $DEPL_NAME -n $NS_NAME
 ```
+

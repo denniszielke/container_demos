@@ -6,7 +6,7 @@ https://docs.microsoft.com/en-us/cli/azure/acs?view=azure-cli-latest#az_acs_crea
 SUBSCRIPTION_ID=""
 KUBE_GROUP="kubevnet"
 KUBE_NAME="dzkubenet"
-LOCATION="westus2"
+LOCATION="ukwest"
 KUBE_VNET_NAME="KVNET"
 KUBE_AGENT_SUBNET_NAME="KVAGENTS"
 KUBE_MASTER_SUBNET_NAME="KVMASTERS"
@@ -62,11 +62,18 @@ scp azureuser@($KUBE_NAME)mgmt.westeurope.cloudapp.azure.com:.kube/config $HOME/
 ```
 
 6. Find out the route table name and update the network
+https://github.com/Azure/ACS/blob/master/docs/VNET/README.md
 ```
 KUBE_ROUTE_TABLE_NAME="k8s-master-21341239-routetable"
 KUBE_ROUTE_TABLE="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/"$KUBE_GROUP"_"$KUBE_NAME"_"$LOCATION"/providers/Microsoft.Network/routeTables/$KUBE_ROUTE_TABLE_NAME"
 az network vnet subnet update --resource-group $KUBE_GROUP --vnet-name $KUBE_VNET_NAME --name $KUBE_MASTER_SUBNET_NAME --route-table $KUBE_ROUTE_TABLE --address-prefix "10.0.0.0/24"
 ```
+
+or
+https://github.com/Azure/ACS/blob/master/announcements/2017-08-22_scenario_usage.md#custom-vnet-and-ports
+#!/bin/bash
+rt=$(az network route-table list -g GROUPNAME -o json | jq -r '.[].id')
+az network vnet subnet update -n $KUBE_VNET_NAME -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME --route-table $rt
 
 7. Check that everything is running ok
 ```

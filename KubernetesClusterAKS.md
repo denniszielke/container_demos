@@ -21,6 +21,7 @@ az account set --subscription $SUBSCRIPTION_ID
 az group create -n $KUBE_GROUP -l $LOCATION
 ```
 
+
 2. Create the aks cluster
 ```
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3 --generate-ssh-keys
@@ -61,9 +62,22 @@ kubectl --kube-context
 az aks browse --resource-group=$KUBE_GROUP --name=$KUBE_NAME
 ```
 
-5. Create container registr
+# Create and configure container registry
+
+1. Create container registr
 ```
 az acr create --resource-group "$KUBE_GROUP" --name "$REGISTRY_NAME" --sku Basic --admin-enabled true
+```
+
+2. Login to ACR
+```
+az acr login --name $REGISTRY_NAME
+```
+
+3. Read login servier
+```
+export REGISTRY_URL=$(az acr show -g $KUBE_GROUP -n $REGISTRY_NAME --query "loginServer")
+export REGISTRY_URL=("${REGISTRY_URL[@]//\"/}")
 ```
 
 # Deploy Secrets

@@ -1,10 +1,15 @@
-# Installing helm and tiller
+# Using Helm
+
+## Installing helm and tiller
 https://github.com/kubernetes/helm
+https://docs.microsoft.com/en-us/azure/aks/kubernetes-helm
 
 Install helm
+```
 wget https://storage.googleapis.com/kubernetes-helm/helm-v2.7.2-linux-amd64.tar.gz
 tar -zxvf helm-v2.7.2-linux-amd64.tar.gz
 sudo mv linux-amd64/helm /usr/local/bin/helm
+```
 
 Install tiller and upgrade tiller
 ```
@@ -35,3 +40,18 @@ helm reset
 
 helm install stable/mysql
 https://kubeapps.com/
+
+## Create your own helm chart
+
+1. Create using draft
+Go to app folder and launch draft
+https://github.com/Azure/draft 
+```
+draft create
+```
+
+2. Create helm chart manually
+
+```
+helm create multicalc
+```
