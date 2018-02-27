@@ -1,0 +1,55 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nginx-ingress-controller
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  template:
+    metadata:
+      labels:
+        app: nginx-ingress-lb
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: nginx-ingress-controller
+          image: gcr.io/google_containers/nginx-ingress-controller:0.8.3
+          imagePullPolicy: Always
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 18080
+              scheme: HTTP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 18080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
+          args:
+            - /nginx-ingress-controller
+            - --default-backend-service=$(POD_NAMESPACE)/default-http-backend
+          # Use downward API
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - containerPort: 80
+      #     volumeMounts:
+      #       - name: nginx-template-volume
+      #         mountPath: /etc/nginx/template
+      #         readOnly: true
+      # volumes:
+      #   - name: nginx-template-volume
+      #     configMap:
+      #       name: nginx-template
+      #       items:
+      #       - key: nginx.tmpl
+      #         path: nginx.tmpl

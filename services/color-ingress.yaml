@@ -1,0 +1,24 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  name: coloringress
+  namespace: default
+spec:
+  rules:
+    - host: "13.82.238.54.xip.io"
+      http:
+        paths:
+          - backend:
+              serviceName: blue-svc
+              servicePort: 80
+            path: /
+          - backend:
+              serviceName: blue-svc
+              servicePort: 80
+            path: /blue
+          - backend:
+              serviceName: green-svc
+              servicePort: 80
+            path: /green

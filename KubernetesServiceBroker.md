@@ -19,12 +19,12 @@ az account set --subscription $SUBSCRIPTION_ID
 1. Get available cluster versions
 
 ```
-az aks get-versions --name $KUBE_NAME --resource-group $KUBE_GROUP --output table
+az aks get-upgrades --name $KUBE_NAME --resource-group $KUBE_GROUP --output table
 ```
 
 2. Upgrade cluster to a specific version
 ```
-KUBE_VERSION=1.8.2
+KUBE_VERSION=1.8.7
 az aks upgrade --name $KUBE_NAME --resource-group $KUBE_GROUP --kubernetes-version $KUBE_VERSION
 ```
 

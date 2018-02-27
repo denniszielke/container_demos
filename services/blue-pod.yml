@@ -9,10 +9,10 @@ metadata:
 spec:
   containers:
     - name: blue
-      image: dzregistry.azurecr.io/blue:latest
+      image: denniszielke/blue:latest
       ports:
         - containerPort: 80
           name: http
           protocol: TCP 
-  imagePullSecrets:
-    - name: kuberegistry
+  # imagePullSecrets:
+  #   - name: kuberegistry

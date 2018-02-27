@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-azuredisk
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: managed-premium
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+ name: grafana-disk
+spec:
+ containers:
+  - image: grafana/grafana
+    name: grafana
+    volumeMounts:
+      - name: grafana
+        mountPath: /var/lib/grafana
+ volumes:
+      - name: grafana
+        persistentVolumeClaim:
+          claimName: pvc-azuredisk

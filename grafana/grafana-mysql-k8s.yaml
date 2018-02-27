@@ -1,0 +1,123 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: sc-azure-file
+provisioner: kubernetes.io/azure-file
+mountOptions:
+  - dir_mode=0777
+  - file_mode=0777
+  - uid=1000
+  - gid=1000
+  - cache=none
+  - serverino
+parameters:
+  storageAccount: dzgrafstor
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: mysql-db-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: sc-azure-file
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  ports:
+  - port: 3306
+  selector:
+    app: mysql
+  clusterIP: None
+---
+apiVersion: apps/v1beta2 #https://github.com/mysql/mysql-docker
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      securityContext:
+        fsGroup: 1000
+                # https://github.com/kubernetes/kubernetes/issues/2630#issuecomment-344091454
+        #runAsUser: 1000
+      containers:
+      - image: mysql:5.6
+        name: mysql
+        env:
+          # Use secret in real usage
+        - name: MYSQL_ROOT_PASSWORD 
+          value: "Aj98dFj.1234"
+        - name: MYSQL_USER
+          value: "grafuser"
+        - name: MYSQL_PASSWORD
+          value: "Aj98dFj.1234"
+        - name: MYSQL_DATABASE
+          value: "grafana"
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      - image: grafana/grafana
+    name: grafana
+    ports: 
+      - containerPort: 3000
+        protocol: TCP
+      env:
+        - name: "GF_DATABASE_TYPE"
+          value: "mysql"
+        - name: "GF_DATABASE_HOST"
+          value: "localhost"
+        - name: "GF_DATABASE_USER"
+          value: "grafuser"
+        - name: "GF_DATABASE_PASSWORD"
+          value: "Aj98dFj.1234"
+        - name: "GF_DATABASE_db"
+          value: "grafana"
+        - name: "GF_DATABASE_PORT"
+          value: "3306"
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-db-claim
+---
+apiVersion: v1
+kind: Pod
+metadata:
+ name: grafana-mysql
+spec:
+ containers:
+  - image: grafana/grafana
+    name: grafana
+    ports: 
+      - containerPort: 3000
+        protocol: TCP
+    env:
+      - name: "GF_DATABASE_TYPE"
+        value: "mysql"
+      - name: "GF_DATABASE_HOST"
+        value: "mysql"
+      - name: "GF_DATABASE_USER"
+        value: "grafuser"
+      - name: "GF_DATABASE_PASSWORD"
+        value: "Aj98dFj.1234"
+      - name: "GF_DATABASE_db"
+        value: "grafana"
+      - name: "GF_DATABASE_PORT"
+        value: "3306"

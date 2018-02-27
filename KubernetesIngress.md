@@ -2,6 +2,30 @@
 
 ## Ingress controller
 
+1. Provision default backend
+```
+kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/services/default-backend.yaml
+```
+2. Create ingress service
+```
+kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/services/default-svc.yaml
+```
+3. Create ingress service
+```
+kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/services/ingress-svc.yaml
+```
+4. Get ingress public ip adress to that service
+```
+kubectl get svc
+```
+5. Create ingress controller
+```
+kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/services/ingress-ctl.yaml
+```
+6. Deploy ingress
+```
+kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/services/color-ingress.yaml
+```
 
 Test it
 ```
@@ -13,6 +37,7 @@ https://kubernetes.io/docs/concepts/services-networking/ingress/
 https://dgkanatsios.com/2017/07/07/using-ssl-for-a-service-hosted-on-a-kubernetes-cluster/
 
 https://blogs.technet.microsoft.com/livedevopsinjapan/2017/02/28/configure-nginx-ingress-controller-for-tls-termination-on-kubernetes-on-azure-2/
+https://daemonza.github.io/2017/02/13/kubernetes-nginx-ingress-controller/
 
 ```
 git clone https://github.com/kubernetes/ingress.git

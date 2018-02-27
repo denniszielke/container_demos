@@ -19,10 +19,10 @@ spec:
     spec:
       containers:
         - name: blue
-          image: dzregistry.azurecr.io/green:latest
+          image: denniszielke/green:latest
           ports:
           - containerPort: 80
             name: http
             protocol: TCP 
-      imagePullSecrets:
-      - name: kuberegistry
+      # imagePullSecrets:
+      # - name: kuberegistry
