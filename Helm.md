@@ -55,6 +55,10 @@ draft create
 ```
 helm create multicalc
 ```
+Validate template
+```
+helm lint ./multicalchart
+```
 
 3. Dry run the chart and override parameters
 ```
