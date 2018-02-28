@@ -1,0 +1,15 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: write-file-test
+spec:
+  containers:
+    - name: myfrontend
+      image: nginx
+      volumeMounts:
+      - mountPath: "/var/www/html"
+        name: volume
+  volumes:
+    - name: volume
+      persistentVolumeClaim:
+        claimName: pvc-azurefile

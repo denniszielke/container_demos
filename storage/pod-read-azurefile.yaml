@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+ name: write-file-test
+spec:
+ containers:
+  - image: nginx
+    name: nginx
+    volumeMounts:
+      - name: azure
+        mountPath: /mnt/azure
+ volumes:
+      - name: azure
+        azureFile:
+          secretName: azure-secret
+          shareName: k8swrite
+          readOnly: false

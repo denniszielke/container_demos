@@ -1,8 +1,7 @@
-# Installing Grafana in AKS
+# Using storage in AKS
 
 0. Define variables
 ```
-Environment Variables
 SUBSCRIPTION_ID=""
 KUBE_GROUP="kubs"
 KUBE_NAME="dzkub8"
@@ -51,13 +50,33 @@ az storage share create --name $STORAGE_SHARE_WRITE --account-name $STORAGE_ACCO
 az storage share create --name $STORAGE_SHARE_READ --account-name $STORAGE_ACCOUNT 
 ```
 
-2. Replace storage account name
+2. Replace storage account name in storage class configuration
 ```
 sed -e "s/ACCOUNT_NAME/$STORAGE_ACCOUNT/" sc-azure-file.yaml > scazurefile.yaml
+kubectl create -f scazurefile.yaml
 ```
 
-kubectl exec -ti myfirstapp-86776c7859-c8kcd bash
+3. Provision storage class
+```
+kubectl create -f pvc-azurefile.yaml
+```
 
-kubectl exec myfirstapp-86776c7859-c8kcd env
+4. Bring up a pod to use claim and log into it
+```
+kubectl create -f pod-write-azurefile.yaml
+kubectl exec -ti frontend bash
+echo "Hallo Welt" > /var/www/html/out.html
+exit
+kubectl exec frontend env
+```
+
+5. Bring up a pod to use an existing share and log into it
+```
+kubectl create -f pod-read-azurefile.yaml
+kubectl exec -ti frontend bash
+echo "Hallo Welt" > /var/www/html/out.html
+exit
+kubectl exec frontend env
+```
 
 ## Set up azure disk storage
