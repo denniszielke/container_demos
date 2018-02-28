@@ -61,7 +61,17 @@ helm create multicalc
 helm install --dry-run --debug ./multicalchart --set frontendReplicaCount=3
 ```
 
-4. Install
+4. Make sure you have the app insights key secret provisioned
+```
+kubectl create secret generic appinsightsecret --from-literal=appinsightskey=$APPINSIGHTS_KEY
+```
+
+5. Install
 ```
 helm install multicalchart --name=c1 --set frontendReplicaCount=3
-``
+```
+
+6. Cleanup
+```
+helm delete c1 --purge
+```
