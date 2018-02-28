@@ -50,8 +50,18 @@ https://github.com/Azure/draft
 draft create
 ```
 
-2. Create helm chart manually
+2. Create helm chart manually and modify accordingly
 
 ```
 helm create multicalc
 ```
+
+3. Dry run the chart and override parameters
+```
+helm install --dry-run --debug ./multicalchart --set frontendReplicaCount=3
+```
+
+4. Install
+```
+helm install multicalchart --name=c1 --set frontendReplicaCount=3
+``
