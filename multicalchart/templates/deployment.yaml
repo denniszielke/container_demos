@@ -90,12 +90,12 @@ spec:
                   name: appinsightsecret
                   key: appinsightskey
             - name: "PORT"
-              value: "3000"
+              value: "3001"
           livenessProbe:
             httpGet:
               path: /ping
-              port: 3000
+              port: 3001
           readinessProbe:
             httpGet:
               path: /ping
-              port: 3000
+              port: 3001

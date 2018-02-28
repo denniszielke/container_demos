@@ -72,10 +72,10 @@ kubectl create secret generic appinsightsecret --from-literal=appinsightskey=$AP
 
 5. Install
 ```
-helm install multicalchart --name=c1 --set frontendReplicaCount=3
+helm install multicalchart --name=c3 --set frontendReplicaCount=3 --set image.frontendTag=redis --set image.backendTag=redis
 ```
 
 6. Cleanup
 ```
-helm delete c1 --purge
+helm delete c3 --purge
 ```
