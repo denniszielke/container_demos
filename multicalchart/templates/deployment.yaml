@@ -33,7 +33,7 @@ spec:
               protocol: TCP
           env: 
             - name: "ENDPOINT"
-              value: "calc-backend-svc"
+              value: "{{ .Release.Name }}-calc-backend-svc"
             - name: "INSTRUMENTATIONKEY"
               valueFrom:
                 secretKeyRef:
