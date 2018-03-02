@@ -72,7 +72,23 @@ kubectl create secret generic appinsightsecret --from-literal=appinsightskey=$AP
 
 5. Install
 ```
-helm install multicalchart --name=c3 --set frontendReplicaCount=3 --set image.frontendTag=redis --set image.backendTag=redis
+helm install multicalchart --name=c3 --set frontendReplicaCount=1 --set backendReplicaCount=1 --set image.frontendTag=redis --set image.backendTag=redis
+```
+
+verify
+```
+helm get values c3
+```
+
+6. Change config and perform an upgrade
+```
+helm upgrade --set backendReplicaCount=4 c3 multicalchart
+```
+
+7. See rollout history
+```
+helm history c3
+helm rollback c3 1
 ```
 
 6. Cleanup
