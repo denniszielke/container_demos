@@ -26,7 +26,8 @@ func main() {
 
 	if (len(appInsightsKey) > 0) {
 		client := appinsights.NewTelemetryClient(appInsightsKey)
-		client.TrackEvent("gobackend-initializing")
+		client.TrackEvent("go-backend-initializing")
+		client.Context().Tags.Cloud().SetRole("calc-backend-svc")
 	}
 	router := mux.NewRouter()
 	router.HandleFunc("/ping", GetPing).Methods("GET")
@@ -90,7 +91,8 @@ func GetCalculation(res http.ResponseWriter, req *http.Request) {
 	start := time.Now()
 	var appInsightsKey = os.Getenv("INSTRUMENTATIONKEY")
 	client := appinsights.NewTelemetryClient(appInsightsKey)
-	client.TrackEvent("calculation-gobackend-call")
+	client.Context().Tags.Cloud().SetRole("calc-backend-svc")
+	client.TrackEvent("calculation-go-backend-call")	
 	var input int
 	var numberString string
 	numberString = req.Header.Get("number")
@@ -107,8 +109,8 @@ func GetCalculation(res http.ResponseWriter, req *http.Request) {
 	var calcResult = Calculation{Value: "[" + primestr + "]", Timestamp: time.Now(), Host: hostname}
 	elapsed := time.Since(start)
 	var milliseconds =  int64(elapsed / time.Millisecond)
-	client.TrackEvent("calculation-gobackend-result")
-	client.TrackMetric("calculation-gobackend-duration", float64(milliseconds));
+	client.TrackEvent("calculation-go-backend-result")
+	client.TrackMetric("calculation-go-backend-duration", float64(milliseconds));
 	fmt.Println("Responded with [" + primestr + "] in " + strconv.FormatInt(milliseconds, 10) +"ms")
 	outgoingJSON, error := json.Marshal(calcResult)
 	if error != nil {
