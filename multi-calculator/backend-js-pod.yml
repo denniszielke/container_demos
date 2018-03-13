@@ -1,14 +1,14 @@
 apiVersion: "v1"
 kind: Pod
 metadata:
-  name: calc-backend
+  name: js-calc-backend
   labels:
     name: calc-backend
     app: calculator
     language: js
 spec:
   containers:
-    - name: calc-js-backend
+    - name: js-calc-backend
       image: dzkubereg.azurecr.io/calc/js-calc-backend:1001
       ports:
         - containerPort: 80

@@ -1,14 +1,14 @@
 apiVersion: "v1"
 kind: Pod
 metadata:
-  name: calc-backend
+  name: go-calc-backend
   labels:
     name: calc-backend
     app: calculator
     language: go
 spec:
   containers:
-    - name: calc-go-backend
+    - name: go-calc-backend
       image: dzkubereg.azurecr.io/calc/go-calc-backend:1001
       ports:
         - containerPort: 80

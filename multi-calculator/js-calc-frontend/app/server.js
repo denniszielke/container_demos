@@ -60,11 +60,10 @@ app.post('/api/calculation', function(req, res) {
                 if (config.instrumentationKey){ 
                     var endDate = new Date();
                     var duration = endDate - startDate;
-                    // client.trackDependency(
-                    //     { target: config.redisHost, dependencyTypeName: "REDIS", name: "calculation-cache", 
-                    //     data:"calculate number " + req.headers.number, 
-                    //     duration: duration, resultCode:0, success: true});
-                    client.trackRequest({name:"POST /api/calculation", url: options.url, duration:duration, resultCode:200, success:true});
+                    client.trackDependency(
+                        { target: config.redisHost, dependencyTypeName: "REDIS", name: "calculation-cache", 
+                        data:"calculate number " + req.headers.number, 
+                        duration: duration, resultCode:0, success: true});
                     client.trackEvent({ name: "calculation-js-frontend-cache" });
                     client.trackMetric({ name:"calculation-js-frontend-duration", value: duration });
                 }

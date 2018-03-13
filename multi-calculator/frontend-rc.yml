@@ -6,7 +6,7 @@ metadata:
     name: calc-frontend
     app: calculator
 spec:
-  replicas: 2
+  replicas: 3
   template:
     metadata:
       labels:
@@ -22,6 +22,16 @@ spec:
             env:       
               - name: "ENDPOINT"
                 value: "calc-backend-svc"
+              - name: "REDIS_HOST"
+                valueFrom:
+                  secretKeyRef:
+                    name: rediscachesecret
+                    key: redishostkey
+              - name: "REDIS_AUTH"
+                valueFrom:
+                  secretKeyRef:
+                    name: rediscachesecret
+                    key: redisauthkey
               - name: "INSTRUMENTATIONKEY"
                 valueFrom:
                   secretKeyRef:
