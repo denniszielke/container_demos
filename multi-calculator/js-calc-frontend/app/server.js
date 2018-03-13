@@ -1,15 +1,6 @@
 require('dotenv-extended').load();
-
-const express = require('express');
-const app = express();
-const morgan = require('morgan');
-const request = require('request');
-const OS = require('os');
-const redis = require("redis");
 const config = require('./config');
-
 var appInsights = require("applicationinsights");
-
 if (config.instrumentationKey){ 
     appInsights.setup(config.instrumentationKey)
     .setAutoDependencyCorrelation(true)
@@ -19,6 +10,13 @@ if (config.instrumentationKey){
     appInsights.start();
 }
 var client = appInsights.defaultClient;
+
+const express = require('express');
+const app = express();
+const morgan = require('morgan');
+const request = require('request');
+const OS = require('os');
+const redis = require("redis");
 
 var redisClient = null;
 if (config.redisHost && config.redisAuth) {
@@ -62,10 +60,11 @@ app.post('/api/calculation', function(req, res) {
                 if (config.instrumentationKey){ 
                     var endDate = new Date();
                     var duration = endDate - startDate;
-                    client.trackDependency(
-                        { target: config.redisHost, dependencyTypeName: "REDIS", name: "calculation-cache", 
-                        data:"calculate number " + req.headers.number, 
-                        duration: duration, resultCode:0, success: true});
+                    // client.trackDependency(
+                    //     { target: config.redisHost, dependencyTypeName: "REDIS", name: "calculation-cache", 
+                    //     data:"calculate number " + req.headers.number, 
+                    //     duration: duration, resultCode:0, success: true});
+                    client.trackRequest({name:"POST /api/calculation", url: options.url, duration:duration, resultCode:200, success:true});
                     client.trackEvent({ name: "calculation-js-frontend-cache" });
                     client.trackMetric({ name:"calculation-js-frontend-duration", value: duration });
                 }
@@ -101,11 +100,11 @@ app.post('/api/calculation', function(req, res) {
                         }
                     }
                     if (config.instrumentationKey){ 
-                        client.trackDependency(
-                            { target: "calc-backend-svc", name: "calc-backend-svc", 
-                            data:"calculate number " + req.headers.number, 
-                            duration: duration, resultCode:200, success: true});
-                        client.trackRequest({name:"GET /api/calculation", url: options.url, duration:duration, resultCode:200, success:true});
+                        // client.trackDependency(
+                        //     { target: "calc-backend-svc", name: "calc-backend-svc", 
+                        //     data:"calculate number " + req.headers.number, 
+                        //     duration: duration, resultCode:200, success: true});
+                        client.trackRequest({name:"POST /api/calculation", url: options.url, duration:duration, resultCode:200, success:true});
                         client.trackEvent({ name: "calculation-js-frontend-call-complete" });
                         client.trackMetric({ name:"calculation-js-frontend-duration", value: duration });
                     }
@@ -141,12 +140,13 @@ app.post('/api/calculation', function(req, res) {
                 }
             }
             if (config.instrumentationKey){ 
-                client.trackDependency(
-                    { target: "calc-backend-svc", name: "calc-backend-svc", 
-                    data:"calculate number " + req.headers.number, 
-                    duration: duration, resultCode:200, success: true});
+                console.log("sending telemetry");
+                // client.trackDependency(
+                //     { name: "POST /api/calculation", target: "calc-backend-svc | roleName:calc-backend-svc", 
+                //     data: options.url, dependencyTypeName: "Http",
+                //     duration: duration, resultCode:200, success: true});
                 client.trackEvent({ name: "calculation-js-frontend-call-complete" });
-                client.trackRequest({name:"GET /api/calculation", url: options.url, duration:duration, resultCode:200, success:true});
+                client.trackRequest({name:"POST /api/calculation", url: options.url, duration:duration, resultCode:200, success:true});
                 client.trackMetric({ name:"calculation-js-frontend-duration", value: duration });
             }
             

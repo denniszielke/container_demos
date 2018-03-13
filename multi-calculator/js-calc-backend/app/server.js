@@ -1,11 +1,5 @@
 require('dotenv-extended').load();
-
-const express = require('express');
-const app = express();
-const morgan = require('morgan');
-
 const config = require('./config');
-const OS = require('os');
 var appInsights = require("applicationinsights");
 
 if (config.instrumentationKey){ 
@@ -17,6 +11,12 @@ if (config.instrumentationKey){
     appInsights.start();
 }
 var client = appInsights.defaultClient;
+
+const express = require('express');
+const app = express();
+const morgan = require('morgan');
+
+const OS = require('os');
 
 // add logging middleware
 app.use(morgan('dev'));
