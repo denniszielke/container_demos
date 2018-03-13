@@ -8,7 +8,7 @@ metadata:
 spec:
   containers:
     - name: calc-backend
-      image: dzregistry.azurecr.io/calc/calc-backend:latest
+      image: dzkubereg.azurecr.io/calc/js-calc-backend:1001
       ports:
         - containerPort: 3001
           name: http         

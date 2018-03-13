@@ -37,12 +37,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("hostname:", hostname)
-	fmt.Println("Listening on " + port)
+	fmt.Println("hostname:", hostname)	
 	if (len(port) > 0 ) {
+		http.ListenAndServe(":" + port, router)
+	}else
+	{
 		port = "80"
 		http.ListenAndServe(":" + port, router)
 	}
+	fmt.Println("Listening on " + port)
 }
 
 func GetPing(res http.ResponseWriter, req *http.Request) {

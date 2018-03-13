@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ReplicationController
 metadata:
-  name: calc-frontend
+  name: calc-frontend-rc
   labels:
     name: calc-frontend
     app: calculator
@@ -14,7 +14,7 @@ spec:
     spec:
         containers:
           - name: calc-frontend
-            image: dzregistry.azurecr.io/calc/calc-frontend:latest
+            image: dzkubereg.azurecr.io/calc/js-calc-frontend:1001
             ports:
               - containerPort: 3000
                 name: http
