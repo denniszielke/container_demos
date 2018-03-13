@@ -1,27 +1,26 @@
 apiVersion: "v1"
 kind: Pod
 metadata:
-  name: calc-frontend
+  name: calc-backend
   labels:
-    name: calc-frontend
+    name: calc-backend
     app: calculator
+    language: go
 spec:
   containers:
-    - name: calcfrontend
-      image: dzkubereg.azurecr.io/calc/js-calc-frontend:1001
+    - name: calc-go-backend
+      image: dzkubereg.azurecr.io/calc/go-calc-backend:1001
       ports:
         - containerPort: 80
-          name: http
+          name: http         
           protocol: TCP
-      env:       
-        - name: "ENDPOINT"
-          value: "calc-backend-svc"
+      env: 
         - name: "INSTRUMENTATIONKEY"
           valueFrom:
             secretKeyRef:
               name: appinsightsecret
               key: appinsightskey
         - name: "PORT"
-          value: "80"  
+          value: "80"
   imagePullSecrets:
-    - name: kuberegistry              
+    - name: kuberegistry

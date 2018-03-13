@@ -5,12 +5,13 @@ metadata:
   labels:
     name: calc-backend
     app: calculator
+    language: js
 spec:
   containers:
-    - name: calc-backend
+    - name: calc-js-backend
       image: dzkubereg.azurecr.io/calc/js-calc-backend:1001
       ports:
-        - containerPort: 3001
+        - containerPort: 80
           name: http         
           protocol: TCP
       env: 
@@ -20,6 +21,6 @@ spec:
               name: appinsightsecret
               key: appinsightskey
         - name: "PORT"
-          value: "3001"
+          value: "80"
   imagePullSecrets:
     - name: kuberegistry
