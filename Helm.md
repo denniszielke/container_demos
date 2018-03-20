@@ -89,7 +89,7 @@ If you have a redis secret you can turn on the redis cache
 ```
 kubectl create secret generic rediscachesecret --from-literal=redishostkey=$REDIS_HOST --from-literal=redisauthkey=$REDIS_AUTH
 
-helm upgrade multicalchart --set backendReplicaCount=4 --set frontendReplicaCount=4 calculator --set useAppInsights=yes --set useRedis=yes
+helm upgrade --set backendReplicaCount=4 --set frontendReplicaCount=4 --set useAppInsights=yes --set useRedis=yes calculator multicalchart
 ```
 
 7. See rollout history
