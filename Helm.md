@@ -72,26 +72,33 @@ kubectl create secret generic appinsightsecret --from-literal=appinsightskey=$AP
 
 5. Install
 ```
-helm install multicalchart --name=c3 --set frontendReplicaCount=1 --set backendReplicaCount=1 --set image.frontendTag=redis --set image.backendTag=redis
+helm install multicalchart --name=calculator --set frontendReplicaCount=1 --set backendReplicaCount=1 --set image.frontendTag=latest --set image.backendTag=latest --set useAppInsights=yes
 ```
 
 verify
 ```
-helm get values c3
+helm get values calculator
 ```
 
 6. Change config and perform an upgrade
 ```
-helm upgrade --set backendReplicaCount=4 c3 multicalchart
+helm upgrade --set backendReplicaCount=4 --set frontendReplicaCount=4 calculator multicalchart
+```
+
+If you have a redis secret you can turn on the redis cache
+```
+kubectl create secret generic rediscachesecret --from-literal=redishostkey=$REDIS_HOST --from-literal=redisauthkey=$REDIS_AUTH
+
+helm upgrade --set backendReplicaCount=4 --set frontendReplicaCount=4 --set useAppInsights=yes --set useRedis=yes calculator multicalchart
 ```
 
 7. See rollout history
 ```
-helm history c3
-helm rollback c3 1
+helm history calculator
+helm rollback calculator 1
 ```
 
 6. Cleanup
 ```
-helm delete c3 --purge
+helm delete calculator --purge
 ```
