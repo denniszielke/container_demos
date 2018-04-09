@@ -2,17 +2,17 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 frontendReplicaCount: 2
-backendReplicaCount: 2
+backendReplicaCount: 3
 dependencies:
   useRedis: no
   redisSecret: rediscachesecret
-  useAppInsights: no
+  useAppInsights: yes
   appInsightsSecret: appinsightsecret
 image:
   repository: denniszielke
   frontendImage: js-calc-frontend
   frontendTag: latest
-  backendImage: js-calc-backend
+  backendImage: go-calc-backend
   backendTag: latest
   pullPolicy: IfNotPresent
   pullSecret: kuberegistry
