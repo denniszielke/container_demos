@@ -12,6 +12,7 @@ image:
   backendImage: js-calc-backend
   backendTag: latest
   pullPolicy: IfNotPresent
+  pullSecret: kuberegistry
 service:
   frontendType: LoadBalancer
   backendType: ClusterIP
