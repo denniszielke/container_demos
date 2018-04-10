@@ -12,7 +12,7 @@ image:
   repository: denniszielke
   frontendImage: js-calc-frontend
   frontendTag: latest
-  backendImage: js-calc-backend
+  backendImage: go-calc-backend
   backendTag: latest
   pullPolicy: IfNotPresent
   pullSecret: kuberegistry
