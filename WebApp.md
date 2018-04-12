@@ -1,3 +1,14 @@
+# Variables
+
+```
+WEBAPP_GROUP=
+WEBAPP_PLAN=
+WEBAPP_NAME=
+REGISTRY_NAME=
+REGISTRY_PASSWORD=
+
+```
+
 # Build container
 
 https://github.com/Azure-Samples/docker-django-webapp-linux
