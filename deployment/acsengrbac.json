@@ -1,0 +1,46 @@
+{
+    "apiVersion": "vlabs",
+    "properties": {
+      "orchestratorProfile": {
+        "orchestratorType": "Kubernetes",
+        "orchestratorRelease": "1.8",
+        "kubernetesConfig": {
+          "enableRbac": true
+        }
+      },
+      "aadProfile": {
+        "serverAppID": "AAD_APP_ID",
+        "clientAppID": "AAD_CLIENT_ID",
+        "tenantID": "TENANT_ID",
+        "adminGroupID": "ADMIN_GROUP_ID"
+      },
+      "masterProfile": {
+        "count": 1,
+        "dnsPrefix": "dz-aad-k8s-18",
+        "vmSize": "Standard_DS2_v2"
+      },
+      "agentPoolProfiles": [
+        {
+          "name": "agentpool1",
+          "count": 3,
+          "vmSize": "Standard_DS2_v2",
+          "storageProfile": "ManagedDisks",
+          "availabilityProfile": "AvailabilitySet"
+        }
+      ],
+      "linuxProfile": {
+        "adminUsername": "dennis",
+        "ssh": {
+          "publicKeys": [
+            {
+              "keyData": "YOUR_SSH_KEY"
+            }
+          ]
+        }
+      },
+      "servicePrincipalProfile": {
+        "clientId": "SERVICE_PRINCIPAL_ID",
+        "secret": "SERVICE_PRINCIPAL_SECRET"
+        }
+      }
+  }
