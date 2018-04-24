@@ -27,6 +27,11 @@ az group create -n $KUBE_GROUP -l $LOCATION
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3 --generate-ssh-keys --kubernetes-version 1.8.7
 ```
 
+with existing keys and latest version
+```
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3  --ssh-key-value ~/.ssh/id_rsa.pub --kubernetes-version 1.9.6
+```
+
 ```
 az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME
 ```
