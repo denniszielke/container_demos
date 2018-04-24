@@ -14,7 +14,7 @@ WORKSPACE_KEY=
 1. Deploy the secreit
 
 ```
-kubectl create secret generic omsagent-secret --from-literal=WSID=WORKSPACE_ID --from-literal=KEY=WORKSPACE_KEY
+kubectl create secret generic omsagent-secret --from-literal=WSID=$WORKSPACE_ID --from-literal=KEY=$WORKSPACE_KEY
 ```
 
 2. Deploy the oms daemons
