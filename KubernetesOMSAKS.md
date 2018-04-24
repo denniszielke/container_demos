@@ -7,8 +7,8 @@ https://docs.microsoft.com/en-us/azure/aks/tutorial-kubernetes-monitor
 0. Define variables
 
 ```
-WSID=WORKSPACE_ID=
-KEY=WORKSPACE_KEY=
+WORKSPACE_ID=
+WORKSPACE_KEY=
 ```
 
 1. Deploy the secreit
@@ -41,4 +41,5 @@ https://docs.microsoft.com/en-us/azure/log-analytics/log-analytics-containers
 ```
 kubectl delete -f https://raw.githubusercontent.com/denniszielke/container_demos/master/oms/ubuntuhost.yml
 kubectl delete -f https://raw.githubusercontent.com/denniszielke/container_demos/master/oms/omsdaemonset.yaml
+kubectl delete secret omsagent-secret
 ```
