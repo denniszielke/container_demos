@@ -8,6 +8,11 @@ https://github.com/kubernetes/charts/tree/master/incubator/istio
 curl -L https://git.io/getIstio | sh -
 ```
 
+Add to your path
+```
+export PATH="$PATH:/Users/dennis/labs/istio/istio-0.7.1/bin"
+```
+
 2. Add incubator chart repo
 helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com
 
@@ -57,3 +62,39 @@ kubectl get ingress -o wide
 ```
 helm delete istio
 ``` 
+
+7. Allow egress traffic
+
+cat <<EOF | istioctl create -f -
+apiVersion: config.istio.io/v1alpha2
+kind: EgressRule
+metadata:
+  name: dogapi-egress-rule
+spec:
+  destination:
+    service: api.thedogapi.co.uk
+  ports:
+    - port: 443
+      protocol: https
+EOF
+
+8. Change routing weight
+
+cat <<EOF | istioctl create -f -
+apiVersion: config.istio.io/v1alpha2
+kind: RouteRule
+metadata:
+  name: petdetailsservice-default
+spec:
+  destination:
+    name: petdetailsservice
+  route:
+  - labels:
+      version: v1
+    weight: 50
+  - labels:
+      version: v2
+    weight: 50
+EOF
+
+istioctl get routerule

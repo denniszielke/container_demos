@@ -1,7 +1,7 @@
 apiVersion: "v1"
 kind: Pod
 metadata:
-  name: bluedemo
+  name: bluedemo2
   labels:
     name: servicedemo
     color: blue
@@ -9,10 +9,10 @@ metadata:
 spec:
   containers:
     - name: blue
-      image: dzkubereg.azurecr.io/demos/blue:latest
+      image: denniszielke/blue:latest
       ports:
         - containerPort: 80
           name: http
           protocol: TCP 
-  imagePullSecrets:
-    - name: kuberegistry
+  # imagePullSecrets:
+  #   - name: kuberegistry

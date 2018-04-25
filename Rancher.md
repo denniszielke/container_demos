@@ -26,3 +26,7 @@ docker run -e CATTLE_DB_CATTLE_GO_PARAMS="allowNativePasswords=true" -d --restar
 
 sudo mkdir -p /storage/docker/mysql-datadir
 docker run -d -v /storage/docker/mysql-datadir:/var/lib/mysql --restart=unless-stopped -p 8080:8080 rancher/server
+
+sudo mkdir -p /storage/docker/mysql-datadir2
+docker run -d -v /storage/docker/mysql-datadir2:/var/lib/mysql --restart=unless-stopped -p 8080:8080 -p 443:443 rancher/server:preview
+

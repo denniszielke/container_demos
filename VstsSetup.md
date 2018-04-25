@@ -12,3 +12,5 @@ BUILD_SOURCESDIRECTORY
 az group create --name "acicd" --location westeurope
 
 $(releaseNameDev) . --install --force --reset-values --wait --set image.repository=$(imageRepository) --set image.backendTag=$(Build.BuildId) --set image.frontendTag=$(Build.BuildId) --set image.pullSecret=kuberegistry
+
+helm history multicalculator-dev 
