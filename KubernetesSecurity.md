@@ -27,8 +27,9 @@ subjects:
 ```
 
 create bearer token
+```
 kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep edit-user | awk '{print $1}')
-
+```
 
 Set kubectl context
 ```
