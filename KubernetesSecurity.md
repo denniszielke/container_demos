@@ -51,7 +51,7 @@ kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | gre
 
 Set kubectl context
 ```
-kubectl config set-cluster low-cluster --server=$KUBE_MANAGEMENT_ENDPOINT--insecure-skip-tls-verify=true
+kubectl config set-cluster low-cluster --server=$KUBE_MANAGEMENT_ENDPOINT --insecure-skip-tls-verify=true
 
 kubectl config set-credentials edit-user --token=$TOKEN
 
