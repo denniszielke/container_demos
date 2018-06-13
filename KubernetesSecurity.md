@@ -26,9 +26,28 @@ subjects:
   namespace: kube-system
 ```
 
+after 1.8
+````
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: my-dashboard-sa
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: my-dashboard-sa
+  namespace: kube-system
+```
+
 create bearer token
+```
 kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep edit-user | awk '{print $1}')
 
+kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep my-dashboard-sa | awk '{print $1}')
+```
 
 Set kubectl context
 ```
