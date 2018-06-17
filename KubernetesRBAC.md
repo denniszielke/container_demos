@@ -16,6 +16,7 @@ SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
 ADMIN_GROUP_ID=
 MY_OBJECT_ID=
+MY_USER_ID=
 ```
 
 ## Create RBAC with AKs
@@ -26,6 +27,7 @@ az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --ssh-key-value ~/.
 
 az aks get-credentials --resource-group $KUBE_GROUP --name $KUBE_NAME --admin
 
+```
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -38,7 +40,23 @@ subjects:
 - apiGroup: rbac.authorization.k8s.io
   kind: User
   name: "user@contoso.com"
+```
 
+```
+cat <<EOF | kubectl create -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: contoso-cluster-admins
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: "$MY_USER_ID"
+EOF
 
 az aks get-credentials --resource-group $KUBE_GROUP --name $KUBE_NAME
 
