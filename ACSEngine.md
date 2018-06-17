@@ -51,7 +51,7 @@ az network vnet create -g $KUBE_GROUP -n $KUBE_VNET_NAME --address-prefixes "172
 
 ```
 az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_MASTER_SUBNET_NAME --address-prefix 172.16.0.0/24
-az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --address-prefix 172.16.2.0/24
+az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n APPGateWay --address-prefix 172.16.5.0/24
 ```
 
 4. Create cluster

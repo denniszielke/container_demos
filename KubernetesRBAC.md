@@ -4,9 +4,11 @@
 0. Variables
 ```
 KUBE_GROUP=kuberbac
-LOCATION="northeurope"
+KUBE_NAME=dzkuberbac
+LOCATION="eastus"
 SUBSCRIPTION_ID=
 AAD_APP_ID=
+AAD_APP_SECRET=
 AAD_CLIENT_ID=
 TENANT_ID=
 YOUR_SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
@@ -14,6 +16,33 @@ SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
 ADMIN_GROUP_ID=
 MY_OBJECT_ID=
+```
+
+## Create RBAC with AKs
+```
+az group create --name $KUBE_GROUP --location $LOCATION
+
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --ssh-key-value ~/.ssh/id_rsa.pub --enable-rbac --aad-server-app-id $AAD_APP_ID --aad-server-app-secret $AAD_APP_SECRET --aad-client-app-id $AAD_CLIENT_ID --aad-tenant-id $TENANT_ID --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID
+
+az aks get-credentials --resource-group $KUBE_GROUP --name $KUBE_NAME --admin
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: contoso-cluster-admins
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: "user@contoso.com"
+
+
+az aks get-credentials --resource-group $KUBE_GROUP --name $KUBE_NAME
+
+
 ```
 
 ## Prepare acs-engine
