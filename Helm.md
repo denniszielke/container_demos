@@ -44,9 +44,48 @@ helm install stable/mysql
 https://kubeapps.com/
 ```
 
-See setting up helm for a dedicated namespace if you have RBAC
+## Setting up helm for a dedicated namespace if you have RBAC
 
 https://github.com/kubernetes/helm/blob/master/docs/rbac.md
+```
+kubectl create ns calculator-helm
+kubectl create serviceaccount tiller -n calculator-helm
+
+cat <<EOF | kubectl create -f -
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: tiller-manager
+  namespace: calculator-helm
+rules:
+- apiGroups: ["", "extensions", "apps"]
+  resources: ["*"]
+  verbs: ["*"]
+EOF
+
+cat <<EOF | kubectl create -f -
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: tiller-binding
+  namespace: calculator-helm
+subjects:
+- kind: ServiceAccount
+  name: tiller
+  namespace: calculator-helm
+roleRef:
+  kind: Role
+  name: tiller-manager
+  apiGroup: rbac.authorization.k8s.io
+EOF
+
+helm init --service-account tiller --tiller-namespace calculator-helm
+
+helm install multicalchart --name=calculator --set frontendReplicaCount=3 --set backendReplicaCount=2 --set image.frontendTag=latest --set image.backendTag=latest --set useAppInsights=yes --tiller-namespace calculator-helm --namespace calculator-helm
+
+```
+
+
 
 ## Create your own helm chart
 
