@@ -35,11 +35,18 @@ kubectl get pods --namespace kube-system
 
 reinstall or delte tiller
 ```
+kubectl delete deployment tiller-deploy -n kube-system
 helm reset
 ```
 
+```
 helm install stable/mysql
 https://kubeapps.com/
+```
+
+See setting up helm for a dedicated namespace if you have RBAC
+
+https://github.com/kubernetes/helm/blob/master/docs/rbac.md
 
 ## Create your own helm chart
 
