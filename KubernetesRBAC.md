@@ -16,7 +16,8 @@ SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
 ADMIN_GROUP_ID=
 MY_OBJECT_ID=
-MY_USER_ID=
+KUBE_ADMIN_ID=
+READER_USER_ID=
 ```
 
 ## Create RBAC with AKs
@@ -50,7 +51,7 @@ cat <<EOF | kubectl create -f -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: contoso-cluster-admins
+  name: cluster-kube-admins
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -58,11 +59,47 @@ roleRef:
 subjects:
 - apiGroup: rbac.authorization.k8s.io
   kind: User
-  name: "$MY_USER_ID"
+  name: "$KUBE_ADMIN_ID"
 EOF
 
 az aks get-credentials --resource-group $KUBE_GROUP --name $KUBE_NAME
 
+kubectl create ns small
+kubectl create ns big
+
+cat <<EOF | kubectl create -f -
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: small
+  name: pod-and-pod-logs-reader
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list"]
+EOF
+
+cat <<EOF | kubectl create -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: small
+  name: small-pod-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pod-and-pod-logs-reader
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: "$READER_USER_ID"
+EOF
+
+kubectl create rolebinding small-pod-reader --role=pod-and-pod-logs-reader --user=$READER_USER_ID --namespace=small
+
+kubectl auth can-i create deployments --namespace=small --as=$READER_USER_ID
+
+kubectl auth can-i list pods --namespace=small --as=$READER_USER_ID
 
 ```
 
