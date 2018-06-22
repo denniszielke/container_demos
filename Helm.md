@@ -48,15 +48,16 @@ https://kubeapps.com/
 
 https://github.com/kubernetes/helm/blob/master/docs/rbac.md
 ```
-kubectl create ns calculator-helm
-kubectl create serviceaccount tiller -n calculator-helm
+APP_NAME=calculator-helm
+kubectl create ns $APP_NAME
+kubectl create serviceaccount tiller-$APP_NAME -n $APP_NAME
 
 cat <<EOF | kubectl create -f -
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: tiller-manager
-  namespace: calculator-helm
+  name: $APP_NAME-manager
+  namespace: $APP_NAME
 rules:
 - apiGroups: ["", "extensions", "apps"]
   resources: ["*"]
@@ -67,21 +68,21 @@ cat <<EOF | kubectl create -f -
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: tiller-binding
-  namespace: calculator-helm
+  name: $APP_NAME-binding
+  namespace: $APP_NAME
 subjects:
 - kind: ServiceAccount
-  name: tiller
-  namespace: calculator-helm
+  name: tiller-$APP_NAME
+  namespace: $APP_NAME
 roleRef:
   kind: Role
-  name: tiller-manager
+  name: $APP_NAME-manager
   apiGroup: rbac.authorization.k8s.io
 EOF
 
-helm init --service-account tiller --tiller-namespace calculator-helm
+helm init --service-account tiller-$APP_NAME --tiller-namespace $APP_NAME
 
-helm install multicalchart --name=calculator --set frontendReplicaCount=3 --set backendReplicaCount=2 --set image.frontendTag=latest --set image.backendTag=latest --set useAppInsights=yes --tiller-namespace calculator-helm --namespace calculator-helm
+helm install multicalchart --name=calculator --set frontendReplicaCount=3 --set backendReplicaCount=2 --set image.frontendTag=latest --set image.backendTag=latest --set useAppInsights=yes --tiller-namespace $APP_NAME --namespace $APP_NAME
 
 ```
 
