@@ -47,6 +47,7 @@ https://kubeapps.com/
 ## Setting up helm for a dedicated namespace if you have RBAC
 
 https://github.com/kubernetes/helm/blob/master/docs/rbac.md
+
 ```
 APP_NAME=calculator-helm
 kubectl create ns $APP_NAME
@@ -86,7 +87,8 @@ helm install multicalchart --name=calculator --set frontendReplicaCount=3 --set 
 
 ```
 
-
+Secure tiller:
+https://github.com/michelleN/helm-secure-tiller 
 
 ## Create your own helm chart
 
