@@ -5,6 +5,91 @@ https://docs.microsoft.com/en-us/azure/aks/ingress
 
 ```
 helm install stable/nginx-ingress --namespace kube-system --set rbac.create=true
+IP="51.145.155.210"
+
+# Name to associate with public IP address
+DNSNAME="demo-aks-ingress"
+
+DNS=
+
+helm upgrade 
+helm install stable/cert-manager --set ingressShim.defaultIssuerName=letsencrypt-prod --set ingressShim.defaultIssuerKind=ClusterIssuer
+
+
+```
+
+
+create cert manager cluster issuer
+```
+cat <<EOF | kubectl create -f -
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: $MY_USER_ID
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    http01: {}
+EOF
+```
+
+create certificate
+
+```
+cat <<EOF | kubectl create -f -
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Certificate
+metadata:
+  name: tls-secret
+spec:
+  secretName: tls-secret
+  dnsNames:
+  - $DNS
+  acme:
+    config:
+    - http01:
+        ingressClass: nginx
+      domains:
+      - $DNS
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+EOF
+```
+
+create ingress
+
+```
+cat <<EOF | kubectl create -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: hello-world-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    certmanager.k8s.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  tls:
+  - hosts:
+    - $DNS
+    secretName: tls-secret
+  rules:
+  - host: $DNS
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: aks-helloworld
+          servicePort: 80
+      - path: /hello-world-two
+        backend:
+          serviceName: ingress-demo
+          servicePort: 80
+EOF
 ```
 
 ## Ingress controller
