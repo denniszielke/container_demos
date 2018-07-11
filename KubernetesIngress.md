@@ -1,5 +1,8 @@
 # Kubernetes ingress controller
 
+Easy way via helm
+https://docs.microsoft.com/en-us/azure/aks/ingress
+
 ## Ingress controller
 
 1. Provision default backend
