@@ -44,6 +44,30 @@ helm install stable/mysql
 https://kubeapps.com/
 ```
 
+## Setting up helm via kube-system for the whole cluster with RBAC
+
+````
+kubectl create serviceaccount tiller --namespace kube-system
+
+cat <<EOF | kubectl create -f -
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: tiller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: tiller
+    namespace: kube-system
+EOF
+
+helm init --service-account tiller
+
+```
+
 ## Setting up helm for a dedicated namespace if you have RBAC
 
 https://github.com/kubernetes/helm/blob/master/docs/rbac.md
