@@ -3,6 +3,10 @@
 Easy way via helm
 https://docs.microsoft.com/en-us/azure/aks/ingress
 
+```
+helm install stable/nginx-ingress --namespace kube-system --set rbac.create=true
+```
+
 ## Ingress controller
 
 1. Provision default backend
