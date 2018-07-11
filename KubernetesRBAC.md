@@ -46,6 +46,7 @@ subjects:
   name: "user@contoso.com"
 ```
 
+create admin user binding
 ```
 cat <<EOF | kubectl create -f -
 apiVersion: rbac.authorization.k8s.io/v1
@@ -63,6 +64,34 @@ subjects:
 EOF
 
 az aks get-credentials --resource-group $KUBE_GROUP --name $KUBE_NAME
+
+az aks browse --resource-group $KUBE_GROUP --name $KUBE_NAME
+
+```
+
+if you see the following error message
+error: unable to forward port because pod is not running. Current status=Pending
+create a binding for the dashboard account
+
+```
+cat <<EOF | kubectl create -f -
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: kubernetes-dashboard
+  labels:
+    k8s-app: kubernetes-dashboard
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: kubernetes-dashboard
+  namespace: kube-system
+EOF
+
+
 
 kubectl create ns small
 kubectl create ns big
