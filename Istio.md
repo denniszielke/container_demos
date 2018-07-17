@@ -1,0 +1,91 @@
+# Install istio
+https://istio.io/docs/setup/kubernetes/quick-start/#download-and-prepare-for-the-installation
+
+curl -L https://git.io/getLatestIstio | sh -
+
+export PATH="$PATH:/Users/dennis/istio-0.8.0/bin"
+
+https://istio.io/docs/setup/kubernetes/helm-install/
+
+
+helm template install/kubernetes/helm/istio --name istio --namespace istio-system > $HOME/istio.yaml
+
+helm template install/kubernetes/helm/istio --name istio --namespace istio-system --set sidecarInjectorWebhook.enabled=false > $HOME/istio.yaml
+
+
+kubectl -n istio-system port-forward $(kubectl -n istio-system get pod -l app=grafana -o jsonpath='{.items[0].metadata.name}') 3000:3000 &
+
+
+kubectl -n default port-forward $(kubectl -n default get pod -l app=vistio-api -o jsonpath='{.items[0].metadata.name}') 9091:9091 &
+
+http://localhost:9091/graph
+
+kubectl -n default port-forward $(kubectl -n default get pod -l app=vistio-web -o jsonpath='{.items[0].metadata.name}') 8080:8080 &
+
+http://localhost:8080
+
+kubectl -n istio-system port-forward $(kubectl -n istio-system get \
+  pod -l app=grafana -o jsonpath='{.items[0].metadata.name}') 3000:3000 &
+
+kubectl apply --record -f <(istioctl kube-inject -f ./full-deply.yaml)
+
+cat <<EOF | istioctl create -f -
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: front-virtual-service
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - front-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /app/front
+    route:
+    - destination:
+        host: calc-frontend-svc
+EOF
+
+cat <<EOF | istioctl create -f -
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: front-gateway
+spec:
+  selector:
+    istio: ingressgateway # use istio default controller
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+EOF
+
+cat <<EOF | istioctl create -f -
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: delay-calc
+spec:
+  hosts:
+  - calc-backend-svc
+  http:
+  - fault:
+      delay:
+        fixedDelay: 7s
+        percent: 100
+    match:
+    - headers:
+        number:
+          regex: ^(.*?)?(.*7.*)(.*)?$
+    route:
+    - destination:
+        host: calc-backend-svc
+  - route:
+    - destination:
+        host: calc-backend-svc
+EOF
