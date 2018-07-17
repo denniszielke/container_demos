@@ -91,7 +91,22 @@ subjects:
   namespace: kube-system
 EOF
 
-
+cat <<EOF | kubectl create -f -
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: kubernetes-default
+  labels:
+    k8s-app: kubernetes-default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: kube-system
+EOF
 
 kubectl create ns small
 kubectl create ns big
