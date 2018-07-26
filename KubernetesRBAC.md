@@ -32,10 +32,11 @@ az aks get-credentials --resource-group $KUBE_GROUP --name $KUBE_NAME --admin
 set cluster role binding
 
 ```
+cat <<EOF | kubectl create -f -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: contoso-cluster-admins
+  name: kube-cluster-admins
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -43,7 +44,8 @@ roleRef:
 subjects:
 - apiGroup: rbac.authorization.k8s.io
   kind: User
-  name: "user@contoso.com"
+  name: "user@microsoft.com"
+EOF
 ```
 
 create admin user binding

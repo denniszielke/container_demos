@@ -16,6 +16,10 @@ helm template install/kubernetes/helm/istio --name istio --namespace istio-syste
 kubectl -n istio-system port-forward $(kubectl -n istio-system get pod -l app=grafana -o jsonpath='{.items[0].metadata.name}') 3000:3000 &
 
 
+## Install grafana dashboard
+https://istio.io/docs/tasks/telemetry/using-istio-dashboard/
+
+
 kubectl -n default port-forward $(kubectl -n default get pod -l app=vistio-api -o jsonpath='{.items[0].metadata.name}') 9091:9091 &
 
 http://localhost:9091/graph
@@ -46,6 +50,26 @@ spec:
     route:
     - destination:
         host: calc-frontend-svc
+EOF
+
+cat <<EOF | istioctl create -f -
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+    - reviews
+  http:
+  - route:
+    - destination:
+        host: reviews
+        subset: v1
+      weight: 75
+    - destination:
+        host: reviews
+        subset: v2
+      weight: 25
 EOF
 
 cat <<EOF | istioctl create -f -

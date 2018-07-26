@@ -1,6 +1,9 @@
 # Install prometheus
 
 https://itnext.io/using-prometheus-in-azure-kubernetes-service-aks-ae22cada8dd9
+https://docs.microsoft.com/en-us/azure/aks/aks-ssh
+add --authentication-token-webhook to /etc/default/kubelet 
+sudo systemctl restart kubelet
 
 ```
 helm repo add coreos https://s3-eu-west-1.amazonaws.com/coreos-charts/stable/

@@ -127,6 +127,7 @@ draft create
 
 ```
 helm create multicalc
+APP_NAME=calculator
 ```
 Validate template
 ```
@@ -140,12 +141,12 @@ helm install --dry-run --debug ./multicalchart --set frontendReplicaCount=3
 
 4. Make sure you have the app insights key secret provisioned
 ```
-kubectl create secret generic appinsightsecret --from-literal=appinsightskey=$APPINSIGHTS_KEY
+kubectl create secret generic appinsightsecret --from-literal=appinsightskey=$APPINSIGHTS_KEY --namespace $APP_NAME
 ```
 
 5. Install
 ```
-helm install multicalchart --name=calculator --set frontendReplicaCount=1 --set backendReplicaCount=1 --set image.frontendTag=latest --set image.backendTag=latest --set useAppInsights=yes
+helm install multicalchart --name=calculator --set frontendReplicaCount=1 --set backendReplicaCount=1 --set image.frontendTag=latest --set image.backendTag=latest --set useAppInsights=yes --namespace $APP_NAME
 ```
 
 verify
@@ -155,14 +156,14 @@ helm get values calculator
 
 6. Change config and perform an upgrade
 ```
-helm upgrade --set backendReplicaCount=4 --set frontendReplicaCount=4 calculator multicalchart
+helm upgrade --set backendReplicaCount=1 --set frontendReplicaCount=1 calculator multicalchart --namespace $APP_NAME
 ```
 
 If you have a redis secret you can turn on the redis cache
 ```
 kubectl create secret generic rediscachesecret --from-literal=redishostkey=$REDIS_HOST --from-literal=redisauthkey=$REDIS_AUTH
 
-helm upgrade --set backendReplicaCount=4 --set frontendReplicaCount=4 --set useAppInsights=yes --set useRedis=yes calculator multicalchart
+helm upgrade --set backendReplicaCount=4 --set frontendReplicaCount=4 --set useAppInsights=yes --set useRedis=yes calculator multicalchart --namespace $APP_NAME
 ```
 
 7. See rollout history

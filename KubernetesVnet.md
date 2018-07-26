@@ -1,5 +1,6 @@
 # Create container cluster in a VNET (AKs)
 https://docs.microsoft.com/en-us/cli/azure/acs?view=azure-cli-latest#az_acs_create
+https://docs.microsoft.com/en-us/azure/aks/networking-overview
 
 0. Variables
 ```
@@ -47,9 +48,11 @@ az role assignment create --role "Virtual Machine Contributor" --assignee $SERVI
 ```
 
 3. Create Subnets
+Register azure firewall https://docs.microsoft.com/en-us/azure/firewall/public-preview
 
 ```
 az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_FW_SUBNET_NAME --address-prefix 10.0.0.0/24
+az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n "AzureFirewallSubnet" --address-prefix 10.0.1.0/24
 az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --address-prefix 10.0.4.0/22 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault
 ```
 
@@ -77,3 +80,4 @@ https://github.com/denniszielke/container_demos/blob/master/KubernetesRBAC.md
 ```
 az aks get-credentials --resource-group $KUBE_GROUP --name $KUBE_NAME --admin
 ```
+

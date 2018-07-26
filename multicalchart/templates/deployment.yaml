@@ -71,8 +71,8 @@ spec:
             httpGet:
               path: /ping
               port: 3000
-      imagePullSecrets:
-      - name: {{ .Values.image.pullSecret }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -128,5 +128,5 @@ spec:
             httpGet:
               path: /ping
               port: 3001
-      imagePullSecrets:
-      - name: {{ .Values.image.pullSecret }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
