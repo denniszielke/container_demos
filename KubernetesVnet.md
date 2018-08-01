@@ -59,10 +59,11 @@ az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUB
 4. Create the aks cluster
 
 get vm sizes
-````
+```
 az vm list-sizes -l $LOCATION
 ```
 
+create cluster without rbac
 ```
 
 KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT_SUBNET_NAME"
