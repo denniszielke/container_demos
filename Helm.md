@@ -48,7 +48,12 @@ https://kubeapps.com/
 
 ````
 kubectl create serviceaccount tiller --namespace kube-system
+kubectl create clusterrolebinding tiller --clusterrole=cluster-admin --serviceaccount=kube-system:tiller --namespace kube-system
+````
 
+or via yaml
+
+```
 cat <<EOF | kubectl create -f -
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
@@ -63,9 +68,12 @@ subjects:
     name: tiller
     namespace: kube-system
 EOF
+````
 
+init tiller with the new service account
+
+```
 helm init --service-account tiller
-
 ```
 
 ## Setting up helm for a dedicated namespace if you have RBAC

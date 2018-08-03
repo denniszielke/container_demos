@@ -1,0 +1,67 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: kube-router
+  namespace: kube-system
+  labels:
+    k8s-app: kube-router
+spec:
+  template:
+    metadata:
+      labels:
+        k8s-app: kube-router
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+      containers:
+      - name: kube-router
+        image: cloudnativelabs/kube-router
+        args: ["--run-router=false", "--run-firewall=true", "--run-service-proxy=false", "--kubeconfig=/var/lib/kube-router/kubeconfig"]
+        securityContext:
+          privileged: true
+        imagePullPolicy: Always
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 20244
+          initialDelaySeconds: 10
+          periodSeconds: 3
+        volumeMounts:
+        - name: kubeconfig
+          mountPath: /var/lib/kube-router/kubeconfig
+          readOnly: true
+        - name: kubecerts
+          mountPath: /etc/kubernetes/certs/
+          readOnly: true
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+      initContainers:
+      - name: install-cni
+        image: busybox
+        imagePullPolicy: Always
+        command:
+        - /bin/sh
+        - -c
+        - set -e -x;
+      hostNetwork: true
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+      volumes:
+      - name: lib-modules
+        hostPath:
+          path: /lib/modules
+      - name: kubeconfig
+        hostPath:
+          path: /var/lib/kubelet/kubeconfig
+      - name: kubecerts
+        hostPath:
+          path: /etc/kubernetes/certs/

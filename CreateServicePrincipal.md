@@ -8,7 +8,8 @@ https://shell.azure.com
 ![](/img/basic-storage.png)
 3. Enter the following command to create a service principal (assuming you have the right credentials/permissions)
 ```
-az ad sp create-for-rbac --skip-assignment
+az ad sp create-for-rbac --skip-assignment --name "kubernetes_sp"
+az ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/${SUBSCRIPTION_ID}" --name "kubernetes_sp"
 ```
 4. The output will look similar to this
 ```

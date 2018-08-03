@@ -2,6 +2,8 @@ kind: Pod
 apiVersion: v1
 metadata:
   name: ubuntuhost
+  labels:
+    run: demo
 spec:
   containers:
     - name: ubuntu

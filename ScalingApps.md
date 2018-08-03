@@ -29,6 +29,12 @@ for i in 1 2 3 4 5; do
 wget -q -O- http://azure-vote-front
 done
 
+kubectl run -it busybox-replicas --rm --image=busybox -- sh
+
+for i in 1 2 3 4 5; do
+wget -q -O- http://web:8080
+done
+
 for i in {1..200} \ do \    wget -q -O- "http://azure-vote-front?i="$i \ done
 
 

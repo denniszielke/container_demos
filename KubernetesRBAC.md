@@ -75,6 +75,12 @@ if you see the following error message
 error: unable to forward port because pod is not running. Current status=Pending
 create a binding for the dashboard account
 
+````
+kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=kube-system:kubernetes-dashboard
+```
+
+or yaml
+
 ```
 cat <<EOF | kubectl create -f -
 apiVersion: rbac.authorization.k8s.io/v1beta1
