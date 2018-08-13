@@ -8,6 +8,7 @@ dependencies:
   redisSecret: rediscachesecret
   useAppInsights: yes
   appInsightsSecret: appinsightsecret
+  appInsightsSecretValue: dummyValue
 image:
   repository: dzkubereg.azurecr.io
   frontendImage: js-calc-frontend
