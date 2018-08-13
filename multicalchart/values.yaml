@@ -9,6 +9,7 @@ dependencies:
   useAppInsights: yes
   appInsightsSecret: appinsightsecret
   appInsightsSecretValue: dummyValue
+  useIngress: no
 image:
   repository: dzkubereg.azurecr.io
   frontendImage: js-calc-frontend
@@ -20,6 +21,7 @@ image:
 service:
   frontendType: LoadBalancer
   backendType: ClusterIP
+  dnsName: calcName
 resources:
   limits:
     cpu: 100m
