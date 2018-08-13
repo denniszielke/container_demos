@@ -4,6 +4,7 @@ https://istio.io/docs/setup/kubernetes/quick-start/#download-and-prepare-for-the
 curl -L https://git.io/getLatestIstio | sh -
 
 export PATH="$PATH:/Users/dennis/istio-0.8.0/bin"
+export PATH="$PATH:/Users/dennis/lib/istio-1.0.0/bin"
 
 https://istio.io/docs/setup/kubernetes/helm-install/
 

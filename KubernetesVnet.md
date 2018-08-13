@@ -5,13 +5,13 @@ https://docs.microsoft.com/en-us/azure/aks/networking-overview
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="kubevnet"
+KUBE_GROUP="kubeavnet"
 KUBE_NAME="dzkubenet"
 LOCATION="westeurope"
 KUBE_VNET_NAME="KVNET"
 KUBE_AGENT_SUBNET_NAME="AKSAGENTS"
 KUBE_FW_SUBNET_NAME="FWNET"
-KUBE_VERSION="1.10.5"
+KUBE_VERSION="1.10.6"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
 AAD_APP_NAME=""
@@ -90,4 +90,3 @@ https://github.com/denniszielke/container_demos/blob/master/KubernetesRBAC.md
 ```
 az aks get-credentials --resource-group $KUBE_GROUP --name $KUBE_NAME --admin
 ```
-

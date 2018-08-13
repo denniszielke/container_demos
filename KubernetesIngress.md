@@ -2,10 +2,21 @@
 
 Easy way via helm
 https://docs.microsoft.com/en-us/azure/aks/ingress
-
+https://github.com/helm/charts/tree/master/stable/nginx-ingress
 ```
-helm install stable/nginx-ingress --namespace kube-system --set rbac.create=true
+
+az network public-ip create --resource-group MC_* --name myAKSPublicIP --allocation-method static
+
+az network public-ip list --resource-group MC_* --query [0].ipAddress --output tsv
+
 IP="51.145.155.210"
+
+helm install stable/nginx-ingress --namespace kube-system --set rbac.create=true --set controller.service.loadBalancerIP="$IP"
+
+helm install stable/nginx-ingress --namespace kube-system
+
+helm install stable/nginx-ingress --namespace kube-system --set rbac.create=true
+
 
 # Name to associate with public IP address
 DNSNAME="demo-aks-ingress"
