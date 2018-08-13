@@ -14,7 +14,7 @@ image:
   repository: dzkubereg.azurecr.io
   frontendImage: js-calc-frontend
   frontendTag: latest
-  backendImage: go-calc-backend
+  backendImage: js-calc-backend
   backendTag: latest
   pullPolicy: IfNotPresent
   pullSecret: kuberegistry
