@@ -16,3 +16,9 @@ helm upgrade --set backendReplicaCount=4 --set frontendReplicaCount=4 calculator
 kubectl get po,deployment,rc,rs,ds,no,job -n calculator -o yaml > calculator.yaml
 
 linkerd inject calculator.yaml | kubectl apply -f - 
+
+kubectl get pod --all-namespaces
+
+linkerd dashboard
+
+kubectl --namespace monitoring port-forward $(kubectl get pod --namespace monitoring -l app=kube-prometheus-grafana -o template --template "{{(index .items 0).metadata.name}}") 3000:3000

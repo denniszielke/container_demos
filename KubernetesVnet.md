@@ -5,13 +5,13 @@ https://docs.microsoft.com/en-us/azure/aks/networking-overview
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="kubeavnet"
-KUBE_NAME="dzkubenet"
+KUBE_GROUP="kubesdemo"
+KUBE_NAME="dzkubeaks"
 LOCATION="westeurope"
-KUBE_VNET_NAME="KVNET"
+KUBE_VNET_NAME="KMNET"
 KUBE_AGENT_SUBNET_NAME="AKSAGENTS"
 KUBE_FW_SUBNET_NAME="FWNET"
-KUBE_VERSION="1.10.6"
+KUBE_VERSION="1.11.1"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
 AAD_APP_NAME=""
@@ -53,6 +53,8 @@ Register azure firewall https://docs.microsoft.com/en-us/azure/firewall/public-p
 ```
 az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_FW_SUBNET_NAME --address-prefix 10.0.0.0/24
 az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n "AzureFirewallSubnet" --address-prefix 10.0.1.0/24
+az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n "InternalIngressSubnet" --address-prefix 10.0.2.0/24
+az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n "APIMSubnet" --address-prefix 10.0.3.0/24
 az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --address-prefix 10.0.4.0/22 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault
 ```
 
@@ -76,7 +78,7 @@ for additional rbac
 ```
 KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT_SUBNET_NAME"
 
-az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3  --ssh-key-value ~/.ssh/id_rsa.pub --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --enable-rbac --aad-server-app-id $AAD_APP_ID --aad-server-app-secret $AAD_APP_SECRET --aad-client-app-id $AAD_CLIENT_ID --aad-tenant-id $TENANT_ID --enable-addons http_application_routing --node-vm-size "Standard_B2s"
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3  --ssh-key-value ~/.ssh/id_rsa.pub --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --enable-rbac --aad-server-app-id $AAD_APP_ID --aad-server-app-secret $AAD_APP_SECRET --aad-client-app-id $AAD_CLIENT_ID --aad-tenant-id $TENANT_ID --enable-addons http_application_routing --node-vm-size "Standard_D2s_v3"
 ```
 
 5. Export the kubectrl credentials files

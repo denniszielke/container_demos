@@ -3,6 +3,43 @@
 Easy way via helm
 https://docs.microsoft.com/en-us/azure/aks/ingress
 https://github.com/helm/charts/tree/master/stable/nginx-ingress
+
+## Internal Ip
+
+Configur ingress variables to use internal assigned ip adress from a different subnet
+```
+INTERNALINGRESSIP="10.0.2.10"
+INGRESSSUBNETNAME="InternalIngressSubnet"
+```
+
+ "annotations": {
+        "service.beta.kubernetes.io/azure-load-balancer-internal": "true"
+    }
+
+helm install stable/nginx-ingress --namespace kube-system --set controller.service.enableHttps=false -f ingres-values.yaml
+helm delete your-quokka --purge
+
+cat <<EOF | kubectl create -n nginx-demo -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /
+        backend:
+          serviceName: nginx
+          servicePort: 80
+EOF
+
+## External Ip
+
+Create a public ip adress
 ```
 
 az network public-ip create --resource-group MC_* --name myAKSPublicIP --allocation-method static
@@ -10,8 +47,12 @@ az network public-ip create --resource-group MC_* --name myAKSPublicIP --allocat
 az network public-ip list --resource-group MC_* --query [0].ipAddress --output tsv
 
 IP="51.145.155.210"
+```
+Use the assigned ip address in the helm chart
 
-helm install stable/nginx-ingress --namespace kube-system --set rbac.create=true --set controller.service.loadBalancerIP="$IP"
+```
+
+helm install stable/nginx-ingress --namespace kube-system --set rbac.create=true --set controller.service.enableHttps=false --set controller.service.loadBalancerIP="$IP" 
 
 helm install stable/nginx-ingress --namespace kube-system
 

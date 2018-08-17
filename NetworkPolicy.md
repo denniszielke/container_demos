@@ -61,7 +61,7 @@ spec:
       protocol: UDP
     - port: 5432
       protocol: TCP
-  - to:
+    to:
     - ipBlock:
         cidr: 168.63.129.0/24
     - ipBlock:
