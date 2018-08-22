@@ -22,3 +22,20 @@ az network nic update -g MC_* -n aks-nodepool1-*-nic-0
 ```
 curl ipinfo.io/ip
 ```
+
+```
+docker run --rm jess/curl -sSL ipinfo.io/ip
+```
+
+```
+cat <<EOF | kubectl create -f -
+kind: Pod
+apiVersion: v1
+metadata:
+  name: curl
+spec:
+  containers:
+    - name: curl
+      image: jess/curl
+      args: ["-sSL", "ipinfo.io/ip"]
+EOF
