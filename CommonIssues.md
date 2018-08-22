@@ -39,3 +39,6 @@ spec:
       image: jess/curl
       args: ["-sSL", "ipinfo.io/ip"]
 EOF
+
+kubectl logs curl
+```

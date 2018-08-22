@@ -37,7 +37,8 @@ spec:
           servicePort: 80
 EOF
 
-## External Ip
+## External Ip, DNS and Certificate
+https://docs.microsoft.com/en-us/azure/aks/ingress#install-an-ingress-controller
 
 Create a public ip adress
 ```
@@ -46,33 +47,84 @@ az network public-ip create --resource-group MC_* --name myAKSPublicIP --allocat
 
 az network public-ip list --resource-group MC_* --query [0].ipAddress --output tsv
 
-IP="51.145.155.210"
+IP="104.42.58.57"
 ```
 Use the assigned ip address in the helm chart
 
 ```
 
-helm install stable/nginx-ingress --namespace kube-system --set rbac.create=true --set controller.service.enableHttps=false --set controller.service.loadBalancerIP="$IP" 
-
-helm install stable/nginx-ingress --namespace kube-system
-
-helm install stable/nginx-ingress --namespace kube-system --set rbac.create=true
-
-
-# Name to associate with public IP address
-DNSNAME="demo-aks-ingress"
-
-DNS=
-
-helm upgrade 
-helm install stable/cert-manager --set ingressShim.defaultIssuerName=letsencrypt-prod --set ingressShim.defaultIssuerKind=ClusterIssuer
-
-
+helm install stable/nginx-ingress --namespace kube-system --set rbac.create=true --set controller.service.loadBalancerIP="$IP" --set controller.stats.enabled=true 
 ```
 
+## DNSName to associate with public IP address
+https://docs.microsoft.com/en-us/azure/aks/ingress#configure-a-dns-name
 
-create cert manager cluster issuer
 ```
+DNSNAME="dzapi"
+
+PUBLICIPID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$IP')].[id]" --output tsv)
+
+
+DNS=$DNSNAME.westus.aksapp.io
+
+az network public-ip update --ids $PUBLICIPID --dns-name $DNSNAME
+```
+
+## Create dummy ingress for challenge
+
+```
+kubectl run nginx --image nginx --port=80
+
+kubectl expose deployment nginx --type=ClusterIP
+
+cat <<EOF | kubectl create -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  tls:
+  - hosts:
+    - $DNS
+    secretName: hello-tls-secret
+  rules:
+  - host: $DNS
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: nginx
+          servicePort: 80
+EOF
+```
+
+## Install certmanager for letsencrypt suppot
+https://docs.microsoft.com/en-us/azure/aks/ingress#install-cert-manager
+
+install cert manager
+```
+helm install stable/cert-manager --name cert-issuer-manager --namespace kube-system --set ingressShim.defaultIssuerName=letsencrypt-prod --set ingressShim.defaultIssuerKind=ClusterIssuer
+```
+
+create cert manager cluster issuer for stage or prod
+```
+cat <<EOF | kubectl create -f -
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: $MY_USER_ID
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    http01: {}
+EOF
+
 cat <<EOF | kubectl create -f -
 apiVersion: certmanager.k8s.io/v1alpha1
 kind: ClusterIssuer
@@ -91,13 +143,14 @@ EOF
 create certificate
 
 ```
+
 cat <<EOF | kubectl create -f -
 apiVersion: certmanager.k8s.io/v1alpha1
 kind: Certificate
 metadata:
-  name: tls-secret
+  name: hello-tls-secret
 spec:
-  secretName: tls-secret
+  secretName: hello-tls-secret
   dnsNames:
   - $DNS
   acme:
@@ -112,9 +165,15 @@ spec:
 EOF
 ```
 
+you can now create the nginx-ingress
+```
+kubectl delete ingress nginx-ingress
+```
+
 create ingress
 
 ```
+
 cat <<EOF | kubectl create -f -
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -128,12 +187,12 @@ spec:
   tls:
   - hosts:
     - $DNS
-    secretName: tls-secret
+    secretName: hello-tls-secret
   rules:
   - host: $DNS
     http:
       paths:
-      - path: /
+      - path: /hello-world-one
         backend:
           serviceName: aks-helloworld
           servicePort: 80
@@ -144,7 +203,16 @@ spec:
 EOF
 ```
 
-## Ingress controller
+Cleanup
+```
+kubectl delete ingress hello-world-ingress
+kubectl delete certificate hello-tls-secret
+kubectl delete clusterissuer letsencrypt-staging
+helm delete cert-issuer-manager --purge
+```
+
+
+## Ingress controller manually
 
 1. Provision default backend
 ```

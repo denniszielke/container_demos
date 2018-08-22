@@ -21,6 +21,11 @@ APP_NAME=monitoring
 helm install coreos/prometheus-operator --name prometheus-operator --namespace $APP_NAME
 helm install coreos/kube-prometheus --name kube-prometheus --namespace $APP_NAME
 
+# if it fails with "Error: watch closed before Until timeout"
+kubectl delete job prometheus-operator-create-sm-job -n $APP_NAME
+kubectl delete job prometheus-operator-get-crd -n $APP_NAME
+helm upgrade prometheus-operator coreos/prometheus-operator --namespace $APP_NAME --force
+
 kubectl --namespace monitoring port-forward $(kubectl get pod --namespace monitoring -l prometheus=kube-prometheus -l app=prometheus -o template --template "{{(index .items 0).metadata.name}}") 9090:9090
 
 echo username:$(kubectl get secret --namespace monitoring kube-prometheus-grafana -o jsonpath="{.data.user}"|base64 --decode;echo)
@@ -28,5 +33,3 @@ echo password:$(kubectl get secret --namespace monitoring kube-prometheus-grafan
 
 
 kubectl --namespace monitoring port-forward $(kubectl get pod --namespace monitoring -l app=kube-prometheus-grafana -o template --template "{{(index .items 0).metadata.name}}") 3000:3000
-
-kubectl delete job prometheus-operator-create-sm-job -n monitoring

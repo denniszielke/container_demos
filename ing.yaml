@@ -1,0 +1,26 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: dashboard-external-auth-oauth2
+  namespace: kube-system
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    certmanager.k8s.io/cluster-issuer: letsencrypt-prod
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/auth-url: "https://dzapi.westus.cloudapp.azure.com/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://dzapi.westus.cloudapp.azure.com/oauth2/start"
+spec:
+  tls:
+  - hosts:
+    - dzapi.westus.cloudapp.azure.com
+    secretName: hello-tls-secret
+  rules:
+  - host: dzapi.westus.cloudapp.azure.com
+    http:
+      paths:
+      - backend:
+          serviceName: kubernetes-dashboard
+          servicePort: 80
+        path: /dashboard

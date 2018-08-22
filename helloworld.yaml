@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: hello-app
 spec:
-  replicas: 1  
+  replicas: 3  
   minReadySeconds: 10
   strategy:
     type: RollingUpdate
@@ -20,4 +20,4 @@ spec:
         image: microsoft/aci-helloworld:latest       
         ports:
         - containerPort: 80
-        imagePullPolicy: Always   
+        imagePullPolicy: Always  
