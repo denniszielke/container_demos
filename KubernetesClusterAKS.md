@@ -9,6 +9,7 @@ KUBE_NAME="dzkubes"
 LOCATION="westeurope"
 REGISTRY_NAME=""
 APPINSIGHTS_KEY=""
+KUBE_VERSION="1.11.2"
 ```
 
 Select subscription
@@ -21,6 +22,10 @@ az account set --subscription $SUBSCRIPTION_ID
 az group create -n $KUBE_GROUP -l $LOCATION
 ```
 
+get available version
+```
+az aks get-versions -l $LOCATION
+```
 
 2. Create the aks cluster
 ```
@@ -29,19 +34,19 @@ az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3 --ge
 
 with existing keys and latest version
 ```
-az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3  --ssh-key-value ~/.ssh/id_rsa.pub --kubernetes-version 1.10.6 --enable-addons http_application_routing
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3  --ssh-key-value ~/.ssh/id_rsa.pub --kubernetes-version $KUBE_VERSION --enable-addons http_application_routing
 ```
 
 with existing service principal
 
 ```
-az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3  --ssh-key-value ~/.ssh/id_rsa.pub --kubernetes-version 1.10.6 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --enable-addons http_application_routing
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3  --ssh-key-value ~/.ssh/id_rsa.pub --kubernetes-version $KUBE_VERSION --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --enable-addons http_application_routing
 ```
 
 with rbac (is now default)
 
 ```
-az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3  --ssh-key-value ~/.ssh/id_rsa.pub --enable-rbac --aad-server-app-id $AAD_APP_ID --aad-server-app-secret $AAD_APP_SECRET --aad-client-app-id $AAD_CLIENT_ID --aad-tenant-id $TENANT_ID --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --node-vm-size "Standard_B1ms" --enable-addons http_application_routing
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3  --ssh-key-value ~/.ssh/id_rsa.pub --kubernetes-version $KUBE_VERSION --enable-rbac --aad-server-app-id $AAD_APP_ID --aad-server-app-secret $AAD_APP_SECRET --aad-client-app-id $AAD_CLIENT_ID --aad-tenant-id $TENANT_ID --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --node-vm-size "Standard_B1ms" --enable-addons http_application_routing
 ```
 
 without rbac ()
