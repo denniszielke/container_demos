@@ -31,16 +31,18 @@ done
 
 kubectl run -it busybox-replicas --rm --image=busybox -- sh
 
-for i in 1 2 3 4 5; do
-wget -q -O- http://web:8080
+for i in 1 ... 1000; do \ 
+wget -q -O- http://65.52.144.134 \
 done
 
-for i in {1..200} \ do \    wget -q -O- "http://azure-vote-front?i="$i \ done
+for i in {1...200} \ do \    curl -q -O- "http://65.52.144.134?i="$i \ done
+
+while true; do sleep 1; curl http://65.52.144.134; echo -e '\n\n\n\n'$(date);done
 
 
-for i in {1..100}
+for i in {1..2000}
 
-wget -q -O- http://azure-vote-front?{1..200}
+wget -q -O- http://65.52.144.134?{1..2000}
 
 ```
 

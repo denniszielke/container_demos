@@ -34,7 +34,6 @@ docker run -it --rm -v deployment:/acs -w /acs ams0/acs-engine-light-autobuild:l
 az login
 az account set --subscription $SUBSCRIPTION_ID
 
-az group create -n $KUBE_GROUP -l $LOCATION
 ```
 
 1. Create the resource group
@@ -51,7 +50,7 @@ az network vnet create -g $KUBE_GROUP -n $KUBE_VNET_NAME --address-prefixes "172
 
 ```
 az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_MASTER_SUBNET_NAME --address-prefix 172.16.0.0/24
-az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n APPGateWay --address-prefix 172.16.5.0/24
+az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --address-prefix 172.16.5.0/24
 ```
 
 4. Create cluster
@@ -67,6 +66,7 @@ az group deployment create \
 
 ```
 export KUBECONFIG=`pwd`/_output/dz-vnet-18/kubeconfig/kubeconfig.northeurope.json
+export KUBECONFIG=`pwd`/_output/dz-vnet-18/kubeconfig/kubeconfig.westeurope.json
 
 ssh -i ~/.ssh/id_rsa dennis@dz-vnet-18.northeurope.cloudapp.azure.com \
     kubectl create clusterrolebinding aad-default-cluster-admin-binding \

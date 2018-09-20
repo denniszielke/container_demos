@@ -135,7 +135,7 @@ draft create
 
 ```
 helm create multicalc
-APP_NAME=calculator
+APP_NAME=calc-essen
 ```
 Validate template
 ```
@@ -154,7 +154,7 @@ kubectl create secret generic appinsightsecret --from-literal=appinsightskey=$AP
 
 5. Install
 ```
-helm install multicalchart --name=calculator --set frontendReplicaCount=1 --set backendReplicaCount=1 --set image.frontendTag=latest --set image.backendTag=latest --set useAppInsights=yes --namespace $APP_NAME
+helm install multicalchart --name=calcu-essen-neu --set frontendReplicaCount=1 --set backendReplicaCount=1 --set image.frontendTag=latest --set image.backendTag=latest --set useAppInsights=yes --namespace $APP_NAME
 ```
 
 verify
@@ -164,7 +164,7 @@ helm get values calculator
 
 6. Change config and perform an upgrade
 ```
-helm upgrade --set backendReplicaCount=1 --set frontendReplicaCount=1 calculator multicalchart --namespace $APP_NAME
+helm upgrade --set backendReplicaCount=3 --set frontendReplicaCount=3 calcu-essen-neu multicalchart --namespace $APP_NAME
 ```
 
 If you have a redis secret you can turn on the redis cache

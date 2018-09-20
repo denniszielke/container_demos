@@ -20,13 +20,13 @@ kubectl create secret generic omsagent-secret --from-literal=WSID=$WORKSPACE_ID 
 2. Deploy the oms daemons
 
 ```
-kubectl create -f https://raw.githubusercontent.com/denniszielke/container_demos/master/oms/omsdaemonset.yaml
+kubectl create -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/omsdaemonset.yaml
 kubectl get daemonset
 ```
 
 3. Create host to log from
 ```
-kubectl create -f https://raw.githubusercontent.com/denniszielke/container_demos/master/oms/ubuntuhost.yml
+kubectl create -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/ubuntuhost.yml
 ```
 
 4. Log something
@@ -39,7 +39,7 @@ https://docs.microsoft.com/en-us/azure/log-analytics/log-analytics-containers
 
 6. Cleanup
 ```
-kubectl delete -f https://raw.githubusercontent.com/denniszielke/container_demos/master/oms/ubuntuhost.yml
-kubectl delete -f https://raw.githubusercontent.com/denniszielke/container_demos/master/oms/omsdaemonset.yaml
+kubectl delete -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/ubuntuhost.yml
+kubectl delete -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/omsdaemonset.yaml
 kubectl delete secret omsagent-secret
 ```

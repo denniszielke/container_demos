@@ -63,6 +63,9 @@ subjects:
 - apiGroup: rbac.authorization.k8s.io
   kind: User
   name: "$KUBE_ADMIN_ID"
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: "$MY_OBJECT_ID"
 EOF
 
 az aks get-credentials --resource-group $KUBE_GROUP --name $KUBE_NAME

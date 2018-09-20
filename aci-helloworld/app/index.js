@@ -6,6 +6,8 @@ app.use(morgan('combined'));
 
 
 app.get('/', (req, res) => {
+  var startDate = new Date();
+  console.log('got request ' + startDate);
   res.sendFile(__dirname + '/index.html')
 });
 

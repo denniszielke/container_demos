@@ -115,7 +115,86 @@ spec:
       command: ["tail"]
       args: ["-f", "/dev/null"]
 EOF
+
+cat <<EOF | kubectl create -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: helloworld
+spec:
+  containers:
+    - name: aci-helloworld
+      image: dzkubereg.azurecr.io/aci-helloworld-ci:76
+      ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+      resources:
+        requests:
+          memory: "128Mi"
+          cpu: "500m"
+        limits:
+          memory: "256Mi"
+          cpu: "1000m"
+EOF
 ```
+
+kubectl exec runclient -- bash -c "date && \
+      echo 1 && \
+      echo 2"
+
+
+kubectl exec alpclient -- bash -c "var=1 && \
+    while true ; do && \
+      res=$( { curl -o /dev/null -s -w %{time_namelookup}\\\\n  http://www.google.com; } 2>&1 ) && \
+      var=$((var+1)) && \
+      if [[ $res =~ ^[1-9] ]]; then && \
+        now=$(date +'%T') && \
+        echo '$var slow: $res $now' && \
+        break && \
+      fi && \
+    done"
+
+kubectl get pods |grep runclient|cut -f1 -d\  |\
+while read pod; \
+ do echo "$pod writing:";\
+  kubectl exec -t $pod -- bash -c \
+ var=1 \
+while true ; do \
+  res=$( { curl -o /dev/null -s -w %{time_namelookup}\\n  http://www.google.com; } 2>&1 ) \
+  var=$((var+1)) \
+  if [[ $res =~ ^[1-9] ]]; then \
+    now=$(date +"%T") \
+    echo "$var slow: $res $now" \
+    break \
+  fi \
+done \
+done
+
+var=1;
+while true ; do
+  res=$( { curl -o /dev/null -s -w %{time_namelookup}\\n  http://nginx; } 2>&1 )
+  var=$((var+1))
+  now=$(date +"%T")
+  echo "$var slow: $res $now"
+  if [[ $res =~ ^[1-9] ]]; then
+    now=$(date +"%T")
+    echo "$var slow: $res $now"
+    break
+  fi
+done
+
+var=1;
+while true ; do
+  res=$( { curl -o /dev/null -s -w %{time_namelookup}\\n  http://www.google.com; } 2>&1 )
+  var=$((var+1))
+  now=$(date +"%T")
+  echo "$var slow: $res $now"
+done
+
+for i in `seq 1 100`; do time curl -s google.com > /dev/null; done
+
+kubectl run -i --tty busybox --image=busybox --restart=Never -- sh   
 
 log into the box
 ```

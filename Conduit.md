@@ -8,6 +8,9 @@ export PATH=$PATH:$HOME/.linkerd2/bin
 Zsh
 export PATH="$HOME/.linkerd2/bin:$PATH"
 
+linkerd inject cal-depl.yaml | kubectl apply -f - 
+
+https://linkerd.io/2/getting-started/#step-3-install-the-demo-app
 
 helm install multicalchart --name=calculator --set frontendReplicaCount=1 --set backendReplicaCount=1 --set image.frontendTag=latest --set image.backendTag=latest --set useAppInsights=yes --namespace $APP_NAME
 

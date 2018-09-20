@@ -16,8 +16,8 @@ INGRESSSUBNETNAME="InternalIngressSubnet"
         "service.beta.kubernetes.io/azure-load-balancer-internal": "true"
     }
 
-helm install stable/nginx-ingress --namespace kube-system --set controller.service.enableHttps=false -f ingres-values.yaml
-helm delete your-quokka --purge
+helm install stable/nginx-ingress --name ingress-controller --namespace kube-system --set controller.service.enableHttps=false -f ingres-values.yaml
+helm delete ingress-controller --purge
 
 cat <<EOF | kubectl create -n nginx-demo -f -
 apiVersion: extensions/v1beta1
@@ -43,29 +43,29 @@ https://docs.microsoft.com/en-us/azure/aks/ingress#install-an-ingress-controller
 Create a public ip adress
 ```
 
-az network public-ip create --resource-group MC_* --name myAKSPublicIP --allocation-method static
+az network public-ip create --resource-group MC_kubesdemo_dzkubeaks_westeurope --name myAKSPublicIP --allocation-method static
 
-az network public-ip list --resource-group MC_* --query [0].ipAddress --output tsv
+az network public-ip list --resource-group MC_kubesdemo_dzkubeaks_westeurope* --query [0].ipAddress --output tsv
 
-IP="104.42.58.57"
+IP="1.1.1.1"
 ```
 Use the assigned ip address in the helm chart
 
 ```
 
-helm install stable/nginx-ingress --namespace kube-system --set rbac.create=true --set controller.service.loadBalancerIP="$IP" --set controller.stats.enabled=true 
+helm install stable/nginx-ingress --name ingress-controller --namespace kube-system --set rbac.create=true --set controller.service.loadBalancerIP="$IP" --set controller.stats.enabled=true 
 ```
 
 ## DNSName to associate with public IP address
 https://docs.microsoft.com/en-us/azure/aks/ingress#configure-a-dns-name
 
 ```
-DNSNAME="dzapi"
+DNSNAME="dzapis"
 
 PUBLICIPID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$IP')].[id]" --output tsv)
 
 
-DNS=$DNSNAME.westus.aksapp.io
+DNS=$DNSNAME.westeurope.cloudapp.azure.com
 
 az network public-ip update --ids $PUBLICIPID --dns-name $DNSNAME
 ```
@@ -101,6 +101,18 @@ spec:
 EOF
 ```
 
+launch dns
+```
+open http://$DNS
+```
+
+install demo app
+```
+helm repo add azure-samples https://azure-samples.github.io/helm-charts/
+helm install azure-samples/aks-helloworld
+helm install azure-samples/aks-helloworld --set title="AKS Ingress Demo" --set serviceName="ingress-demo"
+```
+
 ## Install certmanager for letsencrypt suppot
 https://docs.microsoft.com/en-us/azure/aks/ingress#install-cert-manager
 
@@ -110,6 +122,25 @@ helm install stable/cert-manager --name cert-issuer-manager --namespace kube-sys
 ```
 
 create cert manager cluster issuer for stage or prod
+```
+
+cat <<EOF | kubectl create -f -
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: $MY_USER_ID
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    http01: {}
+EOF
+```
+
+staging
+
 ```
 cat <<EOF | kubectl create -f -
 apiVersion: certmanager.k8s.io/v1alpha1
@@ -125,19 +156,6 @@ spec:
     http01: {}
 EOF
 
-cat <<EOF | kubectl create -f -
-apiVersion: certmanager.k8s.io/v1alpha1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt-prod
-spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: $MY_USER_ID
-    privateKeySecretRef:
-      name: letsencrypt-prod
-    http01: {}
-EOF
 ```
 
 create certificate
@@ -210,7 +228,6 @@ kubectl delete certificate hello-tls-secret
 kubectl delete clusterissuer letsencrypt-staging
 helm delete cert-issuer-manager --purge
 ```
-
 
 ## Ingress controller manually
 
