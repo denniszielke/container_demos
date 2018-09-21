@@ -23,7 +23,11 @@ app.get('/ping', function(req, res) {
 
 app.post('/api/log', function(req, res) {
     console.log("received client request:");
-    console.log(req.headers.message);
+    var messageReceived = "no";
+    if (req.headers.message){
+        console.log(req.headers.message);
+        messageReceived = req.headers.message;
+    }
     var startDate = new Date();
     var month = (((startDate.getMonth()+1)<10) ? '0' + (startDate.getMonth()+1) : (startDate.getMonth()+1));
     var day = (((startDate.getDate())<10) ? '0' + (startDate.getDate()) : (startDate.getDate()));
@@ -37,7 +41,7 @@ app.post('/api/log', function(req, res) {
         req.connection.remoteAddress || 
         req.socket.remoteAddress || 
         req.connection.socket.remoteAddress;
-    var logObject = { timestamp: logDate, value: randomNumber, host: OS.hostname(), source: sourceIp };
+    var logObject = { timestamp: logDate, value: randomNumber, host: OS.hostname(), source: sourceIp, message: messageReceived};
     var serverResult = JSON.stringify(logObject );
     console.log("string:");
     console.log(serverResult);

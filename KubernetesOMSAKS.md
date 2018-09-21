@@ -1,6 +1,7 @@
 # Deploy the OMS (AKS)
 
 https://docs.microsoft.com/en-us/azure/aks/tutorial-kubernetes-monitor
+https://docs.microsoft.com/en-us/azure/log-analytics/log-analytics-containers 
 
 ## Deploy the secrets
 
@@ -24,7 +25,9 @@ kubectl create -f https://raw.githubusercontent.com/denniszielke/container_demos
 kubectl get daemonset
 ```
 
-3. Create host to log from
+## Create custom logs
+
+1. Create host to log from
 ```
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -36,11 +39,12 @@ metadata:
 spec:
   containers:
     - name: dummy-logger
-      image: denniszielke/dummy-logger:latest
+      image: denniszielke/dummy-logger:102
       ports:
         - containerPort: 80
           name: http
           protocol: TCP
+      imagePullPolicy: Always   
       resources:
         requests:
           memory: "128Mi"
@@ -64,19 +68,68 @@ spec:
 EOF
 ```
 
-4. Log something
+2. Figure out ip and log something
 ```
-curl 
+kubectl get svc,pod dummy-logger
+
+LOGGER_IP=13.93.65.225
 
 kubectl get svc dummy-logger -o template --template "{{(index .items 0).status.loadBalancer.ingress }}"
+
+curl -H "message: hi" -X POST http://$LOGGER_IP/api/log
+
 ```
 
-5. Evaluate the logs by referencing the docs
-https://docs.microsoft.com/en-us/azure/log-analytics/log-analytics-containers 
+See the response
+```
+curl -H "message: hi" -X POST http://$LOGGER_IP/api/log
+```
 
-6. Cleanup
+3. Search for the log message in log analytics by this query
+
 ```
-kubectl delete -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/ubuntuhost.yml
-kubectl delete -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/omsdaemonset.yaml
-kubectl delete secret omsagent-secret
+let startTimestamp = ago(1h);
+KubePodInventory
+| where TimeGenerated > startTimestamp
+| where ClusterName =~ "dzkubeaks"
+| distinct ContainerID
+| join
+(
+    ContainerLog
+    | where TimeGenerated > startTimestamp
+)
+on ContainerID
+| project LogEntrySource, LogEntry, TimeGenerated, Computer, Image, Name, ContainerID
+| order by TimeGenerated desc
+| where LogEntrySource == "stdout"
+| where Image == "dummy-logger"
+| render table
 ```
+
+You will see raw data from your log output
+
+4. Create a custom log format
+https://docs.microsoft.com/en-us/azure/log-analytics/log-analytics-data-sources-custom-logs 
+Goto Log Analytics -> Data -> Custom Logs
+
+Upload this file:
+
+
+
+Cleanup
+```
+kubectl delete pod,svc dummy-logger
+```
+
+## Logging from ACI
+
+
+LOCATION=westeurope
+ACI_GROUP=aci-group
+
+az container create --image denniszielke/dummy-logger --resource-group $ACI_GROUP --location $LOCATION --name dummy-logger --os-type Linux --cpu 1 --memory 3.5 --dns-name-label dummy-logger --ip-address public --ports 80 --verbose
+
+LOGGER_IP=dummy-logger.westeurope.azurecontainer.io
+
+curl -H "message: hi" -X POST http://$LOGGER_IP/api/log
+dummy-logger.westeurope.azurecontainer.io

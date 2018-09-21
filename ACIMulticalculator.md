@@ -11,7 +11,6 @@ LOCATION="EASTUS"
 REGISTRY_NAME=""
 APPINSIGHTS_KEY=""
 
-
 ```
 
 Select subscription
@@ -27,6 +26,5 @@ az group create -n $KUBE_GROUP -l $LOCATION
 2. Create backend
 ```
 az container create -g $ACI_GROUP --name myapp --image alpine:latest --command-line "cat /mnt/azfile/myfile" --azure-file-volume-share-name myshare --azure-file-volume-account-name mystorageaccount --azure-file-volume-account-key mystoragekey --azure-file-volume-mount-path /mnt/azfile
-
 
 ```
