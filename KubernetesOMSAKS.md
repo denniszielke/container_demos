@@ -39,7 +39,7 @@ metadata:
 spec:
   containers:
     - name: dummy-logger
-      image: denniszielke/dummy-logger:102
+      image: denniszielke/dummy-logger:latest
       ports:
         - containerPort: 80
           name: http
@@ -76,13 +76,13 @@ LOGGER_IP=13.93.65.225
 
 kubectl get svc dummy-logger -o template --template "{{(index .items 0).status.loadBalancer.ingress }}"
 
-curl -H "message: hi" -X POST http://$LOGGER_IP/api/log
+curl -H "message: ho" -X POST http://$LOGGER_IP/api/log
 
 ```
 
 See the response
 ```
-curl -H "message: hi" -X POST http://$LOGGER_IP/api/log
+{"timestamp":"2018-09-21 06:39:44","value":37,"host":"dummy-logger","source":"::ffff:10.0.4.97","message":"hi"}%    
 ```
 
 3. Search for the log message in log analytics by this query
@@ -132,4 +132,3 @@ az container create --image denniszielke/dummy-logger --resource-group $ACI_GROU
 LOGGER_IP=dummy-logger.westeurope.azurecontainer.io
 
 curl -H "message: hi" -X POST http://$LOGGER_IP/api/log
-dummy-logger.westeurope.azurecontainer.io

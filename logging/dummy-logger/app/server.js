@@ -37,14 +37,14 @@ app.post('/api/log', function(req, res) {
     var logDate = startDate.getFullYear() + "-" +
         month+  "-" + day + " " + hour + ":" + minute + ":" + seconds; 
     var randomNumber = Math.floor((Math.random() * 100) + 1);
-    var sourceIp = (req.headers['x-forwarded-for'] || '').split(',').pop() || 
+    var sourceIp = //(req.headers['x-forwarded-for'] || '').split(',').pop() || 
         req.connection.remoteAddress || 
         req.socket.remoteAddress || 
         req.connection.socket.remoteAddress;
     var logObject = { timestamp: logDate, value: randomNumber, host: OS.hostname(), source: sourceIp, message: messageReceived};
     var serverResult = JSON.stringify(logObject );
     console.log("string:");
-    console.log(serverResult);
+    console.log(serverResult.toString());
     console.log("json object:");
     console.log(logObject);
     res.send(serverResult.toString());
@@ -52,9 +52,5 @@ app.post('/api/log', function(req, res) {
 
 console.log(config);
 console.log(OS.hostname());
-// Listen
-if (config.instrumentationKey){ 
-    client.trackEvent({ name: "dummy-logger-initializing"});
-}
 app.listen(config.port);
 console.log('Listening on localhost:'+ config.port);
