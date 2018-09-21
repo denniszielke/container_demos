@@ -26,12 +26,49 @@ kubectl get daemonset
 
 3. Create host to log from
 ```
-kubectl create -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/ubuntuhost.yml
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dummy-logger
+  labels:
+    app: dummy-logger
+spec:
+  containers:
+    - name: dummy-logger
+      image: denniszielke/dummy-logger:latest
+      ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+      resources:
+        requests:
+          memory: "128Mi"
+          cpu: "500m"
+        limits:
+          memory: "256Mi"
+          cpu: "1000m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dummy-logger
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: dummy-logger
+  type: LoadBalancer
+EOF
 ```
 
 4. Log something
 ```
-kubectl exec -ti ubuntuhost -- logger something
+curl 
+
+kubectl get svc dummy-logger -o template --template "{{(index .items 0).status.loadBalancer.ingress }}"
 ```
 
 5. Evaluate the logs by referencing the docs

@@ -25,9 +25,24 @@ app.post('/api/log', function(req, res) {
     console.log("received client request:");
     console.log(req.headers.message);
     var startDate = new Date();
-    var randomNumber = Math.floor((Math.random() * 10000000) + 1);
-    var serverResult = JSON.stringify({ timestamp: startDate, value: randomNumber, host: OS.hostname() } );
+    var month = (((startDate.getMonth()+1)<10) ? '0' + (startDate.getMonth()+1) : (startDate.getMonth()+1));
+    var day = (((startDate.getDate())<10) ? '0' + (startDate.getDate()) : (startDate.getDate()));
+    var hour = (((startDate.getHours())<10) ? '0' + (startDate.getHours()) : (startDate.getHours()));
+    var minute = (((startDate.getMinutes())<10) ? '0' + (startDate.getMinutes()) : (startDate.getMinutes()));
+    var seconds = (((startDate.getSeconds())<10) ? '0' + (startDate.getSeconds()) : (startDate.getSeconds()));
+    var logDate = startDate.getFullYear() + "-" +
+        month+  "-" + day + " " + hour + ":" + minute + ":" + seconds; 
+    var randomNumber = Math.floor((Math.random() * 100) + 1);
+    var sourceIp = (req.headers['x-forwarded-for'] || '').split(',').pop() || 
+        req.connection.remoteAddress || 
+        req.socket.remoteAddress || 
+        req.connection.socket.remoteAddress;
+    var logObject = { timestamp: logDate, value: randomNumber, host: OS.hostname(), source: sourceIp };
+    var serverResult = JSON.stringify(logObject );
+    console.log("string:");
     console.log(serverResult);
+    console.log("json object:");
+    console.log(logObject);
     res.send(serverResult.toString());
 });
 
