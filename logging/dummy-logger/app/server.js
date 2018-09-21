@@ -45,8 +45,9 @@ app.post('/api/log', function(req, res) {
     var serverResult = JSON.stringify(logObject );
     console.log("string:");
     console.log(serverResult.toString());
-    console.log("json object:");
-    console.log(logObject);
+    console.log(logDate + "," + randomNumber + "," + OS.hostname() + "," + sourceIp + "," + messageReceived);
+    // console.log("json object:");
+    // console.log(logObject);
     res.send(serverResult.toString());
 });
 

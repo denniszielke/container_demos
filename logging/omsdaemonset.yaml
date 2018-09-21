@@ -7,13 +7,18 @@ spec:
   metadata:
    labels:
     app: omsagent
-    agentVersion: 1.4.3-174
-    dockerProviderVersion: 1.0.0-30
+    agentVersion: 1.6.0-163
+    dockerProviderVersion: 1.0.0-34
   spec:
    containers:
      - name: omsagent 
        image: "microsoft/oms"
        imagePullPolicy: Always
+       env:
+       - name: WSID
+         value: <WSID>
+       - name: KEY 
+         value: <KEY>
        securityContext:
          privileged: true
        ports:
@@ -26,9 +31,6 @@ spec:
           name: docker-sock
         - mountPath: /var/log 
           name: host-log
-        - mountPath: /etc/omsagent-secret
-          name: omsagent-secret
-          readOnly: true
         - mountPath: /var/lib/docker/containers 
           name: containerlog-path  
        livenessProbe:
@@ -51,12 +53,12 @@ spec:
     - name: docker-sock 
       hostPath:
        path: /var/run/docker.sock
+    - name: container-hostname
+      hostPath:
+       path: /etc/hostname
     - name: host-log
       hostPath:
-       path: /var/log 
-    - name: omsagent-secret
-      secret:
-       secretName: omsagent-secret
+       path: /var/log
     - name: containerlog-path
       hostPath:
-       path: /var/lib/docker/containers
+       path: /var/lib/docker/containers   

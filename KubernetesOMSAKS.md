@@ -12,13 +12,10 @@ WORKSPACE_ID=
 WORKSPACE_KEY=
 ```
 
-1. Deploy the secreit
+1. Deploy the oms daemons
 
-```
-kubectl create secret generic omsagent-secret --from-literal=WSID=$WORKSPACE_ID --from-literal=KEY=$WORKSPACE_KEY
-```
-
-2. Deploy the oms daemons
+get the latest yaml file from here
+https://github.com/Microsoft/OMS-docker/blob/master/Kubernetes/omsagent.yaml 
 
 ```
 kubectl create -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/omsdaemonset.yaml
