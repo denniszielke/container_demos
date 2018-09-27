@@ -23,6 +23,10 @@ done
 
 kubectl run azure-function-on-kubernetes --image=denniszielke/az-functions --port=80 --requests=cpu=100m
 
+kubectl expose deployment azure-function-on-kubernetes --type=LoadBalancer
+
+kubectl autoscale deploy azure-function-on-kubernetes --cpu-percent=20 --max=10 --min=1
+
 helm install azure/wordpress --name wordpress --namespace wordpress --set resources.requests.cpu=0
 
 

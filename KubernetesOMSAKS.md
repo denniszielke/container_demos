@@ -79,6 +79,7 @@ curl -H "message: ho" -X POST http://$LOGGER_IP/api/log
 
 See the response
 ```
+kubectl logs dummy-logger
 {"timestamp":"2018-09-21 06:39:44","value":37,"host":"dummy-logger","source":"::ffff:10.0.4.97","message":"hi"}%    
 ```
 

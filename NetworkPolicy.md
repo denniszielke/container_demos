@@ -117,6 +117,21 @@ spec:
 EOF
 
 cat <<EOF | kubectl create -f -
+kind: Pod
+apiVersion: v1
+metadata:
+  name: runclient
+  labels:
+    run: pdemo
+spec:
+  containers:
+    - name: debian
+      image: debian
+      command: ["tail"]
+      args: ["-f", "/dev/null"]
+EOF
+
+cat <<EOF | kubectl create -f -
 apiVersion: v1
 kind: Pod
 metadata:
@@ -139,74 +154,35 @@ spec:
 EOF
 ```
 
-kubectl exec runclient -- bash -c "date && \
-      echo 1 && \
-      echo 2"
-
-
-kubectl exec alpclient -- bash -c "var=1 && \
-    while true ; do && \
-      res=$( { curl -o /dev/null -s -w %{time_namelookup}\\\\n  http://www.google.com; } 2>&1 ) && \
-      var=$((var+1)) && \
-      if [[ $res =~ ^[1-9] ]]; then && \
-        now=$(date +'%T') && \
-        echo '$var slow: $res $now' && \
-        break && \
-      fi && \
-    done"
-
-kubectl get pods |grep runclient|cut -f1 -d\  |\
-while read pod; \
- do echo "$pod writing:";\
-  kubectl exec -t $pod -- bash -c \
- var=1 \
-while true ; do \
-  res=$( { curl -o /dev/null -s -w %{time_namelookup}\\n  http://www.google.com; } 2>&1 ) \
-  var=$((var+1)) \
-  if [[ $res =~ ^[1-9] ]]; then \
-    now=$(date +"%T") \
-    echo "$var slow: $res $now" \
-    break \
-  fi \
-done \
-done
-
-var=1;
-while true ; do
-  res=$( { curl -o /dev/null -s -w %{time_namelookup}\\n  http://nginx; } 2>&1 )
-  var=$((var+1))
-  now=$(date +"%T")
-  echo "$var slow: $res $now"
-  if [[ $res =~ ^[1-9] ]]; then
-    now=$(date +"%T")
-    echo "$var slow: $res $now"
-    break
-  fi
-done
-
-var=1;
-while true ; do
-  res=$( { curl -o /dev/null -s -w %{time_namelookup}\\n  http://www.google.com; } 2>&1 )
-  var=$((var+1))
-  now=$(date +"%T")
-  echo "$var slow: $res $now"
-done
-
-for i in `seq 1 100`; do time curl -s google.com > /dev/null; done
-
-kubectl run -i --tty busybox --image=busybox --restart=Never -- sh   
 
 log into the box
 ```
 kubectl exec -ti runclient -- sh
+
+kubectl run -it  debian --image=debian
 ```
 
 install dependencies for tracing + wget
 ```
 sudo apt-get install --fix-missing  
-sudo apt-get update && apt-get install traceroute 
-sudo apt-get install inetutils-traceroute
+sudo apt install traceroute 
+sudo apt install inetutils-traceroute
+sudo apt install dnsutils
 sudo apt install wget
+sudo apt install time
+sudo apt install curl
+
+time nslookup -vc -type=ANY google.com
+https://jonlabelle.com/snippets/view/shell/nslookup-command
+
+kubectl cp ~/.ssh/id_rsa aks-ssh-66cf68f4c7-k5s45:/id_rsa
+
+ssh -i id_rsa azureuser@10.0.4.4
+
+ssh -i id_rsa azureuser@10.0.4.66
+dig @10.0.4.4 google.com +tcp
+
+dig @10.0.4.151 azure.com +tcp
 
 traceroute -T -n $KUBE_NAME.postgres.database.azure.com
 
@@ -216,3 +192,5 @@ https://github.com/jamesbrink/docker-postgres
 ```
 
 should not work!
+
+

@@ -21,8 +21,6 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: helloworld1
-    labels:
-      app: hello-app
 spec:
   containers:
   - image: microsoft/aci-helloworld

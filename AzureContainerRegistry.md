@@ -42,18 +42,14 @@ trigger a deployment with a customer image to validate
 kubectl run helloworld --image $REGISTRY_NAME.azurecr.io/aci-helloworld-ci:latest
 ```
 
-# Deploy Secrets
-https://kubernetes.io/docs/concepts/configuration/secret/
+# Run builds in ACR
 
-the secret for accessing your container registry
+ACR_NAME=dzkubereg
+RES_GROUP=kuberegistry
+LOCATION=northeurope
 
-```
-kubectl create secret docker-registry kuberegistry --docker-server 'myveryownregistry-on.azurecr.io' --docker-username 'username' --docker-password 'password' --docker-email 'example@example.com'
+az group create --resource-group $RES_GROUP --location $LOCATION
 
-```
+az acr create --resource-group $RES_GROUP --name $ACR_NAME --sku Standard --location $LOCATION
 
-or
-
-```
-kubectl create secret docker-registry kuberegistry --docker-server $REGISTRY_URL --docker-username $REGISTRY_NAME --docker-password $REGISTRY_PASSWORD --docker-email 'example@example.com'
-```
+az acr build --registry $ACR_NAME --image helloacr:v1 .
