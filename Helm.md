@@ -4,17 +4,20 @@
 https://github.com/kubernetes/helm
 https://docs.microsoft.com/en-us/azure/aks/kubernetes-helm
 
-Install helm
+1. Install helm
 ```
 wget https://storage.googleapis.com/kubernetes-helm/helm-v2.9.1-linux-amd64.tar.gz
 tar -zxvf helm-v2.9.1-linux-amd64.tar.gz
 sudo mv linux-amd64/helm /usr/local/bin/helm
 ```
 
-Install tiller and upgrade tiller
+upgrade helm via homebrew
 ```
-helm
+brew upgrade kubernetes-helm
+```
 
+2. Install tiller and upgrade tiller
+```
 helm init
 echo "Upgrading tiller..."
 helm init --upgrade
@@ -46,10 +49,10 @@ https://kubeapps.com/
 
 ## Setting up helm via kube-system for the whole cluster with RBAC
 
-````
+```
 kubectl create serviceaccount tiller --namespace kube-system
 kubectl create clusterrolebinding tiller --clusterrole=cluster-admin --serviceaccount=kube-system:tiller --namespace kube-system
-````
+```
 
 or via yaml
 
@@ -68,12 +71,13 @@ subjects:
     name: tiller
     namespace: kube-system
 EOF
-````
+```
 
 init tiller with the new service account
 
 ```
-helm init --service-account tiller
+helm init --service-account tiller --upgrade
+helm version
 ```
 
 ## Setting up helm for a dedicated namespace if you have RBAC

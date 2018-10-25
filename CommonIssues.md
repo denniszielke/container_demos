@@ -21,7 +21,6 @@ az network nic update -g MC_* -n aks-nodepool1-*-nic-0
 
 ```
 curl ipinfo.io/ip
-```
 
 kubectl run azure-function-on-kubernetes --image=denniszielke/az-functions --port=80 --requests=cpu=100m
 
@@ -35,7 +34,7 @@ export num=0 && while true; do curl -s -w "$num = %{time_namelookup}" "time nslo
 kubectl run alp --image=alpine:3.6
 
 kubectl run alp --image=quay.io/collectai/alpine-curl
-```
+
 docker run --rm jess/curl -sSL ipinfo.io/ip
 ```
 
@@ -54,8 +53,6 @@ EOF
 
 kubectl logs curl
 ```
-
-
 
 kubectl exec runclient -- bash -c "date && \
       echo 1 && \

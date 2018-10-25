@@ -154,7 +154,6 @@ spec:
 EOF
 ```
 
-
 log into the box
 ```
 kubectl exec -ti runclient -- sh
@@ -192,5 +191,3 @@ https://github.com/jamesbrink/docker-postgres
 ```
 
 should not work!
-
-

@@ -1,0 +1,45 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: source-ip-fix
+  labels:
+    app: source-ip-fix
+spec:
+  template:
+    metadata:
+      labels:
+        name: source-ip-fix
+    spec:
+      hostNetwork: true
+      containers:
+        - name: source-ip-fix
+          securityContext:
+            privileged: true
+          image: alpine
+          imagePullPolicy: Always
+          command:
+          - /bin/sh
+          - -c
+          - |
+            echo "copy scripts to /tmp"
+            cp /scripts/*.sh /tmp
+            echo "chmod"
+            chmod +x /tmp/run.sh
+            echo "execute"
+            /tmp/run.sh
+          resources:
+            requests:
+              cpu: 5m
+              memory: 50Mi
+          volumeMounts:
+          - mountPath: /scripts
+            name: scripts
+          - mountPath: /var/run/xtables.lock
+            name: xtables
+      volumes:
+      - name: scripts
+        configMap:
+          name: source-ip-fix
+      - name: xtables
+        hostPath:
+          path: /run/xtables.lock

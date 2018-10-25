@@ -3,7 +3,7 @@
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="kubevnet"
+KUBE_GROUP="acskubevnet"
 KUBE_NAME="dzkubenet"
 LOCATION="northeurope"
 KUBE_VNET_NAME="KVNET"
@@ -19,13 +19,16 @@ MY_OBJECT_ID=
 YOUR_SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
 ```
 
-# Prepare acs-engine
+# Prepare variables
 
 ```
 sed -e "s/AAD_APP_ID/$AAD_APP_ID/ ; s/AAD_CLIENT_ID/$AAD_CLIENT_ID/ ; s/SERVICE_PRINCIPAL_ID/$SERVICE_PRINCIPAL_ID/ ; s/SERVICE_PRINCIPAL_SECRET/$SERVICE_PRINCIPAL_SECRET/ ; s/TENANT_ID/$TENANT_ID/ ; s/ADMIN_GROUP_ID/$ADMIN_GROUP_ID/ ; s/SUBSCRIPTION_ID/$SUBSCRIPTION_ID/ ; s/KUBE_GROUP/$KUBE_GROUP/ ; s/GROUP_ID/$GROUP_ID/" acsengvnet.json > acsengvnet_out.json
-docker pull ams0/acs-engine-light-autobuild
-mkdir deployment
-docker run -it --rm -v deployment:/acs -w /acs ams0/acs-engine-light-autobuild:latest /acs-engine generate acsengvnet_out.json
+```
+
+# Prepare acs-engine
+
+```
+./acs-engine generate acsengvnet_out.json
 ```
 
 # Deploy cluster
@@ -68,12 +71,45 @@ az group deployment create \
 export KUBECONFIG=`pwd`/_output/dz-vnet-18/kubeconfig/kubeconfig.northeurope.json
 export KUBECONFIG=`pwd`/_output/dz-vnet-18/kubeconfig/kubeconfig.westeurope.json
 
+# using rbac aad 
 ssh -i ~/.ssh/id_rsa dennis@dz-vnet-18.northeurope.cloudapp.azure.com \
     kubectl create clusterrolebinding aad-default-cluster-admin-binding \
         --clusterrole=cluster-admin \
         --user 'https://sts.windows.net/<tenant-id>/#<user-id>'
 
 kubectl create clusterrolebinding aad-default-cluster-admin-binding --clusterrole=cluster-admin --user=https://sts.windows.net/$TENANT_ID/#$MY_OBJECT_ID
+
+#using rbac without aad
+
+ssh -i ~/.ssh/id_rsa dennis@dz-vnet-18.westeurope.cloudapp.azure.com \
+    kubectl create serviceaccount dennis --namespace kube-system
+
+ssh -i ~/.ssh/id_rsa dennis@dz-vnet-18.westeurope.cloudapp.azure.com \
+    kubectl create clusterrolebinding dennis --clusterrole=cluster-admin --serviceaccount=kube-system:dennis --namespace kube-system
+
+ssh -i ~/.ssh/id_rsa dennis@dz-vnet-18.westeurope.cloudapp.azure.com \
+    kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep dennis-sa | awk '{print $1}')
+
+
+TOKEN=
+
+#Set kubectl context
+
+kubectl config set-cluster acs-cluster --server=$KUBE_MANAGEMENT_ENDPOINT --insecure-skip-tls-verify=true
+
+kubectl config set-credentials dennis --token=$TOKEN
+
+kubectl config set-context acs-context --cluster=acs-cluster --user=dennis
+
+kubectl config use-context acs-context
+```
+
+# Set up route table for kubenet routing
+
+```
+rt=$(az network route-table list -g $KUBE_GROUP | jq -r '.[].name')
+rt=k8s-master-31439917-routetable
+az network vnet subnet update -n k8s-subnet -g $KUBE_GROUP --vnet-name k8s-vnet-31439917  --route-table $rt
 ```
 
 # Create internal Load Balancers

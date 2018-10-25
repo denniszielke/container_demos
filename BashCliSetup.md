@@ -47,3 +47,11 @@ sudo apt-get update && sudo apt-get install azure-cli
 `
 ssh-keygen -t rsa -b 4096
 `
+
+### install and update azure cli on mac
+
+```
+brew update && brew install azure-cli
+
+brew upgrade azure-cli
+```

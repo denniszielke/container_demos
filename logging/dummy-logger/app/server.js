@@ -18,6 +18,10 @@ app.get('/', function(req, res) {
 });
 app.get('/ping', function(req, res) {
     console.log('received ping');
+    var forwared = (req.headers['x-forwarded-for'] || '').split(',').pop();
+    var remoteAddress = req.connection.remoteAddress;
+    console.log("forwared: " + forwared);
+    console.log("remote: " + remoteAddress);
     res.send('Pong');
 });
 

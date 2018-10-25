@@ -18,7 +18,6 @@ kubectl create -f appinsightsecret.yml
 
 ```
 kubectl create secret docker-registry kuberegistry --docker-server 'myveryownregistry-on.azurecr.io' --docker-username 'username' --docker-password 'password' --docker-email 'example@example.com'
-
 ```
 
 or

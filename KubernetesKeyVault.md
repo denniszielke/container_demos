@@ -1,5 +1,5 @@
 # Kubernetes using aad-pod-identity to access azure key vault
-
+https://github.com/Azure/aad-pod-identity
 https://blog.jcorioland.io/archives/2018/09/05/azure-aks-active-directory-managed-identities.html
 
 0. Variables
@@ -190,3 +190,9 @@ spec:
 EOF
 ```
 
+Cleanup
+```
+kubectl delete pods --selector=component=mic
+
+PODNAME=`kubectl get pods --namespace=${NAMESPACE} --selector="app=tf-hub" --output=template --template="{{with index .items 0}}{{.metadata.name}}{{end}}"`
+```

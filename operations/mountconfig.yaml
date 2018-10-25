@@ -1,0 +1,25 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: mount-config
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mount-config
+    spec:
+      containers:
+      - image: alpine:latest
+        name: test-app
+        command: ["/bin/sh", "-c", "--"]
+        args: ["while true; do sleep 5; done;"]
+        volumeMounts:
+          - mountPath: /config
+            name: upgradeconfig
+            readOnly: false
+      volumes:
+      - name: upgradeconfig
+        hostPath:
+          path: /etc/apt/apt.conf.d/20auto-upgrades
+          type: File

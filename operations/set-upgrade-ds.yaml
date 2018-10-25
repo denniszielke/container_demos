@@ -1,0 +1,46 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: set-upgrade-daemon
+  labels:
+    app: set-upgrade-daemon
+spec:
+  template:
+    metadata:
+      labels:
+        name: set-upgrade-daemon
+    spec:
+      containers:
+        - name: set-upgrade-daemon
+          securityContext:
+            privileged: true
+          image: alpine
+          imagePullPolicy: Always
+          command:
+          - /bin/sh
+          - -c
+          - |
+            echo "copy scripts to /tmp"
+            cp /scripts/*.sh /tmp
+            echo "chmod"
+            chmod +x /tmp/run.sh
+            echo "execute"
+            /tmp/run.sh
+          resources:
+            requests:
+              cpu: 5m
+              memory: 50Mi
+          volumeMounts:
+          - mountPath: /scripts
+            name: scripts
+          - mountPath: /config
+            name: upgradeconfig
+            readOnly: false
+      volumes:
+      - name: scripts
+        configMap:
+          name: set-upgrade-script
+      - name: upgradeconfig
+        hostPath:
+          path: /etc/apt/apt.conf.d/20auto-upgrades
+          type: File

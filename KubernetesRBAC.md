@@ -1,5 +1,4 @@
 # Kubernetes Role based acccess control
-## Create container cluster (currently only with acs-engine)
 
 0. Variables
 ```
@@ -30,7 +29,6 @@ az aks get-credentials --resource-group $KUBE_GROUP --name $KUBE_NAME --admin
 ```
 
 set cluster role binding
-
 ```
 cat <<EOF | kubectl create -f -
 apiVersion: rbac.authorization.k8s.io/v1
@@ -62,23 +60,21 @@ roleRef:
 subjects:
 - apiGroup: rbac.authorization.k8s.io
   kind: User
-  name: "$KUBE_ADMIN_ID"
+  name: "$MY_OBJECT_ID"
 - apiGroup: rbac.authorization.k8s.io
   kind: User
-  name: "$MY_OBJECT_ID"
+  name: "$MY_USER_ID"
 EOF
 
 az aks get-credentials --resource-group $KUBE_GROUP --name $KUBE_NAME
 
 az aks browse --resource-group $KUBE_GROUP --name $KUBE_NAME
-
 ```
 
 if you see the following error message
 error: unable to forward port because pod is not running. Current status=Pending
 create a binding for the dashboard account
-
-````
+```
 kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=kube-system:kubernetes-dashboard
 ```
 
@@ -118,7 +114,11 @@ subjects:
   name: default
   namespace: kube-system
 EOF
+```
 
+## Create namespaces and trimmed roles
+
+```
 kubectl create ns small
 kubectl create ns big
 
@@ -155,7 +155,6 @@ kubectl create rolebinding small-pod-reader --role=pod-and-pod-logs-reader --use
 kubectl auth can-i create deployments --namespace=small --as=$READER_USER_ID
 
 kubectl auth can-i list pods --namespace=small --as=$READER_USER_ID
-
 ```
 
 ## Prepare acs-engine

@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  source-ip-fix
+data:
+  run.sh: |
+    #!/bin/sh
+
+    echo "adding iptables"
+
+    apk add iptables
+    while true; do
+      echo $(iptables -t nat -L POSTROUTING)
+
+      # check if exists
+      iptables -t nat -C POSTROUTING -m iprange ! --dst-range 168.63.129.16 -m addrtype ! --dst-type local ! -d 10.0.0.0/8 -j MASQUERADE -w
+      EXISTS=$?
+
+      # delete rule if exists        
+      if [ $EXISTS  -eq 0 ]
+      then
+        echo "Bad rule exists"
+
+        iptables -t nat -D POSTROUTING  -m iprange ! --dst-range 168.63.129.16 -m addrtype ! --dst-type local ! -d 10.0.0.0/8 -j MASQUERADE -w
+
+        echo "Deleted Rule"
+      else 
+        echo "Bad rule does not exist"
+      
+      fi
+    
+
+      # Get subnet of azure nic, sufficient as source traffic comes from same subnet in our instance
+      SUBNET_CIDR=$(ip -o -f inet addr show | awk '/azure0/ {print $4}')
+
+      echo "Subnet is " ${SUBNET_CIDR}
+
+      # check if exists
+      iptables -t nat -C POSTROUTING -m iprange ! --dst-range 168.63.129.16 -m addrtype ! --dst-type local ! -d $SUBNET_CIDR -j MASQUERADE -w
+      EXISTS=$?
+
+      if [  $EXISTS  -eq 0  ]
+      then
+        
+        echo "Rule already exists"
+
+      else 
+          
+        iptables -t nat -A POSTROUTING -m iprange ! --dst-range 168.63.129.16 -m addrtype ! --dst-type local ! -d $SUBNET_CIDR -j MASQUERADE -w
+
+        echo "Added rule"
+
+      fi
+
+      sleep 60
+    
+    done
+
+    exit 0
