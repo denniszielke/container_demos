@@ -1,0 +1,44 @@
+apiVersion: "v1"
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    name: nginx
+    net: internal
+spec:
+  containers:
+    - name: nginx
+      image: nginx
+      ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-ingress
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      name: http
+  selector:
+    name: nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-ingress-subnet
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "gw-4-subnet"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      name: http
+  selector:
+    name: nginx

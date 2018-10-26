@@ -54,6 +54,9 @@ Use the assigned ip address in the helm chart
 ```
 
 helm install stable/nginx-ingress --name ingress-controller --namespace kube-system --set rbac.create=true --set controller.service.loadBalancerIP="$IP" --set controller.stats.enabled=true 
+
+helm install stable/nginx-ingress --name ingress-controller --namespace kube-system --set controller.service.externalTrafficPolicy=Local
+helm upgrade quiet-echidna stable/nginx-ingress  --set controller.service.externalTrafficPolicy=Local
 ```
 
 ## DNSName to associate with public IP address
