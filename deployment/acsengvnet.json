@@ -3,7 +3,7 @@
     "properties": {
       "orchestratorProfile": {
         "orchestratorType": "Kubernetes",
-        "orchestratorRelease": "1.8",
+        "orchestratorRelease": "1.10",
         "kubernetesConfig": {
           "enableRbac": true,
           "networkPolicy": "azure"
@@ -26,7 +26,7 @@
       "agentPoolProfiles": [
         {
           "name": "agentpool1",
-          "count": 2,
+          "count": 3,
           "vmSize": "Standard_D2_v2",
           "storageProfile": "ManagedDisks",
           "availabilityProfile": "AvailabilitySet",

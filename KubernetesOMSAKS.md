@@ -17,6 +17,7 @@ WORKSPACE_KEY=
 
 get the latest yaml file from here
 https://github.com/Microsoft/OMS-docker/blob/master/Kubernetes/omsagent.yaml 
+https://github.com/Microsoft/OMS-docker/blob/ci_feature_prod/Kubernetes/omsagent.yaml
 
 ```
 kubectl create -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/omsdaemonset.yaml

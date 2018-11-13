@@ -89,7 +89,7 @@ EOF
 
 log into the box
 ```
-kubectl exec -ti runclient -- sh
+kubectl exec -ti pclient -- /bin/bash
 ```
 
 log into psql 

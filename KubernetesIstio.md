@@ -10,7 +10,7 @@ curl -L https://git.io/getIstio | sh -
 
 Add to your path
 ```
-export PATH="$PATH:/Users/dennis/labs/istio/istio-0.7.1/bin"
+export PATH="$PATH:/Users/us/lib/istio-1.0.2/bin"
 ```
 
 2. Add incubator chart repo

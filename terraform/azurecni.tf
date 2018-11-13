@@ -18,7 +18,7 @@ resource "azurerm_resource_group" "aksrg" {
   }
 }
 
-# https://www.terraform.io/docs/providers/azurerm/d/network_security_group.html
+# # https://www.terraform.io/docs/providers/azurerm/d/network_security_group.html
 # resource "azurerm_network_security_group" "aksnsg" {
 #   name                = "${var.dns_prefix}-nsg"
 #   location            = "${azurerm_resource_group.aksrg.location}"
@@ -45,28 +45,28 @@ resource "azurerm_virtual_network" "kubevnet" {
 resource "azurerm_subnet" "aksnet" {
   name                      = "aks-1-subnet"
   resource_group_name       = "${azurerm_resource_group.aksrg.name}"
-  # network_security_group_id = "${azurerm_network_security_group.aksnsg.id}"
+  #network_security_group_id = "${azurerm_network_security_group.aksnsg.id}"
   address_prefix            = "10.0.1.0/24"
   virtual_network_name      = "${azurerm_virtual_network.kubevnet.name}"
 }
 resource "azurerm_subnet" "acinet" {
   name                      = "aci-2-subnet"
   resource_group_name       = "${azurerm_resource_group.aksrg.name}"
-  # network_security_group_id = "${azurerm_network_security_group.aksnsg.id}"
+  #network_security_group_id = "${azurerm_network_security_group.aksnsg.id}"
   address_prefix            = "10.0.2.0/24"
   virtual_network_name      = "${azurerm_virtual_network.kubevnet.name}"
 }
 resource "azurerm_subnet" "fwnet" {
   name                      = "fw-3-subnet"
   resource_group_name       = "${azurerm_resource_group.aksrg.name}"
-  # network_security_group_id = "${azurerm_network_security_group.aksnsg.id}"
+  #network_security_group_id = "${azurerm_network_security_group.aksnsg.id}"
   address_prefix            = "10.0.3.0/24"
   virtual_network_name      = "${azurerm_virtual_network.kubevnet.name}"
 }
 resource "azurerm_subnet" "gwnet" {
   name                      = "gw-4-subnet"
   resource_group_name       = "${azurerm_resource_group.aksrg.name}"
-  # network_security_group_id = "${azurerm_network_security_group.aksnsg.id}"
+  #network_security_group_id = "${azurerm_network_security_group.aksnsg.id}"
   address_prefix            = "10.0.4.0/24"
   virtual_network_name      = "${azurerm_virtual_network.kubevnet.name}"
 }
@@ -118,7 +118,7 @@ resource "azurerm_kubernetes_cluster" "akstf" {
   }
 
   network_profile {
-      network_plugin = "kubenet"
+      network_plugin = "azure"
       service_cidr   = "10.2.0.0/24"
       dns_service_ip = "10.2.0.10"
       docker_bridge_cidr = "172.17.0.1/16"

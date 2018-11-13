@@ -80,3 +80,4 @@ kubectl exec frontend env
 ```
 
 ## Set up azure disk storage
+https://kubernetes.io/docs/concepts/storage/storage-classes/#azure-disk

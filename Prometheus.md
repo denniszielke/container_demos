@@ -33,3 +33,7 @@ echo password:$(kubectl get secret --namespace monitoring kube-prometheus-grafan
 
 
 kubectl --namespace monitoring port-forward $(kubectl get pod --namespace monitoring -l app=kube-prometheus-grafana -o template --template "{{(index .items 0).metadata.name}}") 3000:3000
+
+
+helm delete prometheus-operator --purge
+helm delete kube-prometheus --purge

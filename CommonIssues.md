@@ -107,6 +107,6 @@ while true ; do
   echo "$var slow: $res $now"
 done
 
-for i in `seq 1 100`; do time curl -s google.com > /dev/null; done
+for i in `seq 1 1000`; do time curl -s google.com > /dev/null; done
 
 kubectl run -i --tty busybox --image=busybox --restart=Never -- sh   

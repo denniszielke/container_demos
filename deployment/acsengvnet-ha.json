@@ -1,0 +1,100 @@
+{
+    "apiVersion": "vlabs",
+    "properties": {
+      "orchestratorProfile": {
+        "orchestratorType": "Kubernetes",
+        "orchestratorRelease": "1.12",
+        "kubernetesConfig": {
+          "enableRbac": true,
+          "networkPolicy": "azure",
+          "useManagedIdentity": true,
+          "addons": [
+            {
+              "name": "tiller",
+              "enabled": true,
+              "config": {
+                "max-history": "10"
+              },
+              "containers": [
+                {
+                  "name": "tiller",
+                  "cpuRequests": "1",
+                  "memoryRequests": "1Gi",
+                  "cpuLimits": "1",
+                  "memoryLimits": "1Gi"
+                }
+              ]
+            },
+            {
+              "name": "kubernetes-dashboard",
+              "enabled": true,
+              "containers": [
+                {
+                  "name": "kubernetes-dashboard",
+                  "cpuRequests": "50m",
+                  "memoryRequests": "512Mi",
+                  "cpuLimits": "50m",
+                  "memoryLimits": "512Mi"
+                }
+              ]
+            },
+            {
+              "name": "rescheduler",
+              "enabled": true,
+              "containers": [
+                {
+                  "name": "rescheduler",
+                  "cpuRequests": "20m",
+                  "memoryRequests": "200Mi",
+                  "cpuLimits": "20m",
+                  "memoryLimits": "200Mi"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "masterProfile": {
+        "count": 5,
+        "dnsPrefix": "dz-vnet-18",
+        "vmSize": "Standard_DS1_v2",
+        "vnetSubnetId": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/KVNET/subnets/KVMASTERS",
+        "agentVnetSubnetId": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/KVNET/subnets/KVAGENTS",
+        "firstConsecutiveStaticIP": "172.16.0.4",
+        "vnetCIDR": "172.16.0.0/23",
+        "availabilityProfile": "VirtualMachineScaleSets",
+        "availabilityZones": [
+            "1",
+            "2"
+        ]
+      },
+      "agentPoolProfiles": [
+        {
+          "name": "agentpool1",
+          "count": 4,
+          "vmSize": "Standard_D2_v2",
+          "storageProfile": "ManagedDisks",
+          "availabilityProfile": "VirtualMachineScaleSets",
+          "vnetSubnetId": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/KVNET/subnets/KVAGENTS",
+          "availabilityZones": [
+            "1",
+            "2"
+          ]
+        }
+      ],
+      "linuxProfile": {
+        "adminUsername": "dennis",
+        "ssh": {
+          "publicKeys": [
+            {
+              "keyData": "YOUR_SSH_KEY"
+            }
+          ]
+        }
+      },
+      "servicePrincipalProfile": {
+        "clientId": "SERVICE_PRINCIPAL_ID",
+        "secret": "SERVICE_PRINCIPAL_SECRET"
+        }
+    }
+  }

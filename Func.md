@@ -27,8 +27,6 @@ kubectl expose deployment azure-function-on-kubernetes --type=LoadBalancer
 
 kubectl autoscale deploy azure-function-on-kubernetes --cpu-percent=20 --max=10 --min=1
 
-helm install azure/wordpress --name wordpress --namespace wordpress --set resources.requests.cpu=0
-
 
 vsce env create --name dzdevenv --location eastus
 

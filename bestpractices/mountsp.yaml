@@ -17,7 +17,7 @@ spec:
         volumeMounts:
         - name: host-sp
           mountPath: /host/azure.json
-          readOnly: true
+          readOnly: false
       volumes:
       - name: host-sp
         hostPath:

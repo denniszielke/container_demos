@@ -43,17 +43,16 @@ https://docs.microsoft.com/en-us/azure/aks/ingress#install-an-ingress-controller
 Create a public ip adress
 ```
 
-az network public-ip create --resource-group MC_kubesdemo_dzkubeaks_westeurope --name myAKSPublicIP --allocation-method static
+az network public-ip create --resource-group MC_kubeaksvmss_dzkubes_westeurope --name myAKSPublicIP --allocation-method static
 
-az network public-ip list --resource-group MC_kubesdemo_dzkubeaks_westeurope* --query [0].ipAddress --output tsv
+az network public-ip list --resource-group MC_kubeaksvmss_dzkubes_westeurope* --query [0].ipAddress --output tsv
 
 IP="1.1.1.1"
 ```
 Use the assigned ip address in the helm chart
 
 ```
-
-helm install stable/nginx-ingress --name ingress-controller --namespace kube-system --set rbac.create=true --set controller.service.loadBalancerIP="$IP" --set controller.stats.enabled=true 
+helm install stable/nginx-ingress --name ingress-controller --namespace kube-system --set rbac.create=true --set controller.service.loadBalancerIP="$IP" --set controller.stats.enabled=true --set controller.service.externalTrafficPolicy=Local
 
 helm install stable/nginx-ingress --name ingress-controller --namespace kube-system --set controller.service.externalTrafficPolicy=Local
 helm upgrade quiet-echidna stable/nginx-ingress  --set controller.service.externalTrafficPolicy=Local
@@ -74,11 +73,31 @@ az network public-ip update --ids $PUBLICIPID --dns-name $DNSNAME
 ```
 
 ## Create dummy ingress for challenge
+dzapis.westeurope.cloudapp.azure.com
 
 ```
 kubectl run nginx --image nginx --port=80
 
 kubectl expose deployment nginx --type=ClusterIP
+
+cat <<EOF | kubectl create -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: $DNS
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: nginx
+          servicePort: 80
+EOF
 
 cat <<EOF | kubectl create -f -
 apiVersion: extensions/v1beta1
@@ -126,7 +145,6 @@ helm install stable/cert-manager --name cert-issuer-manager --namespace kube-sys
 
 create cert manager cluster issuer for stage or prod
 ```
-
 cat <<EOF | kubectl create -f -
 apiVersion: certmanager.k8s.io/v1alpha1
 kind: ClusterIssuer

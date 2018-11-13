@@ -12,6 +12,7 @@ Jenkins-ACI.md
 CommonIssues.md
 Presentation.md
 games/whack.yaml
+deployment/acsengvnet_out.json
 multi-calculator/.DS_Store
 multi-calculator/go-calc-backend/.DS_Store
 multi-calculator/js-calc-backend/.DS_Store

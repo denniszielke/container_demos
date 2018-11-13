@@ -23,6 +23,9 @@ az ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/${SUBSCRI
 ```
 5. Remember and copy the appId (this is the service principal client id ) and the password (this is the service principal client secret) because you will need them later for kubernetes-to-azure authentication.
 
+Creation of an SP with the least amount of priviledges:
+https://github.com/jsturtevant/aks-examples/tree/master/least-privileged-sp
+
 # Creation of Service Principal via Azure Portal
 
 1. Open the azure portal by authenticating with azure corp credentials and navigating to 

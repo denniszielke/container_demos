@@ -7,6 +7,7 @@ export PATH="$PATH:/Users/dennis/.linkerd2/bin"
 export PATH=$PATH:$HOME/.linkerd2/bin
 Zsh
 export PATH="$HOME/.linkerd2/bin:$PATH"
+export PATH=$PATH:$HOME/.linkerd2/bin
 
 linkerd inject cal-depl.yaml | kubectl apply -f - 
 
