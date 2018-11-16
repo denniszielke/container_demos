@@ -9,10 +9,12 @@ KUBE_GROUP="kubenets"
 KUBE_NAME="dkubes"
 LOCATION="westeurope"
 KUBE_VNET_NAME="knets"
-KUBE_AGENT_SUBNET_NAME="aksnodes"
-KUBE_ACI_SUBNET_NAME="acinet"
-KUBE_FW_SUBNET_NAME="fwnet"
-KUBE_VERSION="1.11.2"
+KUBE_GW_SUBNET_NAME="gw-1-subnet"
+KUBE_ACI_SUBNET_NAME="aci-2-subnet"
+KUBE_FW_SUBNET_NAME="fw-3-subnet"
+KUBE_ING_SUBNET_NAME="ing-4-subnet"
+KUBE_AGENT_SUBNET_NAME="aks-5-subnet"
+KUBE_VERSION="1.11.4"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
 AAD_APP_NAME=""
@@ -49,15 +51,24 @@ az role assignment create --role "Virtual Machine Contributor" --assignee $SERVI
 az role assignment create --role "Contributor" --assignee $SERVICE_PRINCIPAL_ID -g $KUBE_GROUP
 ```
 
+Create dns zone
+```
+az network dns zone create -g $KUBE_GROUP  -n runningcode.local  --zone-type Private --registration-vnets $KUBE_VNET_NAME
+```
+KUBE_GW_SUBNET_NAME="gw-1-subnet"
+KUBE_ACI_SUBNET_NAME="aci-2-subnet"
+KUBE_FW_SUBNET_NAME="fw-3-subnet"
+KUBE_ING_SUBNET_NAME="ing-4-subnet"
+KUBE_AGENT_SUBNET_NAME="aks-5-subnet"
 3. Create Subnets
 Register azure firewall https://docs.microsoft.com/en-us/azure/firewall/public-preview
 
 ```
-az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_FW_SUBNET_NAME --address-prefix 10.0.0.0/24
-az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_ACI_SUBNET_NAME --address-prefix 10.0.1.0/24 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault
-az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n "InternalIngressSubnet" --address-prefix 10.0.2.0/24
-az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n "APIMSubnet" --address-prefix 10.0.3.0/24
-az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --address-prefix 10.0.4.0/22 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault
+az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_GW_SUBNET_NAME --address-prefix 10.0.1.0/24
+az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_ACI_SUBNET_NAME --address-prefix 10.0.2.0/24 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault
+az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_FW_SUBNET_NAME --address-prefix 10.0.3.0/24
+az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_ING_SUBNET_NAME --address-prefix 10.0.4.0/24
+az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --address-prefix 10.0.5.0/22 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault
 ```
 
 4. Create the aks cluster
@@ -84,6 +95,13 @@ az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --s
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --ssh-key-value ~/.ssh/id_rsa.pub --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --enable-rbac --node-vm-size "Standard_D2s_v3"
 
 ```
+
+with kubenet
+```
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --ssh-key-value ~/.ssh/id_rsa.pub --network-plugin kubenet --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --enable-rbac --node-vm-size "Standard_D2s_v3"
+
+```
+
 --node-vm-size "Standard_B2s"
 --node-vm-size "Standard_D2s_v3"
 
@@ -98,3 +116,22 @@ https://github.com/denniszielke/container_demos/blob/master/KubernetesRBAC.md
 ```
 az aks get-credentials --resource-group $KUBE_GROUP --name $KUBE_NAME --admin
 ```
+
+
+create addition dns record
+
+az network dns zone list --resource-group $KUBE_GROUP
+
+az network dns record-set list -g $KUBE_GROUP -z runningcode.local
+
+az network dns zone show -g $KUBE_GROUP -n contoso.com -o json
+
+
+az network dns record-set a add-record \
+  -g $KUBE_GROUP \
+  -z runningcode.local \
+  -n dummy \
+  -a 10.0.4.24
+
+curl 10.0.4.24
+curl nginx.runningcode.local

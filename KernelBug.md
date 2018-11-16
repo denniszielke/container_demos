@@ -43,6 +43,7 @@ spec:
         - "3600"
 EOF
 
+
 for i in {1..1000}; do curl -s -w "%{time_total}\n" -o /dev/null http://www.microsoft.com/; done
 for i in {1..1000}; do curl -s -w "%{time_total}\n" -o /dev/null http://http://137.117.245.83; done
 kubectl delete pod -n kube-system --selector="k8s-app=kube-dns"

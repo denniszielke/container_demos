@@ -32,9 +32,9 @@ echo
 fi
 
 if [ "$cluster_region" == "ne" ]; then
-cluster_region="EastUs"
-elif [ "$cluster_region" == "ea" ]; then
 cluster_region="NorthEurope"
+elif [ "$cluster_region" == "ea" ]; then
+cluster_region="EastUs"
 else
 cluster_region="WestEurope"
 fi
@@ -73,18 +73,19 @@ VM_COUNT=4
 fi
 
 if [ "$kube_version" == "" ]; then
-echo "Kubernetes version 1.[10.9], 1.[11.2], 1.[11.3]?: "
+echo "Kubernetes version [1.10.9], [1.11.3], [1.11.4]?: "
 read -n 6 kube_version
 echo
 fi
 
 TERRAFORM_STORAGE_NAME=dzt$cluster_name
-KUBE_RG=dzt$cluster_name
+KUBE_RG="kub_ter_"$cni_type"_"$cluster_size"_"$cluster_name
 LOCATION=$cluster_region
 
-echo "$TERRAFORM_STORAGE_NAME"
-echo "$LOCATION"
-echo "$TEMPLATE_FILE"
+echo "Resource Group: $KUBE_RG"
+echo "Terraform State: $TERRAFORM_STORAGE_NAME"
+echo "Location: $LOCATION"
+echo "$KUBE_TEMPLATE_FILE"
 echo "$SUBSCRIPTION_FILE"
 
 echo "using terraform version:"
@@ -112,3 +113,4 @@ less $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
 (cd $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME && $TERRA_PATH plan -out $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/out.plan)
 
 (cd $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME && $TERRA_PATH apply $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/out.plan)
+

@@ -34,9 +34,10 @@ metadata:
   name: nginx-ingress-subnet
   annotations:
     service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "gw-4-subnet"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "ing-4-subnet"
 spec:
   type: LoadBalancer
+  loadBalancerIP: 10.0.4.24
   ports:
     - port: 80
       name: http

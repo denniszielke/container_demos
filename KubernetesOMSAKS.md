@@ -84,6 +84,9 @@ kind: Service
 metadata:
   name: dummy-logger
   namespace: default
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "InternalIngressSubnet"
 spec:
   ports:
   - port: 80
@@ -346,6 +349,9 @@ kind: Service
 metadata:
   name: crashing-app
   namespace: default
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "InternalIngressSubnet"
 spec:
   ports:
   - port: 80
