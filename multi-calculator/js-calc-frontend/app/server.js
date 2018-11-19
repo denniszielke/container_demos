@@ -19,9 +19,6 @@ const OS = require('os');
 const redis = require("redis");
 
 var redisClient = null;
-if (config.redisHost && config.redisAuth) {
-    redisClient = redis.createClient(6380, config.redisHost, {auth_pass: config.redisAuth, tls: {servername: config.redisHost}});
-}
 
 var publicDir = require('path').join(__dirname, '/public');
 
@@ -51,6 +48,10 @@ app.post('/api/calculation', function(req, res) {
     if (config.instrumentationKey){ 
         var startDate = new Date();
         client.trackEvent( { name: "calculation-js-frontend-call-start"});
+    }
+
+    if (config.redisHost && config.redisAuth && redisClient == null) {
+        redisClient = redis.createClient(6379, config.redisHost, {auth_pass: config.redisAuth, tls: {servername: config.redisHost}});
     }
 
     if (redisClient){

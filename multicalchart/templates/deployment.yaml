@@ -47,7 +47,7 @@ spec:
               value: "3000"
 {{- if .Values.dependencies.usePodRedis }}
             - name: "REDIS_HOST"
-              value: "localhost"
+              value: "127.0.0.1"
             - name: "REDIS_AUTH"
               value: "MySuperSecretRedis"
 {{- else }}
@@ -71,22 +71,25 @@ spec:
 {{- end }}
           livenessProbe:
             httpGet:
+              host: calcfrontend
               path: /ping
               port: 3000
           readinessProbe:
             httpGet:
               path: /ping
               port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
           resources:
 {{ toYaml .Values.resources | indent 12 }}
 {{- if .Values.dependencies.usePodRedis }}
         - name: redis
           image: redis:4.0.11-alpine
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["redis-server"]
-          args: ["/etc/redis.conf", "--requirepass", "MySuperSecretRedis"]
+          args: ["--requirepass", "MySuperSecretRedis"]
           ports:
             - containerPort: 6379
+              name: redis
           env:
             - name: "ASDFASDF"
               value: "localhost"
