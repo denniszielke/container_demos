@@ -47,7 +47,7 @@ spec:
               value: "3000"
 {{- if .Values.dependencies.usePodRedis }}
             - name: "REDIS_HOST"
-              value: "127.0.0.1"
+              value: "localhost"
             - name: "REDIS_AUTH"
               value: "MySuperSecretRedis"
 {{- else }}
@@ -89,11 +89,6 @@ spec:
           ports:
             - containerPort: 6379
               name: redis
-          env:
-            - name: "ASDFASDF"
-              value: "localhost"
-            - name: "ASDFASD4"
-              value: "no"
           resources:
 {{ toYaml .Values.resources | indent 12 }}
 {{- end }}

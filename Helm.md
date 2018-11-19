@@ -171,6 +171,8 @@ helm get values calculator
 6. Change config and perform an upgrade
 ```
 helm upgrade --set backendReplicaCount=3 --set frontendReplicaCount=3 $APP_IN multicalchart --namespace $APP_NS
+helm upgrade --set backendReplicaCount=1 --set frontendReplicaCount=1 --set usePodRedis=no $APP_IN multicalchart --namespace $APP_NS
+
 ```
 
 If you have a redis secret you can turn on the redis cache

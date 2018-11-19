@@ -108,7 +108,7 @@ app.post('/api/calculation', function(req, res) {
                         client.trackMetric({ name:"calculation-js-frontend-duration", value: duration });
                     }
                                        
-                    var cachedResult = redisClient.set(req.headers.number, body, function(err, reply) {
+                    var cachedResult = redisClient.set(req.headers.number.toString(), body.toString(), function(err, reply) {
                         console.log("cache save");
                         console.log(reply);
                     });

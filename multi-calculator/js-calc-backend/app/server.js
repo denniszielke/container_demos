@@ -77,9 +77,7 @@ app.post('/api/calculation', function(req, res) {
     var remoteAddress = req.connection.remoteAddress;
     var serverResult = JSON.stringify({ timestamp: endDate, value: resultValue, host: OS.hostname(), remote: remoteAddress } );
     console.log(serverResult);
-    setTimeout(function() {
-        res.send(serverResult.toString());
-    }, resultValue.length * 500);
+    res.send(serverResult.toString());
 });
 
 app.post('/api/dummy', function(req, res) {

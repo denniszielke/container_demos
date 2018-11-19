@@ -90,6 +90,51 @@ spec:
     - "3600"
 EOF
 
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: redis
+  labels:
+    name: redis
+spec:
+  containers:
+  - name: redis
+    image: redis:4.0.11-alpine
+    args: ["--requirepass", "MySuperSecretRedis"]
+    ports:
+    - containerPort: 6379
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rediscli
+  labels:
+    name: rediscli
+spec:
+  containers:
+  - name: redis
+    image: redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-svc
+  labels:
+    name: redis-svc
+spec:
+  selector:
+    name: redis
+  type: ClusterIP
+  ports:
+   - port: 6379
+     targetPort: 6379
+     protocol: TCP
+EOF
+
+redis-cli -h redis-svc -p 6379 -a MySuperSecretRedis ping
+redis-cli -h redis-svc -p 6379 ping
+
 I also used bing for testing the dns timeout (just in case google was messing with us ;)
 kubectl exec -ti centos -- /bin/bash
 for i in {1..100}; do curl -s -w "%{time_total}\n" -o /dev/null http://www.google.com/; done
