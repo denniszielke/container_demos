@@ -5,8 +5,9 @@ frontendReplicaCount: 2
 backendReplicaCount: 3
 dependencies:
   useRedis: no
+  usePodRedis: yes
   redisSecret: rediscachesecret
-  useAppInsights: yes
+  useAppInsights: no
   appInsightsSecret: appinsightsecret
   appInsightsSecretValue: dummyValue
   useIngress: no
@@ -24,8 +25,8 @@ service:
   dnsName: calcName
 resources:
   limits:
-    cpu: 100m
-    memory: 256Mi
+    cpu: 300m
+    memory: 350Mi
   requests:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 250m
+    memory: 256Mi

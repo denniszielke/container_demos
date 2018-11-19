@@ -74,7 +74,7 @@ resource "azurerm_subnet" "aksnet" {
   name                      = "aks-5-subnet"
   resource_group_name       = "${azurerm_resource_group.aksrg.name}"
   #network_security_group_id = "${azurerm_network_security_group.aksnsg.id}"
-  address_prefix            = "10.0.5.0/22"
+  address_prefix            = "10.0.5.0/24"
   virtual_network_name      = "${azurerm_virtual_network.kubevnet.name}"
 }
 

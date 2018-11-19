@@ -31,7 +31,6 @@ app.use(express.static(publicDir));
 
 // Routes
 app.get('/ping', function(req, res) {
-    client.trackEvent({ name: 'ping-js-frontend-received' });
     console.log('received ping');
     res.send('Pong');
 });

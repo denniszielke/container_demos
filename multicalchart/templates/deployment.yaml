@@ -28,8 +28,7 @@ spec:
           image: "{{ .Values.image.repository }}/{{ .Values.image.frontendImage }}:{{ .Values.image.frontendTag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: 3000
-              name: http         
+            - containerPort: 3000      
               protocol: TCP
           env: 
             - name: "ENDPOINT"
@@ -46,6 +45,12 @@ spec:
 {{- end }}
             - name: "PORT"
               value: "3000"
+{{- if .Values.dependencies.usePodRedis }}
+            - name: "REDIS_HOST"
+              value: "localhost"
+            - name: "REDIS_AUTH"
+              value: "MySuperSecretRedis"
+{{- else }}
 {{- if .Values.dependencies.useRedis }}
             - name: "REDIS_HOST"
               valueFrom:
@@ -63,6 +68,7 @@ spec:
             - name: "REDIS_AUTH"
               value: ""
 {{- end }}
+{{- end }}
           livenessProbe:
             httpGet:
               path: /ping
@@ -73,6 +79,22 @@ spec:
               port: 3000
           resources:
 {{ toYaml .Values.resources | indent 12 }}
+{{- if .Values.dependencies.usePodRedis }}
+        - name: redis
+          image: redis:4.0.11-alpine
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["redis-server"]
+          args: ["/etc/redis.conf", "--requirepass", "MySuperSecretRedis"]
+          ports:
+            - containerPort: 6379
+          env:
+            - name: "ASDFASDF"
+              value: "localhost"
+            - name: "ASDFASD4"
+              value: "no"
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+{{- end }}
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -104,8 +126,7 @@ spec:
           image: "{{ .Values.image.repository }}/{{ .Values.image.backendImage }}:{{ .Values.image.backendTag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: 3001
-              name: http         
+            - containerPort: 3001    
               protocol: TCP
           env: 
 {{- if .Values.dependencies.useAppInsights }}

@@ -140,7 +140,8 @@ draft create
 
 ```
 helm create multicalc
-APP_NAME=calc-essen
+APP_NS=calculator
+APP_IN=calc1
 ```
 Validate template
 ```
@@ -149,17 +150,17 @@ helm lint ./multicalchart
 
 3. Dry run the chart and override parameters
 ```
-helm install --dry-run --debug ./multicalchart --set frontendReplicaCount=3
+helm install --dry-run --debug ./multicalchart --name=calculator --set frontendReplicaCount=3
 ```
 
 4. Make sure you have the app insights key secret provisioned
 ```
-kubectl create secret generic appinsightsecret --from-literal=appinsightskey=$APPINSIGHTS_KEY --namespace $APP_NAME
+kubectl create secret generic appinsightsecret --from-literal=appinsightskey=$APPINSIGHTS_KEY --namespace $APP_NS
 ```
 
 5. Install
 ```
-helm install multicalchart --name=calcu-essen-neu --set frontendReplicaCount=1 --set backendReplicaCount=1 --set image.frontendTag=latest --set image.backendTag=latest --set useAppInsights=yes --namespace $APP_NAME
+helm install multicalchart --name=$APP_IN --set frontendReplicaCount=1 --set backendReplicaCount=1 --set image.frontendTag=latest --set image.backendTag=latest --namespace $APP_NS
 ```
 
 verify
@@ -169,23 +170,23 @@ helm get values calculator
 
 6. Change config and perform an upgrade
 ```
-helm upgrade --set backendReplicaCount=3 --set frontendReplicaCount=3 calcu-essen-neu multicalchart --namespace $APP_NAME
+helm upgrade --set backendReplicaCount=3 --set frontendReplicaCount=3 $APP_IN multicalchart --namespace $APP_NS
 ```
 
 If you have a redis secret you can turn on the redis cache
 ```
 kubectl create secret generic rediscachesecret --from-literal=redishostkey=$REDIS_HOST --from-literal=redisauthkey=$REDIS_AUTH
 
-helm upgrade --set backendReplicaCount=4 --set frontendReplicaCount=4 --set useAppInsights=yes --set useRedis=yes calculator multicalchart --namespace $APP_NAME
+helm upgrade --set backendReplicaCount=4 --set frontendReplicaCount=4 --set useAppInsights=yes --set useRedis=yes calculator $APP_IN --namespace $APP_NS
 ```
 
 7. See rollout history
 ```
-helm history calculator
-helm rollback calculator 1
+helm history $APP_IN
+helm rollback $APP_IN 1
 ```
 
 6. Cleanup
 ```
-helm delete calculator --purge
+helm delete $APP_IN --purge
 ```

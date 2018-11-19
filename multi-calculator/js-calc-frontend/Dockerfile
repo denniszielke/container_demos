@@ -1,4 +1,4 @@
-FROM node:8.2.0-alpine
+FROM node:8.12.0-alpine
 RUN mkdir -p /usr/src/app
 COPY ./app/* /usr/src/app/
 RUN mkdir -p /usr/src/app/public

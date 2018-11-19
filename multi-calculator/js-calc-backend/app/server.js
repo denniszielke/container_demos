@@ -28,7 +28,6 @@ app.get('/', function(req, res) {
     res.send('Hi!');
 });
 app.get('/ping', function(req, res) {
-    client.trackEvent({ name: 'ping-js-backend-received' });
     console.log('received ping');
     res.send('Pong');
 });
@@ -66,8 +65,8 @@ app.post('/api/calculation', function(req, res) {
         }
         resultValue = [0];
     }
+    var endDate = new Date();
     if (config.instrumentationKey){ 
-        var endDate = new Date();
         var duration = endDate - startDate;
         client.trackEvent({ name: "calculation-js-backend-result"});
         client.trackMetric({ name:"calculation-js-backend-duration", value: duration });
@@ -75,9 +74,12 @@ app.post('/api/calculation', function(req, res) {
     if (req.headers.joker){
         resultValue = "42";
     }
-    var serverResult = JSON.stringify({ timestamp: endDate, value: resultValue, host: OS.hostname() } );
+    var remoteAddress = req.connection.remoteAddress;
+    var serverResult = JSON.stringify({ timestamp: endDate, value: resultValue, host: OS.hostname(), remote: remoteAddress } );
     console.log(serverResult);
-    res.send(serverResult.toString());
+    setTimeout(function() {
+        res.send(serverResult.toString());
+    }, resultValue.length * 500);
 });
 
 app.post('/api/dummy', function(req, res) {
