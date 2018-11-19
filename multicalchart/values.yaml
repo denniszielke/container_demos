@@ -5,7 +5,7 @@ frontendReplicaCount: 2
 backendReplicaCount: 3
 dependencies:
   useRedis: no
-  usePodRedis: yes
+  usePodRedis: no
   redisSecret: rediscachesecret
   useAppInsights: no
   appInsightsSecret: appinsightsecret

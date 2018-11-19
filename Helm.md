@@ -160,7 +160,7 @@ kubectl create secret generic appinsightsecret --from-literal=appinsightskey=$AP
 
 5. Install
 ```
-helm install multicalchart --name=$APP_IN --set frontendReplicaCount=1 --set backendReplicaCount=1 --set image.frontendTag=113 --set image.backendTag=113 --namespace $APP_NS
+helm install multicalchart --name=$APP_IN --set frontendReplicaCount=1 --set backendReplicaCount=1 --set image.frontendTag=118 --set image.backendTag=120 --set usePodRedis=no --namespace $APP_NS
 ```
 
 verify
@@ -171,7 +171,7 @@ helm get values calculator
 6. Change config and perform an upgrade
 ```
 helm upgrade --set backendReplicaCount=3 --set frontendReplicaCount=3 $APP_IN multicalchart --namespace $APP_NS
-helm upgrade --set backendReplicaCount=1 --set frontendReplicaCount=1 --set usePodRedis=no $APP_IN multicalchart --namespace $APP_NS
+helm upgrade --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.frontendTag=118 --set image.backendTag=120 --set dependencies.usePodRedis=yes $APP_IN multicalchart --namespace $APP_NS
 
 ```
 
