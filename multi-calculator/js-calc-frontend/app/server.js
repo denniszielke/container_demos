@@ -51,10 +51,17 @@ app.post('/api/calculation', function(req, res) {
     }
 
     if (config.redisHost && config.redisAuth && redisClient == null) {
-        redisClient = redis.createClient(6379, config.redisHost, {auth_pass: config.redisAuth, tls: {servername: config.redisHost}});
+        try{
+            redisClient = redis.createClient(6379, config.redisHost, {auth_pass: config.redisAuth, password: config.redisAuth});
+        }
+        catch(e){
+            console.log(e);
+            redisClient=null;
+        }
     }
 
     if (redisClient){
+        console.log("calling redis:" + config.redisHost + " with " + config.redisAuth);
         var cachedResult = redisClient.get(req.headers.number, function(err, reply) {
             if (reply && !err){
                 if (config.instrumentationKey){ 
@@ -71,13 +78,6 @@ app.post('/api/calculation', function(req, res) {
                 res.send(reply);            
                 console.log(reply);                
             }else{
-                // if (err){
-                //     console.log("cache error:");
-                //     console.log(err);
-                //     if (config.instrumentationKey){ 
-                //         client.trackException(err);
-                //     }
-                // }
                 console.log("cache miss");
                 var formData = {
                     received: new Date().toLocaleString(), 

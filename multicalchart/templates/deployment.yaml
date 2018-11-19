@@ -71,7 +71,6 @@ spec:
 {{- end }}
           livenessProbe:
             httpGet:
-              host: calcfrontend
               path: /ping
               port: 3000
           readinessProbe:
