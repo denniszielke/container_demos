@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dummy-logger-cluster
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: dummy-logger
+  type: LoadBalancer
+  loadBalancerIP: 10.2.2.55
+  loadBalancerSourceRanges:
+  - 10.0.0.0/8

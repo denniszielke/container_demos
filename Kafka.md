@@ -43,7 +43,7 @@ helm repo add incubator http://storage.googleapis.com/kubernetes-charts-incubato
 
 helm install --name $APP_INSTANCE incubator/kafka --set global.namespace=$APP_NAME --tiller-namespace $APP_NAME --namespace $APP_NAME
 
-  labs helm install --name $APP_INSTANCE incubator/kafka --set global.namespace=$APP_NAME --tiller-namespace $APP_NAME --namespace $APP_NAME
+helm install --name $APP_INSTANCE incubator/kafka --set global.namespace=$APP_NAME --tiller-namespace $APP_NAME --namespace $APP_NAME
 Error: release mykafka failed: poddisruptionbudgets.policy is forbidden: User "system:serviceaccount:kafka:tiller-kafka" cannot create poddisruptionbudgets.policy in the namespace "kafka"
 
 ```

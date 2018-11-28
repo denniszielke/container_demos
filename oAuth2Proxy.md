@@ -4,6 +4,7 @@ https://github.com/helm/charts/tree/master/stable/oauth2-proxy
 Requirements
 - nginx ingress controller deployed with dns
 - trusted ssl certificate (letsencrypt-prod) on your dns
+- use https://github.com/buzzfeed/sso instead of oauthproxy
 
 sample for azure ad
 https://github.com/brbarnett/k8s-aad-auth/tree/master/k8s-manifests

@@ -4,7 +4,7 @@ cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
-  name: centos
+  name: centos1
 spec:
   containers:
   - name: centoss
@@ -15,6 +15,13 @@ spec:
     - sleep
     - "3600"
 EOF
+
+postStart:
+  exec:
+    command:
+    - /bin/sh
+    - -c
+    - "/bin/echo 'options single-request-reopen' >> /etc/resolv.conf"
 
 cat <<EOF | kubectl apply -f -
 apiVersion: apps/v1
@@ -157,6 +164,9 @@ kubectl scale --replicas=3 deployment/azure-vote-back
 
 Using chaoskube who is killing random pods after 2 seconds
 https://github.com/linki/chaoskube
+
+
+cat > asdfas <<  EOF
 
 cat <<EOF | kubectl apply -f -
 apiVersion: v1

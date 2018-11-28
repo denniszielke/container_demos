@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
       - name: jscalcfrontend
-        image: dzkubereg.azurecr.io/calc/js-calc-frontend:redis
+        image: dzkubereg.azurecr.io/calc/js-calc-frontend:latest
         ports:
           - containerPort: 3000
             name: http         
@@ -48,20 +48,8 @@ spec:
               secretKeyRef:
                 name: appinsightsecret
                 key: appinsightskey
-          - name: "REDIS_HOST"
-            valueFrom:
-              secretKeyRef:
-                name: rediscachesecret
-                key: redishostkey
-          - name: "REDIS_AUTH"
-            valueFrom:
-              secretKeyRef:
-                name: rediscachesecret
-                key: redisauthkey
           - name: "PORT"
             value: "3000"
-      imagePullSecrets:
-      - name: kuberegistry
 ---
 apiVersion: v1
 kind: Service
@@ -103,7 +91,7 @@ spec:
     spec:
       containers:
       - name: gocalcbackend
-        image: dzkubereg.azurecr.io/calc/go-calc-backend:redis
+        image: dzkubereg.azurecr.io/calc/go-calc-backend:latest
         ports:
           - containerPort: 3001
             name: http         
@@ -116,5 +104,3 @@ spec:
                 key: appinsightskey
           - name: "PORT"
             value: "3001"
-      imagePullSecrets:
-      - name: kuberegistry

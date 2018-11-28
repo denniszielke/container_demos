@@ -19,6 +19,9 @@ MY_OBJECT_ID=
 YOUR_SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
 ```
 
+wget https://github.com/Azure/acs-engine/releases/download/v0.25.3/acs-engine-v0.25.3-darwin-amd64.tar.gz
+tar -zxvf acs-engine-*-darwin-amd64.tar.gz
+
 # Prepare variables
 
 ```
@@ -28,7 +31,7 @@ sed -e "s/AAD_APP_ID/$AAD_APP_ID/ ; s/AAD_CLIENT_ID/$AAD_CLIENT_ID/ ; s/SERVICE_
 # Prepare acs-engine
 
 ```
-./acs-engine generate acsengvnet_out.json
+./acs-engine generate acseng.json
 ```
 
 # Deploy cluster

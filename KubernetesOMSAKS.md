@@ -74,10 +74,10 @@ spec:
       resources:
         requests:
           memory: "128Mi"
-          cpu: "500m"
+          cpu: "100m"
         limits:
           memory: "256Mi"
-          cpu: "1000m"
+          cpu: "200m"
 ---
 apiVersion: v1
 kind: Service
@@ -86,7 +86,7 @@ metadata:
   namespace: default
   annotations:
     service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "InternalIngressSubnet"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "ing-4-subnet"
 spec:
   ports:
   - port: 80

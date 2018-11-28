@@ -57,10 +57,10 @@ resource "azurerm_subnet" "acinet" {
   virtual_network_name      = "${azurerm_virtual_network.kubevnet.name}"
 }
 resource "azurerm_subnet" "fwnet" {
-  name                      = "fw-3-subnet"
+  name                      = "AzureFirewallSubnet"
   resource_group_name       = "${azurerm_resource_group.aksrg.name}"
   #network_security_group_id = "${azurerm_network_security_group.aksnsg.id}"
-  address_prefix            = "10.0.3.0/24"
+  address_prefix            = "10.0.6.0/24"
   virtual_network_name      = "${azurerm_virtual_network.kubevnet.name}"
 }
 resource "azurerm_subnet" "ingnet" {
@@ -129,7 +129,7 @@ resource "azurerm_kubernetes_cluster" "akstf" {
       service_cidr   = "10.2.0.0/24"
       dns_service_ip = "10.2.0.10"
       docker_bridge_cidr = "172.17.0.1/16"
-      #pod_cidr = ""
+      # pod_cidr = "" selected by subnetid
   }
 
   service_principal {

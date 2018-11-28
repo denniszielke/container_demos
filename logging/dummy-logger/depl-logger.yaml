@@ -1,0 +1,40 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dummy-logger
+spec:
+  replicas: 1 
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1 
+  template:
+    metadata:
+      labels:
+        app: dummy-logger
+    spec:
+      containers:
+      - name: dummy-logger
+        image: denniszielke/dummy-logger:latest  
+        ports:
+        - containerPort: 80
+        imagePullPolicy: Always   
+        livenessProbe:
+          httpGet:
+            path: /ping
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /ping
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"

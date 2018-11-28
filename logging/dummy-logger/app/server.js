@@ -18,11 +18,20 @@ app.get('/', function(req, res) {
 });
 app.get('/ping', function(req, res) {
     console.log('received ping');
-    var forwared = (req.headers['x-forwarded-for'] || '').split(',').pop();
-    var remoteAddress = req.connection.remoteAddress;
-    console.log("forwared: " + forwared);
-    console.log("remote: " + remoteAddress);
-    res.send('Pong');
+    var startDate = new Date();
+    var month = (((startDate.getMonth()+1)<10) ? '0' + (startDate.getMonth()+1) : (startDate.getMonth()+1));
+    var day = (((startDate.getDate())<10) ? '0' + (startDate.getDate()) : (startDate.getDate()));
+    var hour = (((startDate.getHours())<10) ? '0' + (startDate.getHours()) : (startDate.getHours()));
+    var minute = (((startDate.getMinutes())<10) ? '0' + (startDate.getMinutes()) : (startDate.getMinutes()));
+    var seconds = (((startDate.getSeconds())<10) ? '0' + (startDate.getSeconds()) : (startDate.getSeconds()));
+    var logDate = startDate.getFullYear() + "-" +
+        month+  "-" + day + " " + hour + ":" + minute + ":" + seconds; 
+    var sourceIp = (req.headers['x-forwarded-for'] || '').split(',').pop() || 
+        req.connection.remoteAddress;
+    var logObject = { timestamp: logDate, host: OS.hostname(), source: sourceIp, message: "Pong!"};
+    var serverResult = JSON.stringify(logObject );
+    console.log(serverResult.toString());
+    res.send(serverResult.toString());
 });
 
 app.post('/api/log', function(req, res) {

@@ -1,16 +1,21 @@
 # Setting up Firewall + AKS
 https://docs.microsoft.com/en-us/azure/firewall/scripts/sample-create-firewall-test
+https://docs.microsoft.com/en-us/azure/firewall/log-analytics-samples
+https://raw.githubusercontent.com/Azure/azure-docs-json-samples/master/azure-firewall/AzureFirewall.omsview
+
 
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="kubesdemo"
-KUBE_NAME="dzkubeaks"
+KUBE_GROUP="kub_ter_k_s_kubenet"
+KUBE_NAME="kubenet"
 LOCATION="westeurope"
-KUBE_VNET_NAME="kmnet"
-KUBE_AGENT_SUBNET_NAME="aksagents"
-KUBE_FW_SUBNET_NAME="fwnet"
-KUBE_VERSION="1.11.2"
+KUBE_VNET_NAME="kubenet-vnet"
+KUBE_AGENT_SUBNET_NAME="aks-5-subnet"
+KUBE_FW_SUBNET_NAME="AzureFirewallSubnet"
+FW_NAME="dzkubfw"
+FW_IP_NAME="azureFirewalls-ip"
+KUBE_VERSION="1.11.4"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
 AAD_APP_NAME=""
@@ -19,8 +24,7 @@ AAD_APP_SECRET=
 AAD_CLIENT_NAME=
 AAD_CLIENT_ID=
 TENANT_ID=
-FW_NAME="dzfwapi"
-FW_IP_NAME="azureFirewalls-ip"
+
 ```
 
 Select subscription
@@ -39,7 +43,7 @@ FW_ROUTE_NAME=$FW_NAME"_fw_r"
 FW_ROUTE_TABLE_NAME=$FW_NAME"_fw_rt"
 
 FW_PUBLIC_IP=$(az network public-ip show -g $KUBE_GROUP -n $FW_IP_NAME --query ipAddress)
-FW_PRIVATE_IP="10.0.1.4"
+FW_PRIVATE_IP="10.0.6.4"
 
 az network route-table create -g $KUBE_GROUP --name $FW_ROUTE_TABLE_NAME
 
@@ -54,6 +58,7 @@ Add netowrk rule
 
 * TCP - * - * - 22
 * TCP - * - * - 443
+* TCP - * - * - 10250
 
 Add application rule for aks
 ```

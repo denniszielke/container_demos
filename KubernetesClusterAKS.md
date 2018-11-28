@@ -9,7 +9,7 @@ KUBE_NAME="dzkubvmss"
 LOCATION="westeurope"
 REGISTRY_NAME=""
 APPINSIGHTS_KEY=""
-KUBE_VERSION="1.11.2"
+KUBE_VERSION="1.11.4"
 ```
 
 Select subscription
@@ -96,6 +96,7 @@ kubectl --kube-context
 5. Activate the kubernetes dashboard
 ```
 az aks browse --resource-group=$KUBE_GROUP --name=$KUBE_NAME
+http://localhost:8001/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy/#!/login
 ```
 
 6. Get all upgrade versions

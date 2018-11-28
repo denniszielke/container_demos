@@ -55,3 +55,16 @@ brew update && brew install azure-cli
 
 brew upgrade azure-cli
 ```
+
+### install and configure kubectl
+https://kubernetes.io/docs/tasks/tools/install-kubectl/
+
+```
+az aks install-cli 
+brew install kubernetes-cli
+```
+
+Install autocompletion
+```
+kubectl completion -h
+```
