@@ -6,22 +6,15 @@ https://kubernetes.io/docs/tasks/administer-cluster/change-default-storage-class
 
 ### Create storage account
 ```
-KUBE_GROUP=jupyterk
-KUBE_NAME=dzjupyter
+KUBE_GROUP=kub_ter_k_m_jupnorbac5
+KUBE_NAME=jupnorbac5
 LOCATION=westeurope
 STORAGE_ACCOUNT=dzjupyteruserstore
-STORAGE_SHARE_WRITE=dzwrite
 
 az storage account create --resource-group  MC_$(echo $KUBE_GROUP)_$(echo $KUBE_NAME)_$(echo $LOCATION) --name $STORAGE_ACCOUNT --location $LOCATION --sku Standard_LRS --kind StorageV2 --access-tier hot --https-only false
-
-az storage account keys list --account-name $STORAGE_ACCOUNT --resource-group MC_$(echo $KUBE_GROUP)_$(echo $KUBE_NAME)_$(echo $LOCATION)
-
-STORAGE_ACCOUNT_KEY=$(az storage account keys list --account-name $STORAGE_ACCOUNT --resource-group MC_$(echo $KUBE_GROUP)_$(echo $KUBE_NAME)_$(echo $LOCATION) --query [0].value)
-
-az storage share create --name $STORAGE_SHARE_WRITE --account-name $STORAGE_ACCOUNT 
 ```
 
-### Patch storage default class
+### Patch storage default class and create cluster-admin role
 ```
 cat <<EOF | kubectl apply -f -
 kind: StorageClass
@@ -33,6 +26,30 @@ parameters:
   skuName: Standard_LRS
   location: $LOCATION
   storageAccount: $STORAGE_ACCOUNT
+EOF
+
+
+cat <<EOF | kubectl apply -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    rbac.authorization.kubernetes.io/autoupdate: "true"
+  creationTimestamp: null
+  labels:
+    kubernetes.io/bootstrapping: rbac-defaults
+  name: cluster-admin
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- nonResourceURLs:
+  - '*'
+  verbs:
+  - '*'
 EOF
 
 ```
