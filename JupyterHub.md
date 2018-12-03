@@ -68,6 +68,8 @@ singleuser:
   storage:
     dynamic:
       storageClass: azurefile
+rbac:
+   enabled: false
 ```
 
 install jhub
