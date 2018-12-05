@@ -25,13 +25,13 @@ tar -zxvf acs-engine-*-darwin-amd64.tar.gz
 # Prepare variables
 
 ```
-sed -e "s/AAD_APP_ID/$AAD_APP_ID/ ; s/AAD_CLIENT_ID/$AAD_CLIENT_ID/ ; s/SERVICE_PRINCIPAL_ID/$SERVICE_PRINCIPAL_ID/ ; s/SERVICE_PRINCIPAL_SECRET/$SERVICE_PRINCIPAL_SECRET/ ; s/TENANT_ID/$TENANT_ID/ ; s/ADMIN_GROUP_ID/$ADMIN_GROUP_ID/ ; s/SUBSCRIPTION_ID/$SUBSCRIPTION_ID/ ; s/KUBE_GROUP/$KUBE_GROUP/ ; s/GROUP_ID/$GROUP_ID/" acsengvnet-ha.json > acsengvnet_out.json
+sed -e "s/AAD_APP_ID/$AAD_APP_ID/ ; s/AAD_CLIENT_ID/$AAD_CLIENT_ID/ ; s/SERVICE_PRINCIPAL_ID/$SERVICE_PRINCIPAL_ID/ ; s/SERVICE_PRINCIPAL_SECRET/$SERVICE_PRINCIPAL_SECRET/ ; s/TENANT_ID/$TENANT_ID/ ; s/ADMIN_GROUP_ID/$ADMIN_GROUP_ID/ ; s/SUBSCRIPTION_ID/$SUBSCRIPTION_ID/ ; s/KUBE_GROUP/$KUBE_GROUP/ ; s/GROUP_ID/$GROUP_ID/" acseng.json > acseng_out.json
 ```
 
 # Prepare acs-engine
 
 ```
-./acs-engine generate acseng.json
+./acs-engine generate acseng_out.json
 ```
 
 # Deploy cluster
@@ -62,20 +62,20 @@ az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUB
 4. Create cluster
 ```
 az group deployment create \
-    --name dz-vnet-18 \
+    --name dz-vnet-acs \
     --resource-group $KUBE_GROUP \
-    --template-file "_output/dz-vnet-18/azuredeploy.json" \
-    --parameters "_output/dz-vnet-18/azuredeploy.parameters.json"
+    --template-file "_output/dz-vnet-acs/azuredeploy.json" \
+    --parameters "_output/dz-vnet-acs/azuredeploy.parameters.json"
 ```
 
 # Create cluster role binding
 
 ```
-export KUBECONFIG=`pwd`/_output/dz-vnet-18/kubeconfig/kubeconfig.northeurope.json
-export KUBECONFIG=`pwd`/_output/dz-vnet-18/kubeconfig/kubeconfig.westeurope.json
+export KUBECONFIG=`pwd`/_output/dz-vnet-acs/kubeconfig/kubeconfig.northeurope.json
+export KUBECONFIG=`pwd`/_output/dz-vnet-acs/kubeconfig/kubeconfig.westeurope.json
 
 # using rbac aad 
-ssh -i ~/.ssh/id_rsa dennis@dz-vnet-18.northeurope.cloudapp.azure.com \
+ssh -i ~/.ssh/id_rsa dennis@dz-vnet-acs.northeurope.cloudapp.azure.com \
     kubectl create clusterrolebinding aad-default-cluster-admin-binding \
         --clusterrole=cluster-admin \
         --user 'https://sts.windows.net/<tenant-id>/#<user-id>'

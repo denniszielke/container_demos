@@ -3,7 +3,7 @@
     "properties": {
       "orchestratorProfile": {
         "orchestratorType": "Kubernetes",
-        "orchestratorRelease": "1.8",
+        "orchestratorRelease": "1.11",
         "kubernetesConfig": {
           "enableRbac": true
         }
@@ -16,7 +16,7 @@
       },
       "masterProfile": {
         "count": 1,
-        "dnsPrefix": "dz-aad-k8s-18",
+        "dnsPrefix": "dz-vnet-acs",
         "vmSize": "Standard_DS2_v2"
       },
       "agentPoolProfiles": [

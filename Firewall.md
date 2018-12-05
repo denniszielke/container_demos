@@ -7,13 +7,13 @@ https://raw.githubusercontent.com/Azure/azure-docs-json-samples/master/azure-fir
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="kub_ter_k_s_kubenet"
-KUBE_NAME="kubenet"
-LOCATION="westeurope"
-KUBE_VNET_NAME="kubenet-vnet"
+KUBE_GROUP="kub_ter_a_m_speedeply"
+KUBE_NAME="speedeply"
+LOCATION="eastus"
+KUBE_VNET_NAME="speedeply-vnet"
 KUBE_AGENT_SUBNET_NAME="aks-5-subnet"
 KUBE_FW_SUBNET_NAME="AzureFirewallSubnet"
-FW_NAME="dzkubfw"
+FW_NAME="dzfwapi"
 FW_IP_NAME="azureFirewalls-ip"
 KUBE_VERSION="1.11.4"
 SERVICE_PRINCIPAL_ID=

@@ -8,6 +8,7 @@
           "enableRbac": true,
           "networkPolicy": "azure",
           "useManagedIdentity": true,
+          "userAssignedID": "dzacsmsi",
           "addons": [
             {
               "name": "tiller",
@@ -72,7 +73,7 @@
       "agentPoolProfiles": [
         {
           "name": "agentpool1",
-          "count": 3,
+          "count": 4,
           "vmSize": "Standard_D2_v2",
           "storageProfile": "ManagedDisks",
           "availabilityProfile": "VirtualMachineScaleSets",

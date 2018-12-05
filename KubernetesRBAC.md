@@ -26,6 +26,8 @@ az group create --name $KUBE_GROUP --location $LOCATION
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --ssh-key-value ~/.ssh/id_rsa.pub --enable-rbac --aad-server-app-id $AAD_APP_ID --aad-server-app-secret $AAD_APP_SECRET --aad-client-app-id $AAD_CLIENT_ID --aad-tenant-id $TENANT_ID --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --enable-addons http_application_routing
 
 az aks get-credentials --resource-group $KUBE_GROUP --name $KUBE_NAME --admin
+
+kubectl api-versions
 ```
 
 set cluster role binding

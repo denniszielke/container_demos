@@ -7,8 +7,10 @@
         "kubernetesConfig": {
           "enableRbac": true,
           "networkPolicy": "azure",
+          "networkPlugin": "azure",
           "useManagedIdentity": true,
           "userAssignedID": "dzacsmsi",
+          "loadBalancerSku": "Standard",
           "addons": [
             {
               "name": "tiller",

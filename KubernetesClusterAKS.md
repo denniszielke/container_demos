@@ -9,7 +9,7 @@ KUBE_NAME="dzkubvmss"
 LOCATION="westeurope"
 REGISTRY_NAME=""
 APPINSIGHTS_KEY=""
-KUBE_VERSION="1.11.4"
+KUBE_VERSION="1.11.5"
 ```
 
 Select subscription

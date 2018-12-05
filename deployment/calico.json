@@ -10,7 +10,7 @@
       },
       "masterProfile": {
         "count": 1,
-        "dnsPrefix": "dz-vnet-18",
+        "dnsPrefix": "dz-vnet-acs",
         "vmSize": "Standard_D2_v2",
         "vnetSubnetId": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/KVNET/subnets/KVMASTERS",
         "firstConsecutiveStaticIP": "172.16.0.4",

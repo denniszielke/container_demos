@@ -53,6 +53,7 @@ https://kubeapps.com/
 ```
 kubectl create serviceaccount tiller --namespace kube-system
 kubectl create clusterrolebinding tiller --clusterrole=cluster-admin --serviceaccount=kube-system:tiller --namespace kube-system
+helm init --service-account tiller --upgrade
 ```
 
 or via yaml
