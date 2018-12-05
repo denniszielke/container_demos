@@ -89,6 +89,7 @@ EOF
 
 ### create cloud provider azure files role
 
+
 ```
 cat <<EOF | kubectl apply -f -
 apiVersion: rbac.authorization.k8s.io/v1
@@ -127,6 +128,8 @@ singleuser:
   storage:
     dynamic:
       storageClass: azurefile
+rbac:
+   enabled: false
 ```
 
 install jhub
