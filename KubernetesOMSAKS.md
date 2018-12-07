@@ -136,6 +136,7 @@ on ContainerID
 | render table
 ```
 
+```
 let startDateTime = datetime('2018-10-22T06:15:00.000Z');
 let endDateTime = datetime('2018-10-22T12:26:21.322Z');
 let ContainerIdList = KubePodInventory              
@@ -149,8 +150,9 @@ ContainerLog
 | project LogEntrySource, LogEntry, TimeGenerated, Computer, Image, Name, ContainerID            
 | order by TimeGenerated desc            
 | render table
+```
 
-
+```
 let startTimestamp = ago(1d);
 KubePodInventory
     | where TimeGenerated > startTimestamp
@@ -175,15 +177,12 @@ Perf
 | where ObjectName == "Container" and CounterName == "% Processor Time"
 | where InstanceName contains "buggy-app" 
 | summarize AvgCPUPercent = avg(CounterValue) by bin(TimeGenerated, 30m), InstanceName
-
+```
 You will see raw data from your log output
 
 4. Create a custom log format
 https://docs.microsoft.com/en-us/azure/log-analytics/log-analytics-data-sources-custom-logs 
 Goto Log Analytics -> Data -> Custom Logs
-
-Upload this file:
-
 
 
 Cleanup
@@ -349,9 +348,9 @@ kind: Service
 metadata:
   name: crashing-app
   namespace: default
-  annotations:
-    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "InternalIngressSubnet"
+#  annotations:
+#    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+#    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "InternalIngressSubnet"
 spec:
   ports:
   - port: 80
@@ -371,7 +370,30 @@ ContainerInventory
 | summarize AggregatedValue = dcount(ContainerID) by Computer, Image, ContainerState
 ```
 
+```
 ContainerInventory | where Image contains "buggy-app" and CreatedTime > ago(10m) and ContainerState == "Failed"
+```
+
+## Crash or leak app
+
+the app has a route called crash - it you call it the app will crash
+/crash 
+
+the app has a route called leak - if you call it it will leak memory
+/leak
+
+```
+LOGGER_IP=
+LOGGER_IP=
+LEAKER_IP=
+CRASHER_IP=
+
+curl -H "message: hi" -X POST http://$LOGGER_IP/api/log
+
+curl -X GET http://$CRASHER_IP/crash
+
+curl -X GET http://$LEAKER_IP/leak
+```
 
 ## Log nginx http errors
 
