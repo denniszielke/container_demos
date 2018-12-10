@@ -45,8 +45,8 @@ export KUBECONFIG=`pwd`/_output/$KUBE_NAME/kubeconfig/kubeconfig.northeurope.jso
 
 check nodes
 ```
-kubectl get node -l beta.kubernetes.io/os=windows
-kubectl get node -l beta.kubernetes.io/os=linux
+kubectl get node -l beta.kubernetes.io/os=windows -o wide
+kubectl get node -l beta.kubernetes.io/os=linux -o wide
 ```
 
 if you see the following error message

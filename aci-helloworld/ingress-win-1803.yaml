@@ -7,7 +7,14 @@ metadata:
   namespace: default
 spec:
   rules:
-    - host: dzwin18.northeurope.cloudapp.azure.com
+    - host: dzwin1803.northeurope.cloudapp.azure.com
+      http:
+        paths:
+          - backend:
+              serviceName: iis
+              servicePort: 80
+            path: /
+    - host: dzwin1809.northeurope.cloudapp.azure.com
       http:
         paths:
           - backend:
