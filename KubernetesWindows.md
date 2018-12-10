@@ -74,12 +74,12 @@ helm install --name nginx-ingress \
 
 create hello world app
 ```
-kubectl apply -f https://github.com/denniszielke/container_demos/blob/master/aci-helloworld/iis-win-1803.yaml
+kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/aci-helloworld/iis-win-1803.yaml
 ```
 
 create ingress
 ```
-kubectl apply -f https://github.com/denniszielke/container_demos/blob/master/aci-helloworld/ingress-win-1803.yaml
+kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/aci-helloworld/ingress-win-1803.yaml
 ```
 
 ## Additional

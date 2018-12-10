@@ -7,7 +7,7 @@ metadata:
   namespace: default
 spec:
   rules:
-    - host: test.ogfg.link
+    - host: dzwin18.northeurope.cloudapp.azure.com
       http:
         paths:
           - backend:
