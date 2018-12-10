@@ -73,6 +73,8 @@ az group deployment create \
 ```
 export KUBECONFIG=`pwd`/_output/dz-vnet-acs/kubeconfig/kubeconfig.northeurope.json
 export KUBECONFIG=`pwd`/_output/dz-vnet-acs/kubeconfig/kubeconfig.westeurope.json
+export KUBECONFIG=`pwd`/_output/dz-win-1803/kubeconfig/kubeconfig.northeurope.json
+export KUBECONFIG=`pwd`/_output/dz-win-1809/kubeconfig/kubeconfig.northeurope.json
 
 # using rbac aad 
 ssh -i ~/.ssh/id_rsa dennis@dz-vnet-acs.northeurope.cloudapp.azure.com \

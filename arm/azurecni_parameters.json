@@ -1,0 +1,63 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "resourceName": {
+            "value": "KUBE_NAME"
+        },
+        "location": {
+            "value": "LOCATION"
+        },
+        "dnsPrefix": {
+            "value": "KUBE_NAME"
+        },
+        "agentCount": {
+            "value": 2
+        },
+        "agentVMSize": {
+            "value": "Standard_B2s"
+        },
+        "servicePrincipalClientId": {
+            "value": "SERVICE_PRINCIPAL_ID"
+        },
+        "servicePrincipalClientSecret": {
+            "value": "SERVICE_PRINCIPAL_SECRET"
+        },
+        "kubernetesVersion": {
+            "value": "KUBE_VERSION"
+        },
+        "workspaceName": {
+            "value": "DefaultWorkspace-SUBSCRIPTION_ID-WEU"
+        },
+        "omsWorkspaceId": {
+            "value": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/DefaultResourceGroup-WEU/providers/Microsoft.OperationalInsights/workspaces/DefaultWorkspace-SUBSCRIPTION_ID-WEU"
+        },
+        "workspaceRegion": {
+            "value": "LOCATION"
+        },
+        "enableHttpApplicationRouting": {
+            "value": false
+        },
+        "networkPlugin": {
+            "value": "azure"
+        },
+        "enableRBAC": {
+            "value": false
+        },
+        "vnetSubnetID": {
+            "value": "KUBE_AGENT_SUBNET_ID"
+        },
+        "serviceCidr": {
+            "value": "10.2.0.0/24"
+        },
+        "dnsServiceIP": {
+            "value": "10.2.0.10"
+        },
+        "dockerBridgeCidr": {
+            "value": "172.17.0.1/16"
+        },
+	    "maxPods": {
+            "value": 15
+        }
+    }
+}

@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  name: iis-ingress
+  namespace: default
+spec:
+  rules:
+    - host: test.ogfg.link
+      http:
+        paths:
+          - backend:
+              serviceName: iis
+              servicePort: 80
+            path: /

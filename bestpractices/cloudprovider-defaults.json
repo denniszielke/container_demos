@@ -1,0 +1,55 @@
+{
+    "cniVersion":"0.3.0",
+    "name":"azure",
+    "plugins":[
+       {
+          "type":"azure-vnet",
+          "mode":"bridge",
+          "bridge":"azure0",
+          "ipam":{
+             "type":"azure-vnet-ipam"
+          }
+       },
+       {
+          "type":"portmap",
+          "capabilities":{
+             "portMappings":true
+          },
+          "snat":true
+       }
+    ]
+ }
+ 
+ {
+     "cloud":"AzurePublicCloud",
+     "tenantId": "",
+     "subscriptionId": "",
+     "aadClientId": "",
+     "aadClientSecret": "",
+     "resourceGroup": "MC_*_westeurope",
+     "location": "westeurope",
+     "vmType": "standard",
+     "subnetName": "aks-5-subnet",
+     "securityGroupName": "aks-agentpool-x-nsg",
+     "vnetName": "x-vnet",
+     "vnetResourceGroup": "kub_x",
+     "routeTableName": "aks-agentpool-x-routetable",
+     "primaryAvailabilitySetName": "default-availabilitySet-x",
+     "primaryScaleSetName": "",
+     "cloudProviderBackoff": true,
+     "cloudProviderBackoffRetries": 6,
+     "cloudProviderBackoffExponent": 1.5,
+     "cloudProviderBackoffDuration": 5,
+     "cloudProviderBackoffJitter": 1,
+     "cloudProviderRatelimit": true,
+     "cloudProviderRateLimitQPS": 3,
+     "cloudProviderRateLimitBucket": 10,
+     "useManagedIdentityExtension": false,
+     "userAssignedIdentityID": "",
+     "useInstanceMetadata": true,
+     "loadBalancerSku": "Basic",
+     "excludeMasterFromStandardLB": false,
+     "providerVaultName": "",
+     "providerKeyName": "k8s",
+     "providerKeyVersion": ""
+ }

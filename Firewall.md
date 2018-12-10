@@ -58,7 +58,6 @@ Add netowrk rule
 
 * TCP - * - * - 22
 * TCP - * - * - 443
-* TCP - * - * - 10250
 
 Add application rule for aks
 ```

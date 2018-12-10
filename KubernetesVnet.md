@@ -11,7 +11,7 @@ LOCATION="westeurope"
 KUBE_VNET_NAME="knets"
 KUBE_GW_SUBNET_NAME="gw-1-subnet"
 KUBE_ACI_SUBNET_NAME="aci-2-subnet"
-KUBE_FW_SUBNET_NAME="fw-3-subnet"
+KUBE_FW_SUBNET_NAME="AzureFirewallSubnet"
 KUBE_ING_SUBNET_NAME="ing-4-subnet"
 KUBE_AGENT_SUBNET_NAME="aks-5-subnet"
 KUBE_VERSION="1.11.5"
@@ -54,12 +54,14 @@ az role assignment create --role "Contributor" --assignee $SERVICE_PRINCIPAL_ID 
 Create dns zone
 ```
 az network dns zone create -g $KUBE_GROUP  -n runningcode.local  --zone-type Private --registration-vnets $KUBE_VNET_NAME
-```
+
 KUBE_GW_SUBNET_NAME="gw-1-subnet"
 KUBE_ACI_SUBNET_NAME="aci-2-subnet"
-KUBE_FW_SUBNET_NAME="fw-3-subnet"
+KUBE_FW_SUBNET_NAME="AzureFirewallSubnet"
 KUBE_ING_SUBNET_NAME="ing-4-subnet"
 KUBE_AGENT_SUBNET_NAME="aks-5-subnet"
+```
+
 3. Create Subnets
 Register azure firewall https://docs.microsoft.com/en-us/azure/firewall/public-preview
 
@@ -104,6 +106,18 @@ az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --s
 
 --node-vm-size "Standard_B2s"
 --node-vm-size "Standard_D2s_v3"
+
+create cluster via arm
+```
+
+sed -e "s/KUBE_NAME/$KUBE_NAME/ ; s/LOCATION/$LOCATION/ ; s/SERVICE_PRINCIPAL_ID/$SERVICE_PRINCIPAL_ID/ ; s/SERVICE_PRINCIPAL_SECRET/$SERVICE_PRINCIPAL_SECRET/ ; s/KUBE_VERSION/$KUBE_VERSION/ ; s/SUBSCRIPTION_ID/$SUBSCRIPTION_ID/ ; s/KUBE_GROUP/$KUBE_GROUP/ ; s/GROUP_ID/$GROUP_ID/" acsengvnet-ha.json > acsengvnet_out.json
+
+az group deployment create \
+    --name dz-vnet-acs \
+    --resource-group $KUBE_GROUP \
+    --template-file "arm/azurecni_template.json" \
+    --parameters "arm/azurecni_parameters.json"
+```
 
 5. Export the kubectrl credentials files
 ```
