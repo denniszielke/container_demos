@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tm
+  labels:
+    app: tm
+    city: amsterdam
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: tm
+      labels:
+        app: tm
+    spec:
+      containers:
+      - name: tm
+        image: tmobiledemo.azurecr.io/publicportal:publicportal-1709
+        ports:
+          - containerPort: 80
+            name: port80
+          - containerPort: 443
+            name: port443
+          - containerPort: 1433
+            name: port1433
+        volumeMounts:
+        - name: www-content
+          mountPath: C:/www.t-mobile.nl
+        - name: www-configuration
+          mountPath: C:/configuration
+        - name: publicweb-content
+          mountPath: C:/PublicWeb
+      volumes:
+      - name: www-content
+        azureFile:
+          secretName: azure-secret
+          shareName: www-content
+          readOnly: true
+      - name: www-configuration
+        azureFile:
+          secretName: azure-secret
+          shareName: www-configuration
+          readOnly: true
+      - name: publicweb-content
+        azureFile:
+          secretName: azure-secret
+          shareName: publicweb-content
+          readOnly: true
+      nodeSelector:
+        "beta.kubernetes.io/os": windows
+      imagePullSecrets:
+        - name: mobileregistry
+  selector:
+    matchLabels:
+      app: tm
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tm
+spec:
+  type: LoadBalancer
+  ports:
+  - protocol: TCP
+    port: 80
+    name: port80
+  - protocol: TCP
+    port: 443
+    name: port443
+  selector:
+    app: tm

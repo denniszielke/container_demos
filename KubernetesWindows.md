@@ -14,9 +14,9 @@ https://github.com/Azure/acs-engine/blob/master/docs/kubernetes/windows-details.
 
 set variables
 ```
-KUBE_GROUP="dz-win-1803"
-KUBE_NAME="dz-win-1803"
-LOCATION="northeurope"
+KUBE_GROUP="dz-win-1709-L"
+KUBE_NAME="dz-win-1709-L"
+LOCATION="westeurope"
 ```
 
 create resource group
@@ -24,9 +24,9 @@ create resource group
 az group create -n $KUBE_GROUP -l $LOCATION
 ```
 
-create arm template
+create arm template by using the acs-engine json
 ```
-./acs-engine generate acseng-1803.json 
+./acs-engine generate acseng-1709-L.json 
 ```
 
 deploy arm template
@@ -40,7 +40,7 @@ az group deployment create \
 
 set the kubeconfig
 ```
-export KUBECONFIG=`pwd`/_output/$KUBE_NAME/kubeconfig/kubeconfig.northeurope.json
+export KUBECONFIG=`pwd`/_output/$KUBE_NAME/kubeconfig/kubeconfig.westeurope.json
 ```
 
 check nodes
@@ -49,12 +49,49 @@ kubectl get node -l beta.kubernetes.io/os=windows -o wide
 kubectl get node -l beta.kubernetes.io/os=linux -o wide
 ```
 
+
+open the dashboard by opening http://localhost:8081/ui
+```
+kubectl proxy
+```
+
 if you see the following error message
 error: unable to forward port because pod is not running. Current status=Pending
 create a binding for the dashboard account
 ```
 kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=kube-system:kubernetes-dashboard
 ```
+
+create container registry authentication secret
+
+```
+REGISTRY_URL=
+REGISTRY_NAME=
+REGISTRY_PASSWORD=
+kubectl create secret docker-registry mobileregistry --docker-server $REGISTRY_URL --docker-username $REGISTRY_NAME --docker-password $REGISTRY_PASSWORD --docker-email 'example@example.com'
+```
+
+## Creating storage for the file share
+https://github.com/andyzhangx/demo/tree/master/windows
+
+AKS_STORAGE_ACCOUNT_NAME=
+AKS_STORAGE_RESOURCE_GROUP=
+AKS_STORAGE_KEY=
+LOCATION=westeurope
+
+create storage account
+
+az storage account create --resource-group $AKS_STORAGE_RESOURCE_GROUP --name $AKS_STORAGE_ACCOUNT_NAME --location $LOCATION --sku Standard_LRS
+
+AKS_STORAGE_KEY=$(az storage account keys list --account-name $AKS_STORAGE_ACCOUNT_NAME --resource-group $AKS_STORAGE_RESOURCE_GROUP --query "[0].value")
+
+az storage share create -n www-content --quota 10 --account-name $AKS_STORAGE_ACCOUNT_NAME --account-key $AKS_STORAGE_KEY
+
+az storage share create -n www-configuration --quota 10 --account-name $AKS_STORAGE_ACCOUNT_NAME --account-key $AKS_STORAGE_KEY
+
+az storage share create -n publicweb-content --quota 10 --account-name $AKS_STORAGE_ACCOUNT_NAME --account-key $AKS_STORAGE_KEY
+
+kubectl create secret generic azure-secret --from-literal=azurestorageaccountname=$AKS_STORAGE_ACCOUNT_NAME --from-literal=azurestorageaccountkey=$AKS_STORAGE_KEY
 
 
 ## Setting up ingress in a mixed cluster

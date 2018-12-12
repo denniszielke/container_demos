@@ -4,8 +4,9 @@ metadata:
   name: iis-1803
   labels:
     app: iis-1803
+    city: amsterdam
 spec:
-  replicas: 1
+  replicas: 2
   template:
     metadata:
       name: iis-1803
