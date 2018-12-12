@@ -9,6 +9,15 @@ https://github.com/Azure/acs-engine/blob/master/docs/kubernetes/windows.md#suppo
 customizing windows deployments:
 https://github.com/Azure/acs-engine/blob/master/docs/kubernetes/windows-details.md#customizing-windows-deployments
 
+## Get acs-engine
+
+Download latest release from https://github.com/Azure/acs-engine/releases/tag/v0.26.2
+
+```
+wget https://github.com/Azure/acs-engine/releases/download/v0.26.2/acs-engine-v0.26.2-darwin-amd64.tar.gz
+tar -zxvf acs-engine-v0.26.2-darwin-amd64.tar.gz
+cd acs-engine-v0.26.2-darwin-amd64
+```
 
 ## create mixed cluster
 
@@ -23,6 +32,13 @@ create resource group
 ```
 az group create -n $KUBE_GROUP -l $LOCATION
 ```
+
+get one of the sample templates from https://github.com/Azure/acs-engine/tree/master/examples/windows 
+or use these ones 
+https://github.com/denniszielke/container_demos/blob/master/aks-engine/acsengvnet-win-1809.json
+https://github.com/denniszielke/container_demos/blob/master/aks-engine/acsengvnet-win-1803.json
+
+make sure to set the variables for `SERVICE_PRINCIPAL_ID`, `SERVICE_PRINCIPAL_SECRET` and `YOUR_SSH_KEY` with your own values
 
 create arm template by using the acs-engine json
 ```
