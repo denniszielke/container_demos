@@ -73,12 +73,14 @@ kubectl delete ns jhub
 https://zero-to-jupyterhub.readthedocs.io/en/stable/reference.html#helm-chart-configuration-reference
 https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/master/jupyterhub/templates/hub/pvc.yaml
 
+az storage account create --resource-group  acskubevnet --name $STORAGE_ACCOUNT --location $LOCATION --sku Standard_LRS --kind StorageV2 --access-tier hot --https-only false
+
 ```
 cat <<EOF | kubectl apply -f -
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
-  name: azurefile
+  name: azurefile2
 provisioner: kubernetes.io/azure-file
 parameters:
   skuName: Standard_LRS
@@ -127,9 +129,7 @@ proxy:
 singleuser:
   storage:
     dynamic:
-      storageClass: azurefile
-rbac:
-   enabled: false
+      storageClass: azurefile2
 ```
 
 install jhub

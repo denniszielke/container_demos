@@ -51,7 +51,7 @@ az group create -n $KUBE_GROUP -l $LOCATION
 az group deployment create \
     --name dz-acs \
     --resource-group $KUBE_GROUP \
-    --template-file "_output/dz-acs18/azuredeploy.json" \
+    --template-file "_output/dz-acs/azuredeploy.json" \
     --parameters "_output/dz-acs/azuredeploy.parameters.json"
 ```
 
