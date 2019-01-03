@@ -1,5 +1,5 @@
 
-
+```
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Pod
@@ -76,6 +76,8 @@ kubectl exec -ti centos -- /bin/bash
 0.101
 5.602
 0.110
+
+for i in `seq 1 1000`;do time nslookup kubernetes.default; done
 
 We are still getting customer feedback that are complaining about dns timeouts after applying the kernel patch. However what is different that the timeouts are no longer visible in empty clusters - therefore here a set of things I have done to get some load.
 
@@ -221,3 +223,4 @@ done
 183 slow: 10.517 22:09:27
 [root@centos /]# while true ; do   res=$( { curl -o /dev/null -s -w %{time_namelookup}\\n  http://www.bing.com; } 2>&1 );   var=$((var+1));   now=$(date +"%T");   if [[ $res =~ ^[1-9] ]]; then     now=$(date +"%T");     echo "$var slow: $res $now";     break;   fi; done
 204 slow: 10.519 22:10:28
+```
