@@ -9,22 +9,6 @@
           "networkPolicy": "azure",
           "addons": [
             {
-              "name": "tiller",
-              "enabled": true,
-              "config": {
-                "max-history": "10"
-              },
-              "containers": [
-                {
-                  "name": "tiller",
-                  "cpuRequests": "1",
-                  "memoryRequests": "1Gi",
-                  "cpuLimits": "1",
-                  "memoryLimits": "1Gi"
-                }
-              ]
-            },
-            {
               "name": "kubernetes-dashboard",
               "enabled": true,
               "containers": [

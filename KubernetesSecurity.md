@@ -3,27 +3,31 @@ https://github.com/kubernetes/dashboard/wiki/Creating-sample-user
 
 create user
 ```
+cat <<EOF | kubectl create -f -
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: edit-user
+  name: admin-user
   namespace: kube-system
+EOF
 ```
 
 create cluster role binding
 ```
+cat <<EOF | kubectl create -f -
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-  name: edit-user
+  name: admin-user
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: admin
 subjects:
 - kind: ServiceAccount
-  name: edit-user
+  name: admin-user
   namespace: kube-system
+EOF
 ```
 
 after 1.8

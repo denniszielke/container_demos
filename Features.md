@@ -3,6 +3,8 @@
 Get AKS features
 ```
 az feature list --namespace Microsoft.ContainerService 
+
+az feature list --namespace  Microsoft.DocumentDB 
 ```
 
 Register a feature and reregister the provider

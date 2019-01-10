@@ -3,7 +3,7 @@
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="acskubevnet"
+KUBE_GROUP="akskube"
 KUBE_NAME="dzkubenet"
 LOCATION="westeurope"
 SERVICE_PRINCIPAL_ID=
@@ -16,9 +16,9 @@ YOUR_SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
 Download latest release from https://github.com/Azure/acs-engine/releases/tag/v0.26.2
 
 ```
-wget https://github.com/Azure/acs-engine/releases/download/v0.26.2/acs-engine-v0.26.2-darwin-amd64.tar.gz
-tar -zxvf acs-engine-v0.26.2-darwin-amd64.tar.gz
-cd acs-engine-v0.26.2-darwin-amd64
+wget https://github.com/Azure/aks-engine/releases/download/v0.28.1/aks-engine-v0.28.1-darwin-amd64.tar.gz
+tar -zxvf aks-engine-v0.28.1-darwin-amd64.tar.gz
+cd aks-engine-v0.28.1-darwin-amd64
 ```
 
 # Prepare variables
@@ -33,10 +33,10 @@ sed -e "s/SERVICE_PRINCIPAL_ID/$SERVICE_PRINCIPAL_ID/ ; s/SERVICE_PRINCIPAL_SECR
 
 2. Replace YOUR_SSH_KEY with your ssh key
 
-# Generate acs-engine
+# Generate aks-engine
 
 ```
-./acs-engine generate acseng_out.json
+./aks-engine generate akseng_out.json
 ```
 
 # Deploy cluster
@@ -49,16 +49,16 @@ az group create -n $KUBE_GROUP -l $LOCATION
 2. Create cluster
 ```
 az group deployment create \
-    --name dz-acs \
+    --name dz-aks-eng \
     --resource-group $KUBE_GROUP \
-    --template-file "_output/dz-acs/azuredeploy.json" \
-    --parameters "_output/dz-acs/azuredeploy.parameters.json"
+    --template-file "_output/dz-aks-eng/azuredeploy.json" \
+    --parameters "_output/dz-aks-eng/azuredeploy.parameters.json"
 ```
 
 # Create cluster role binding
 
 ```
-export KUBECONFIG=`pwd`/_output/dz-acs/kubeconfig/kubeconfig.westeurope.json
+export KUBECONFIG=`pwd`/_output/dz-aks-eng/kubeconfig/kubeconfig.westeurope.json
 ```
 
 # Delete everything

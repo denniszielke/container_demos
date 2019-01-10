@@ -90,13 +90,15 @@ kubectl create secret docker-registry mobileregistry --docker-server $REGISTRY_U
 ## Creating storage for the file share
 https://github.com/andyzhangx/demo/tree/master/windows
 
+```
 AKS_STORAGE_ACCOUNT_NAME=
 AKS_STORAGE_RESOURCE_GROUP=
 AKS_STORAGE_KEY=
 LOCATION=westeurope
+````
 
 create storage account
-
+```
 az storage account create --resource-group $AKS_STORAGE_RESOURCE_GROUP --name $AKS_STORAGE_ACCOUNT_NAME --location $LOCATION --sku Standard_LRS
 
 AKS_STORAGE_KEY=$(az storage account keys list --account-name $AKS_STORAGE_ACCOUNT_NAME --resource-group $AKS_STORAGE_RESOURCE_GROUP --query "[0].value")
@@ -108,7 +110,7 @@ az storage share create -n www-configuration --quota 10 --account-name $AKS_STOR
 az storage share create -n publicweb-content --quota 10 --account-name $AKS_STORAGE_ACCOUNT_NAME --account-key $AKS_STORAGE_KEY
 
 kubectl create secret generic azure-secret --from-literal=azurestorageaccountname=$AKS_STORAGE_ACCOUNT_NAME --from-literal=azurestorageaccountkey=$AKS_STORAGE_KEY
-
+```
 
 ## Setting up ingress in a mixed cluster
 https://github.com/Azure/acs-engine/blob/master/docs/kubernetes/mixed-cluster-ingress.md

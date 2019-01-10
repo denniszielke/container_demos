@@ -1,21 +1,37 @@
-# Installing JupyterHub on azure files
+# Installing JupyterHub in AKS
 
-## Create azure files default storage class
-https://kubernetes.io/docs/tasks/administer-cluster/change-default-storage-class/
-https://zero-to-jupyterhub.readthedocs.io/en/stable/setup-jupyterhub.html
+## create postgres db
+
+create postgres db
+```
+KUBE_GROUP=juphub
+KUBE_NAME=juphub
+LOCATION=westeurope
+STORAGE_ACCOUNT=dzjupyteruser
+PSQL_PASSWORD=$(openssl rand -base64 10)
+
+az postgres server create --resource-group $KUBE_GROUP --name $KUBE_NAME  --location $LOCATION --admin-user myadmin --admin-password $PSQL_PASSWORD --sku-name GP_Gen4_2 --version 9.6
+```
+
+lock up details
+```
+az postgres server show --resource-group $KUBE_GROUP --name $KUBE_NAME
+```
+
+connect to psql using shell.azure.com and create database for jupyterhub
+```
+psql --host=$KUBE_NAME.postgres.database.azure.com --username=myadmin@$KUBE_NAME --dbname=postgres --port=5432
+
+CREATE DATABASE jupyterhub;
+```
+
+## create storage account
 
 ```
-KUBE_GROUP=juprbac5
-KUBE_NAME=juprbac5
-LOCATION=westeurope
-STORAGE_ACCOUNT=dzjupyteruserrbac
-
 az storage account create --resource-group  MC_$(echo $KUBE_GROUP)_$(echo $KUBE_NAME)_$(echo $LOCATION) --name $STORAGE_ACCOUNT --location $LOCATION --sku Standard_LRS --kind StorageV2 --access-tier hot --https-only false
 ```
 
-## cluster without rbac
-
-### Patch storage default class and create cluster-admin role
+Patch storage default class and create cluster-admin role
 ```
 cat <<EOF | kubectl apply -f -
 kind: StorageClass
@@ -23,6 +39,11 @@ apiVersion: storage.k8s.io/v1
 metadata:
   name: azurefile
 provisioner: kubernetes.io/azure-file
+mountOptions:
+  - dir_mode=0777
+  - file_mode=0777
+  - uid=1000
+  - gid=1000
 parameters:
   skuName: Standard_LRS
   location: $LOCATION
@@ -30,8 +51,8 @@ parameters:
 EOF
 ```
 
+## deploy jupyterhub without RBAC
 
-### deploy jupyterhub
 ```
 openssl rand -hex 32
 ```
@@ -40,6 +61,12 @@ create config.yaml with content
 ```
 proxy:
   secretToken: "774629f880afc0302830c19a9f09be4f59e98b242b65983cea7560e828df2978"
+hub:
+  uid: 1000
+  cookieSecret: "774629f880afc0302830c19a9f09be4f59e98b242b65983cea7560e828df2978"
+  db:
+    type: postgres
+    url: postgres+psycopg2://myadmin@$KUBE_NAME:$PSQL_PASSWORD@$KUBE_NAME.postgres.database.azure.com:5432/jupyterhub
 singleuser:
   storage:
     dynamic:
@@ -69,28 +96,25 @@ helm delete jhub --purge
 kubectl delete ns jhub
 ```
 
-## cluster with rbac
-https://zero-to-jupyterhub.readthedocs.io/en/stable/reference.html#helm-chart-configuration-reference
-https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/master/jupyterhub/templates/hub/pvc.yaml
+## deploy jupyterhub in cluster with rbac
 
-az storage account create --resource-group  acskubevnet --name $STORAGE_ACCOUNT --location $LOCATION --sku Standard_LRS --kind StorageV2 --access-tier hot --https-only false
+create cloud provider azure files role
 
 ```
 cat <<EOF | kubectl apply -f -
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
+apiVersion: v1
+kind: PersistentVolumeClaim
 metadata:
-  name: azurefile2
-provisioner: kubernetes.io/azure-file
-parameters:
-  skuName: Standard_LRS
-  location: $LOCATION
-  storageAccount: $STORAGE_ACCOUNT
+  name: azurefilestore
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: azurefile
+  resources:
+    requests:
+      storage: 5Gi
 EOF
 ```
-
-### create cloud provider azure files role
-
 
 ```
 cat <<EOF | kubectl apply -f -
@@ -118,18 +142,26 @@ subjects:
 EOF
 ```
 
-### deploy jupyterhub
 ```
 openssl rand -hex 32
 ```
+
 create config.yaml with content
 ```
 proxy:
   secretToken: "774629f880afc0302830c19a9f09be4f59e98b242b65983cea7560e828df2978"
+hub:
+  uid: 1000
+  cookieSecret: "774629f880afc0302830c19a9f09be4f59e98b242b65983cea7560e828df2978"
+  db:
+    type: postgres
+    url: postgres+psycopg2://myadmin@$KUBE_NAME:$PSQL_PASSWORD@$KUBE_NAME.postgres.database.azure.com:5432/jupyterhub
 singleuser:
   storage:
     dynamic:
-      storageClass: azurefile2
+      storageClass: azurefile
+rbac:
+   enabled: true
 ```
 
 install jhub
