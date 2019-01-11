@@ -130,20 +130,18 @@ az network firewall create --name $FW_NAME --resource-group $KUBE_GROUP --locati
 6. Create UDR
 ```
 FW_ROUTE_NAME="${FW_NAME}_fw_r"
-FW_ROUTE_TABLE_NAME="{$FW_NAME}_fw_rt"
+FW_ROUTE_TABLE_NAME="${FW_NAME}_fw_rt"
 
 FW_PUBLIC_IP=$(az network public-ip show -g $KUBE_GROUP -n $FW_IP_NAME --query ipAddress)
 FW_PRIVATE_IP="10.0.3.4"
 
-AKS_MC_RG=$(az group list --query "[?starts_with(name, 'MC_${KUBE_GROUP}')].name | [0]" --output tsv)
-
 az network route-table create -g $KUBE_GROUP --name $FW_ROUTE_TABLE_NAME
 
-az network vnet subnet update --resource-group $KUBE_GROUP --route-table $ROUTE_TABLE_ID --ids $KUBE_AGENT_SUBNET_ID
+az network vnet subnet update --resource-group $KUBE_GROUP --route-table $FW_ROUTE_TABLE_NAME --ids $KUBE_AGENT_SUBNET_ID
 
 az network route-table route create --resource-group $KUBE_GROUP --name $FW_ROUTE_NAME --route-table-name $FW_ROUTE_TABLE_NAME --address-prefix 0.0.0.0/0 --next-hop-type VirtualAppliance --next-hop-ip-address $FW_PRIVATE_IP --subscription $SUBSCRIPTION_ID
 
-az network route-table route list --resource-group $AKS_MC_RG --route-table-name $ROUTE_TABLE_NAME 
+az network route-table route list --resource-group $KUBE_GROUP --route-table-name $FW_ROUTE_TABLE_NAME 
 ````
 
 7. Add firewall rules
