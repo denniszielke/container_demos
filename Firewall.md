@@ -3,6 +3,7 @@ https://docs.microsoft.com/en-us/azure/firewall/scripts/sample-create-firewall-t
 https://docs.microsoft.com/en-us/azure/firewall/log-analytics-samples
 https://raw.githubusercontent.com/Azure/azure-docs-json-samples/master/azure-firewall/AzureFirewall.omsview
 
+## setting up vnet
 
 0. Variables
 ```
@@ -50,16 +51,13 @@ az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUB
 az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --address-prefix 10.0.5.0/24 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault Microsoft.Storage
 ```
 
+## setting up cluster with kubenet
+
 4. Create the aks cluster
 
-create cluster without rbac
 ```
-
 KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT_SUBNET_NAME"
-```
 
-with kubenet
-```
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --ssh-key-value ~/.ssh/id_rsa.pub --network-plugin kubenet --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --enable-rbac --node-vm-size "Standard_D2s_v3"
 ```
 
@@ -87,22 +85,86 @@ az network vnet subnet update --resource-group $KUBE_GROUP --route-table $ROUTE_
 az network route-table route create --resource-group $AKS_MC_RG --name $FW_ROUTE_NAME --route-table-name $ROUTE_TABLE_NAME --address-prefix 0.0.0.0/0 --next-hop-type VirtualAppliance --next-hop-ip-address $FW_PRIVATE_IP --subscription $SUBSCRIPTION_ID
 
 az network route-table route list --resource-group $AKS_MC_RG --route-table-name $ROUTE_TABLE_NAME 
+```
+
+7. Add firewall rules
+
+Add network rule for 80, and 443
+```
+az network firewall network-rule create --firewall-name $FW_NAME --collection-name "aksnetwork" --destination-addresses "*"  --destination-ports 22 443 --name "allow network" --protocols "TCP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks network rule" --priority 100
+```
+
+Add application rule for:
+•	*<region>.azmk8s.io (eg. *eastus.azmk8s.io) – this is the dns that is running your masters
+•	k8s.gcr.io – Google’s Container Registry and is needed for things like pulling down hypercube image and az aks upgrade to work properly.
+•	storage.googleapis.com – This is the backing store behind Google’s Container Registry.
+•	*auth.docker.io – Used to authenticate to Docker Hub, even if you are not logged in.
+•	*cloudflare.docker.io – This is a CDN endpoint for cached Container Images on Docker Hub.
+•	*registry-1.docker.io – This is Docker Hub’s registry. We still use this for things like the Dashboard and when GPU nodes are used.
+•	*.ubuntu.com – This is needed for security patches and updates. If the customer is only going to create net new clusters and not worry about patching then this is not needed as they will always build new (immutable infrastructure).
+•	*azurecr.io – If they are using ACR they will need this rule. If they want to lock it down to specific registry then they can add the name of their ACR to the front.
+•	*blob.core.windows.net – This is the backing store for ACR and needed to be able to properly pull from ACR.
+
+create the application rules
+```
+az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "aksbasics" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "*.azmk8s.io" "k8s.gcr.io" "storage.googleapis.com" "*auth.docker.io" "*cloudflare.docker.io" "*registry-1.docker.io" "*.ubuntu.com" "*azurecr.io" "*blob.core.windows.net" --priority 100
+```
+
+## setting up cluster with azure cni
+
+4. Create the aks cluster
+
+
+```
+KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT_SUBNET_NAME"
+
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --ssh-key-value ~/.ssh/id_rsa.pub --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --enable-rbac --node-vm-size "Standard_B2s"
+```
+
+5. Create azure firewall
+* this is currently not possible via cli - the creation of the azure firewall in that vnet is only possible with the azure portal *
+```
+az extension add --name azure-firewall
+az network firewall create --name $FW_NAME --resource-group $KUBE_GROUP --location $LOCATION
+```
+
+6. Create UDR
+```
+FW_ROUTE_NAME="${FW_NAME}_fw_r"
+FW_ROUTE_TABLE_NAME="{$FW_NAME}_fw_rt"
+
+FW_PUBLIC_IP=$(az network public-ip show -g $KUBE_GROUP -n $FW_IP_NAME --query ipAddress)
+FW_PRIVATE_IP="10.0.3.4"
+
+AKS_MC_RG=$(az group list --query "[?starts_with(name, 'MC_${KUBE_GROUP}')].name | [0]" --output tsv)
+
+az network route-table create -g $KUBE_GROUP --name $FW_ROUTE_TABLE_NAME
+
+az network vnet subnet update --resource-group $KUBE_GROUP --route-table $ROUTE_TABLE_ID --ids $KUBE_AGENT_SUBNET_ID
+
+az network route-table route create --resource-group $KUBE_GROUP --name $FW_ROUTE_NAME --route-table-name $FW_ROUTE_TABLE_NAME --address-prefix 0.0.0.0/0 --next-hop-type VirtualAppliance --next-hop-ip-address $FW_PRIVATE_IP --subscription $SUBSCRIPTION_ID
+
+az network route-table route list --resource-group $AKS_MC_RG --route-table-name $ROUTE_TABLE_NAME 
 ````
 
 7. Add firewall rules
 
-Add network rule
+Add network rule for 80, and 443
 
-az network firewall network-rule create --firewall-name $FW_NAME --collection-name "aksnetwork" --destination-addresses "*"  --destination-ports "22, 443" --item-name "allow network" --protocols "TCP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks network rule" --priority 100
+az network firewall network-rule create --firewall-name $FW_NAME --collection-name "aksnetwork" --destination-addresses "*"  --destination-ports 22 443 --name "allow network" --protocols "TCP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks network rule" --priority 100
 
-* TCP - * - * - 22
-* TCP - * - * - 443
+Add application rule for:
+•	*<region>.azmk8s.io (eg. *eastus.azmk8s.io) – this is the dns that is running your masters
+•	k8s.gcr.io – Google’s Container Registry and is needed for things like pulling down hypercube image and az aks upgrade to work properly.
+•	storage.googleapis.com – This is the backing store behind Google’s Container Registry.
+•	*auth.docker.io – Used to authenticate to Docker Hub, even if you are not logged in.
+•	*cloudflare.docker.io – This is a CDN endpoint for cached Container Images on Docker Hub.
+•	*registry-1.docker.io – This is Docker Hub’s registry. We still use this for things like the Dashboard and when GPU nodes are used.
+•	*.ubuntu.com – This is needed for security patches and updates. If the customer is only going to create net new clusters and not worry about patching then this is not needed as they will always build new (immutable infrastructure).
+•	*azurecr.io – If they are using ACR they will need this rule. If they want to lock it down to specific registry then they can add the name of their ACR to the front.
+•	*blob.core.windows.net – This is the backing store for ACR and needed to be able to properly pull from ACR.
 
-Add application rule for aks
+create the application rules
 ```
-$Azfw = Get-AzureRmFirewall -ResourceGroupName $RG
-$Rule = New-AzureRmFirewallApplicationRule -Name AKS -Protocol "http:80","https:443" -TargetFqdn "*azmk8s.io,*azureedge.net,*auth.docker.io,*blob.core.windows.net,*azure-automation.net,*opinsights.azure.com,*management.azure.com,*login.microsoftonline.com,*ubuntu.com,*vo.msecnd.net,*storage.googleapis.com,k8s.gcr.io,*.cloudflare.docker.io,*.microsoft.com,*.snapcraft.io,registry-1.docker.io, production.cloudflare.docker.com"
-$RuleCollection = New-AzureRmFirewallApplicationRuleCollection -Name AKS-Outgoing -Priority 101 -Rule $Rule -ActionType "Allow"
-$Azfw.ApplicationRuleCollections = $RuleCollection
-Set-AzureRmFirewall -AzureFirewall $Azfw
+az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "aksbasics" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "*.azmk8s.io" "k8s.gcr.io" "storage.googleapis.com" "*auth.docker.io" "*cloudflare.docker.io" "*registry-1.docker.io" "*.ubuntu.com" "*azurecr.io" "*blob.core.windows.net" --priority 100
 ```

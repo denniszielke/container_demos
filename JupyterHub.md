@@ -31,7 +31,7 @@ CREATE DATABASE jupyterhub;
 az storage account create --resource-group  MC_$(echo $KUBE_GROUP)_$(echo $KUBE_NAME)_$(echo $LOCATION) --name $STORAGE_ACCOUNT --location $LOCATION --sku Standard_LRS --kind StorageV2 --access-tier hot --https-only false
 ```
 
-Patch storage default class and create cluster-admin role
+create azure file storage class
 ```
 cat <<EOF | kubectl apply -f -
 kind: StorageClass
