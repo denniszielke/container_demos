@@ -4,7 +4,7 @@
 ```
 SUBSCRIPTION_ID=""
 KUBE_GROUP="akskube"
-KUBE_NAME="dzkubenet"
+KUBE_NAME="dz-aks"
 LOCATION="westeurope"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
@@ -49,16 +49,16 @@ az group create -n $KUBE_GROUP -l $LOCATION
 2. Create cluster
 ```
 az group deployment create \
-    --name dz-aks-eng \
+    --name $KUBE_NAME \
     --resource-group $KUBE_GROUP \
-    --template-file "_output/dz-aks-eng/azuredeploy.json" \
-    --parameters "_output/dz-aks-eng/azuredeploy.parameters.json"
+    --template-file "_output/$KUBE_NAME/azuredeploy.json" \
+    --parameters "_output/$KUBE_NAME/azuredeploy.parameters.json"
 ```
 
 # Create cluster role binding
 
 ```
-export KUBECONFIG=`pwd`/_output/dz-aks-eng/kubeconfig/kubeconfig.westeurope.json
+export KUBECONFIG=`pwd`/_output/$KUBE_NAME/kubeconfig/kubeconfig.westeurope.json
 ```
 
 # Delete everything

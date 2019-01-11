@@ -14,8 +14,8 @@ kubectl create -f https://raw.githubusercontent.com/Azure-Samples/azure-voting-a
 
 kubectl get pod -o wide
 
-kubectl scale --replicas=10 deployment/azure-vote-front
-kubectl scale --replicas=3 deployment/azure-vote-back
+kubectl scale --replicas=6 deployment/azure-vote-front
+kubectl scale --replicas=4 deployment/azure-vote-back
 
 kubectl autoscale deployment azure-vote-front --cpu-percent=20 --min=20 --max=30
 
@@ -34,11 +34,11 @@ kubectl run -it busybox-replicas --rm --image=busybox -- sh
 for i in 1 ... 1000; do \ 
 wget -q -O- http://65.52.144.134 \
 done
-for i in `seq 1 100`; do time curl -s http://azure-vote-front > /dev/null; done
+for i in `seq 1 100`; do time curl -s http://40.85.173.109 > /dev/null; done
 
 for i in {1...200} \ do \    curl -q -O- "http://azure-vote-front?i="$i \ done
 
-while true; do sleep 1; curl http://65.52.144.134; echo -e '\n\n\n\n'$(date);done
+while true; do sleep 1; curl http://40.85.173.109; echo -e '\n\n\n\n'$(date);done
 
 
 for i in {1..2000}

@@ -10,6 +10,7 @@ az feature list --namespace  Microsoft.DocumentDB
 Register a feature and reregister the provider
 ```
 az feature register --name MobyImage --namespace Microsoft.ContainerService
+az feature register --name AKSAuditLog --namespace Microsoft.ContainerService
 az provider register -n Microsoft.ContainerService
 ```
 

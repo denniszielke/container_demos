@@ -3,6 +3,8 @@
 https://docs.microsoft.com/en-us/azure/aks/tutorial-kubernetes-monitor
 https://docs.microsoft.com/en-us/azure/log-analytics/log-analytics-containers 
 https://docs.microsoft.com/en-gb/azure/monitoring/media/monitoring-container-insights-overview/azmon-containers-views.png
+https://github.com/helm/charts/tree/master/incubator/azuremonitor-containers
+
 
 ## Deploy the secrets
 
@@ -361,17 +363,76 @@ spec:
 EOF
 ```
 
+```
+cat <<EOF | kubectl apply -f -
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dummy-logger
+spec:
+  replicas: 1
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        name: dummy-logger
+        demo: logging
+        app: dummy-logger
+    spec:
+      containers:
+      - name: dummy-logger
+        image: denniszielke/dummy-logger:latest
+        livenessProbe:
+          httpGet:
+            path: /ping
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 20
+          timeoutSeconds: 5
+        ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+        imagePullPolicy: Always   
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "500m"
+          limits:
+            memory: "256Mi"
+            cpu: "1000m"    
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dummy-logger
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: dummy-logger
+  type: LoadBalancer
+EOF
+```
+
 ## Create an alert based on container fail
 
 Log query
 ```
 ContainerInventory
-| where Image contains "buggy-app" and CreatedTime > ago(10m) and ContainerState == "Failed"
+| where Image contains "buggy-app" and TimeGenerated > ago(10m) and ContainerState == "Failed"
 | summarize AggregatedValue = dcount(ContainerID) by Computer, Image, ContainerState
 ```
 
 ```
-ContainerInventory | where Image contains "buggy-app" and CreatedTime > ago(10m) and ContainerState == "Failed"
+ContainerInventory | where Image contains "buggy-app" and TimeGenerated > ago(10m) and ContainerState == "Failed"
 ```
 
 ## Crash or leak app
@@ -383,10 +444,10 @@ the app has a route called leak - if you call it it will leak memory
 /leak
 
 ```
+LOGGER_IP=40.74.50.209
 LOGGER_IP=
-LOGGER_IP=
-LEAKER_IP=
-CRASHER_IP=
+LEAKER_IP=40.74.50.209
+CRASHER_IP=40.74.50.209
 
 curl -H "message: hi" -X POST http://$LOGGER_IP/api/log
 
@@ -434,10 +495,10 @@ ACI_GROUP=aci-group
 
 az container create --image denniszielke/dummy-logger --resource-group $ACI_GROUP --location $LOCATION --name dummy-logger --os-type Linux --cpu 1 --memory 3.5 --dns-name-label dummy-logger --ip-address public --ports 80 --verbose
 
-LOGGER_IP=
-LOGGER_IP=
-LEAKER_IP=
-CRASHER_IP=
+LOGGER_IP=40.115.24.237
+LOGGER_IP=40.68.132.153
+LEAKER_IP=40.115.24.237
+CRASHER_IP=40.115.24.237
 
 curl -H "message: hi" -X POST http://$LOGGER_IP/api/log
 

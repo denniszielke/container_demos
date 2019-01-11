@@ -4,7 +4,7 @@
 
 create postgres db
 ```
-KUBE_GROUP=juphub
+KUBE_GROUP=kub_ter_k_l_juphub
 KUBE_NAME=juphub
 LOCATION=westeurope
 STORAGE_ACCOUNT=dzjupyteruser
@@ -59,6 +59,7 @@ openssl rand -hex 32
 
 create config.yaml with content
 ```
+cat  <<EOF >config.yaml
 proxy:
   secretToken: "774629f880afc0302830c19a9f09be4f59e98b242b65983cea7560e828df2978"
 hub:
@@ -73,6 +74,7 @@ singleuser:
       storageClass: azurefile
 rbac:
    enabled: false
+EOF
 ```
 
 install jhub
@@ -148,6 +150,7 @@ openssl rand -hex 32
 
 create config.yaml with content
 ```
+cat  <<EOF >config.yaml
 proxy:
   secretToken: "774629f880afc0302830c19a9f09be4f59e98b242b65983cea7560e828df2978"
 hub:
@@ -162,6 +165,7 @@ singleuser:
       storageClass: azurefile
 rbac:
    enabled: true
+EOF
 ```
 
 install jhub
