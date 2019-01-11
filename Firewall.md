@@ -89,21 +89,20 @@ az network route-table route list --resource-group $AKS_MC_RG --route-table-name
 
 7. Add firewall rules
 
-Add network rule for 80, and 443
+Add network rule for 22 (tunnel), and 443 (api server)
 ```
 az network firewall network-rule create --firewall-name $FW_NAME --collection-name "aksnetwork" --destination-addresses "*"  --destination-ports 22 443 --name "allow network" --protocols "TCP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks network rule" --priority 100
 ```
 
 Add application rule for:
-•	*<region>.azmk8s.io (eg. *eastus.azmk8s.io) – this is the dns that is running your masters
-•	k8s.gcr.io – Google’s Container Registry and is needed for things like pulling down hypercube image and az aks upgrade to work properly.
-•	storage.googleapis.com – This is the backing store behind Google’s Container Registry.
-•	*auth.docker.io – Used to authenticate to Docker Hub, even if you are not logged in.
-•	*cloudflare.docker.io – This is a CDN endpoint for cached Container Images on Docker Hub.
-•	*registry-1.docker.io – This is Docker Hub’s registry. We still use this for things like the Dashboard and when GPU nodes are used.
-•	*.ubuntu.com – This is needed for security patches and updates. If the customer is only going to create net new clusters and not worry about patching then this is not needed as they will always build new (immutable infrastructure).
-•	*azurecr.io – If they are using ACR they will need this rule. If they want to lock it down to specific registry then they can add the name of their ACR to the front.
-•	*blob.core.windows.net – This is the backing store for ACR and needed to be able to properly pull from ACR.
+- `*<region>.azmk8s.io` (eg. `*westeurope.azmk8s.io`) – this is the dns that is running your masters
+- `k8s.gcr.io` – Google’s Container Registry and is needed for things like pulling down hypercube image and az aks upgrade to work properly.
+- `storage.googleapis.com` – This is the backing store behind Google’s Container Registry.
+- `*auth.docker.io` – Used to authenticate to Docker Hub, even if you are not logged in.
+- `*cloudflare.docker.io` – This is a CDN endpoint for cached Container Images on Docker Hub.
+- `*registry-1.docker.io` – This is Docker Hub’s registry. We still use this for things like the Dashboard and when GPU nodes are used.
+- `*.ubuntu.com` – This is needed for security patches and updates. If the customer is only going to create net new clusters and not worry about patching then this is not needed as they will always build new (immutable infrastructure)- `*azurecr.io` – If they are using ACR they will need this rule. If they want to lock it down to specific registry then they can add the name of their ACR to the front.
+- `*blob.core.windows.net` – This is the backing store for ACR and needed to be able to properly pull from ACR.
 
 create the application rules
 ```
@@ -149,20 +148,19 @@ az network route-table route list --resource-group $AKS_MC_RG --route-table-name
 
 7. Add firewall rules
 
-Add network rule for 80, and 443
+Add network rule for 22 (tunnel), and 443 (api server)
 
 az network firewall network-rule create --firewall-name $FW_NAME --collection-name "aksnetwork" --destination-addresses "*"  --destination-ports 22 443 --name "allow network" --protocols "TCP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks network rule" --priority 100
 
 Add application rule for:
-•	*<region>.azmk8s.io (eg. *eastus.azmk8s.io) – this is the dns that is running your masters
-•	k8s.gcr.io – Google’s Container Registry and is needed for things like pulling down hypercube image and az aks upgrade to work properly.
-•	storage.googleapis.com – This is the backing store behind Google’s Container Registry.
-•	*auth.docker.io – Used to authenticate to Docker Hub, even if you are not logged in.
-•	*cloudflare.docker.io – This is a CDN endpoint for cached Container Images on Docker Hub.
-•	*registry-1.docker.io – This is Docker Hub’s registry. We still use this for things like the Dashboard and when GPU nodes are used.
-•	*.ubuntu.com – This is needed for security patches and updates. If the customer is only going to create net new clusters and not worry about patching then this is not needed as they will always build new (immutable infrastructure).
-•	*azurecr.io – If they are using ACR they will need this rule. If they want to lock it down to specific registry then they can add the name of their ACR to the front.
-•	*blob.core.windows.net – This is the backing store for ACR and needed to be able to properly pull from ACR.
+- `*<region>.azmk8s.io` (eg. `*westeurope.azmk8s.io`) – this is the dns that is running your masters
+- `k8s.gcr.io` – Google’s Container Registry and is needed for things like pulling down hypercube image and az aks upgrade to work properly.
+- `storage.googleapis.com` – This is the backing store behind Google’s Container Registry.
+- `*auth.docker.io` – Used to authenticate to Docker Hub, even if you are not logged in.
+- `*cloudflare.docker.io` – This is a CDN endpoint for cached Container Images on Docker Hub.
+- `*registry-1.docker.io` – This is Docker Hub’s registry. We still use this for things like the Dashboard and when GPU nodes are used.
+- `*.ubuntu.com` – This is needed for security patches and updates. If the customer is only going to create net new clusters and not worry about patching then this is not needed as they will always build new (immutable infrastructure)- `*azurecr.io` – If they are using ACR they will need this rule. If they want to lock it down to specific registry then they can add the name of their ACR to the front.
+- `*blob.core.windows.net` – This is the backing store for ACR and needed to be able to properly pull from ACR.
 
 create the application rules
 ```
