@@ -27,6 +27,8 @@ az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --ssh-key-value ~/.
 
 az aks get-credentials --resource-group $KUBE_GROUP --name $KUBE_NAME --admin
 
+az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query enableRbac
+
 kubectl api-versions
 ```
 

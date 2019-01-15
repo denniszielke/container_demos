@@ -125,14 +125,18 @@ az network route-table route list --resource-group $KUBE_GROUP --route-table-nam
 
 Add firewall rules
 
-Add network rule for 22 (tunnel), and 443 (api server)
+Add network rule for 22 (tunnel), and 443 (api server) for aks to work
+Add network rule for 123 (time sync) and 53 (dns) for the worker nodes
 ```
 az network firewall network-rule create --firewall-name $FW_NAME --collection-name "aksnetwork" --destination-addresses "*"  --destination-ports 22 443 --name "allow network" --protocols "TCP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks network rule" --priority 100
+
+az network firewall network-rule create --firewall-name $FW_NAME --collection-name "time" --destination-addresses "*"  --destination-ports 123 --name "allow network" --protocols "UDP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks node time sync rule" --priority 101
+
+az network firewall network-rule create --firewall-name $FW_NAME --collection-name "dns" --destination-addresses "*"  --destination-ports 53 --name "allow network" --protocols "UDP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks node dns rule" --priority 102
 ```
 
 Required application rule for:
 - `*<region>.azmk8s.io` (eg. `*westeurope.azmk8s.io`) – this is the dns that is running your masters
-- `k8s.gcr.io` – Google’s Container Registry and is needed for things like pulling down hypercube image and az aks upgrade to work properly.
 - `*cloudflare.docker.io` – This is a CDN endpoint for cached Container Images on Docker Hub.
 - `*registry-1.docker.io` – This is Docker Hub’s registry. We still use this for things like the Dashboard and when GPU nodes are used.
 
