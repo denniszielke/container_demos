@@ -1,6 +1,8 @@
 # Setting up Firewall + AKS
 https://docs.microsoft.com/en-us/azure/firewall/scripts/sample-create-firewall-test
 https://docs.microsoft.com/en-us/azure/firewall/log-analytics-samples
+
+Download the azure firewall diagnostics dashboard and import it to log analytics
 https://raw.githubusercontent.com/Azure/azure-docs-json-samples/master/azure-firewall/AzureFirewall.omsview
 
 ## setting up vnet
@@ -8,19 +10,18 @@ https://raw.githubusercontent.com/Azure/azure-docs-json-samples/master/azure-fir
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="kubes_fw_net"
-KUBE_NAME="dzkube"
+KUBE_GROUP="kubes_fw_knet"
+KUBE_NAME="dzkubekube"
 LOCATION="westeurope"
 KUBE_VNET_NAME="knets"
 KUBE_FW_SUBNET_NAME="AzureFirewallSubnet"
 KUBE_ING_SUBNET_NAME="ing-4-subnet"
 KUBE_AGENT_SUBNET_NAME="aks-5-subnet"
-FW_NAME="dzkubefw"
+FW_NAME="dzkubenetfw"
 FW_IP_NAME="azureFirewalls-ip"
 KUBE_VERSION="1.11.4"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
-
 ```
 
 Select subscription
@@ -94,7 +95,7 @@ az network route-table route list --resource-group $AKS_MC_RG --route-table-name
 ```
 KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT_SUBNET_NAME"
 
-az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --ssh-key-value ~/.ssh/id_rsa.pub --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --enable-rbac --node-vm-size "Standard_B2s"
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --ssh-key-value ~/.ssh/id_rsa.pub --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --enable-rbac --node-vm-size "Standard_D2s_v3"
 ```
 
 5. Create azure firewall
@@ -125,8 +126,8 @@ az network route-table route list --resource-group $KUBE_GROUP --route-table-nam
 
 Add firewall rules
 
-Add network rule for 22 (tunnel), and 443 (api server) for aks to work
-Add network rule for 123 (time sync) and 53 (dns) for the worker nodes
+Add network rule for 22 (tunnel), and 443 (api server) for aks to work - this is needed for aks
+Add network rule for 123 (time sync) and 53 (dns) for the worker nodes - this is optional for ubuntu patches
 ```
 az network firewall network-rule create --firewall-name $FW_NAME --collection-name "aksnetwork" --destination-addresses "*"  --destination-ports 22 443 --name "allow network" --protocols "TCP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks network rule" --priority 100
 
@@ -149,10 +150,48 @@ Optional:
 ### create the basic application rules
 
 ```
-az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "aksbasics" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "*.azmk8s.io" "*auth.docker.io" "*cloudflare.docker.io" "*registry-1.docker.io" "*.ubuntu.com" --priority 100
+az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "aksbasics" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "*.azmk8s.io" "*auth.docker.io" "*cloudflare.docker.io" "*registry-1.docker.io" --priority 100
 ```
 
 ### create the extended application rules
 ```
 az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "aksextended" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "download.opensuse.org" "*.ubuntu.com" "*azurecr.io" "*blob.core.windows.net" --priority 101
 ```
+
+### public ip NET rules
+* THIS IS ONLY REQUIRED IF YOU HAVE PUBLIC IP LOADBALANCERS IN AKS*
+
+create a pod 
+```
+kubectl run nginx --image=nginx --port=80
+```
+
+expose it via internal lb
+```
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: internal-nginx
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    run: nginx
+EOF
+```
+
+get the internal ip adress
+```
+SERVICE_IP=$(kubectl get svc internal-nginx --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
+```
+
+create an azure firewall nat rule for that internal service
+```
+az network firewall nat-rule create  --firewall-name $FW_NAME --collection-name "inboundlbrules" --name "allow inbound load balancers" --protocols "TCP" --source-addresses "*" --resource-group $KUBE_GROUP --action "Dnat"  --destination-addresses $FW_PUBLIC_IP --destination-ports 80 --translated-address $SERVICE_IP --translated-port "80"  --priority 101
+```
+
+now you can acces the internal service by going to the $FW_PUBLIC_IP on port 80

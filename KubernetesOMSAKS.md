@@ -86,9 +86,9 @@ kind: Service
 metadata:
   name: dummy-logger
   namespace: default
-  annotations:
-    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "ing-4-subnet"
+  #annotations:
+  #  service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+  #  service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "ing-4-subnet"
 spec:
   ports:
   - port: 80

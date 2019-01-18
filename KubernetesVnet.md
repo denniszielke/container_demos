@@ -133,7 +133,7 @@ az aks get-credentials --resource-group $KUBE_GROUP --name $KUBE_NAME --admin
 
 
 create addition dns record
-
+```
 az network dns zone list --resource-group $KUBE_GROUP
 
 az network dns record-set list -g $KUBE_GROUP -z runningcode.local
@@ -149,3 +149,43 @@ az network dns record-set a add-record \
 
 curl 10.0.4.24
 curl nginx.runningcode.local
+````
+
+create internal load balancer for nginx
+
+kubectl run nginx --image=nginx --port=80
+
+```
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: internal-nginx
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    run: nginx
+EOF
+```
+
+```
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: centos1
+spec:
+  containers:
+  - name: centoss
+    image: centos
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+```
