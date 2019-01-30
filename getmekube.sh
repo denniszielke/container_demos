@@ -52,7 +52,7 @@ echo
 fi
 
 if [ "$cni_type" == "k" ]; then
-TEMPLATE_FILE=$PWD/kubenet.tf
+KUBE_TEMPLATE_FILE=$PWD/terraform/kubenet.tf
 fi
 
 if [ "$cluster_size" == "" ]; then

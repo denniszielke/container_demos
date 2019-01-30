@@ -58,7 +58,7 @@ az group deployment create \
 # Create cluster role binding
 
 ```
-export KUBECONFIG=`pwd`/_output/$KUBE_NAME/kubeconfig/kubeconfig.westeurope.json
+export KUBECONFIG=`pwd`/_output/$KUBE_NAME/kubeconfig/kubeconfig.$LOCATION.json
 ```
 
 # Delete everything

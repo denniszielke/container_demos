@@ -124,6 +124,10 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     vnet_subnet_id = "${azurerm_subnet.aksnet.id}"
   }
 
+  role_based_access_control {
+    enabled        = true
+  }
+
   network_profile {
       network_plugin = "azure"
       service_cidr   = "10.2.0.0/24"

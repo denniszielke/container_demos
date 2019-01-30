@@ -159,7 +159,7 @@ Without the kernel patch the dns timeout occurs like clockwork almost every 5-10
 However after applying the kernel patch and rebooting all nodes I cannot repro the dns timeout on kubenet based clusters (that is promising). However I can repro it on my azure cni based cluster with the following setup (and some load in the cluster).
 
 I need to have some load inside the cluster therefore I launch the azure voting sample
-kubectl create -f https://raw.githubusercontent.com/Azure-Samples/azure-voting-app-redis/master/azure-vote-all-in-one-redis.yaml
+kubectl apply -f https://raw.githubusercontent.com/Azure-Samples/azure-voting-app-redis/master/azure-vote-all-in-one-redis.yaml
 Scale the deployment and generate some load 
 kubectl scale --replicas=20 deployment/azure-vote-front
 kubectl scale --replicas=3 deployment/azure-vote-back
@@ -181,7 +181,7 @@ spec:
     image: quay.io/linki/chaoskube:v0.11.0
     args:
     # kill a pod every 10 minutes
-    - --interval=0m3s
+    - --interval=0m1s
     # only target pods in the test environment
     - --labels=app=azure-vote-front
     # exclude all pods in the kube-system namespace

@@ -5,6 +5,9 @@ https://github.com/kubernetes/helm
 https://docs.microsoft.com/en-us/azure/aks/kubernetes-helm
 https://chocolatey.org/packages/kubernetes-helm
 
+https://github.com/core-process/aks-terraform-helm
+https://github.com/dwaiba/aks-terraform
+
 1. Install helm
 ```
 wget https://storage.googleapis.com/kubernetes-helm/helm-v2.9.1-linux-amd64.tar.gz

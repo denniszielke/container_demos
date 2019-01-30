@@ -2,10 +2,10 @@
     "apiVersion": "vlabs",
     "properties": {
         "orchestratorProfile": {
-        "orchestratorType": "Kubernetes",
+            "orchestratorType": "Kubernetes",
             "kubernetesConfig": {
-            "useManagedIdentity": true
-          }
+                "useManagedIdentity": true
+            }
         },
         "featureFlags": {
             "blockOutboundInternet": true
@@ -14,7 +14,7 @@
             "count": 1,
             "dnsPrefix": "dz-aks-eng",
             "vmSize": "Standard_D2_v2",
-            "cosmosEtcd" : true
+            "cosmosEtcd": true
         },
         "agentPoolProfiles": [
             {
@@ -34,5 +34,5 @@
                 ]
             }
         }
-  }
+    }
 }

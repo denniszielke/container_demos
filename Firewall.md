@@ -1,50 +1,47 @@
 # Setting up Firewall + AKS
-https://docs.microsoft.com/en-us/azure/firewall/scripts/sample-create-firewall-test
-https://docs.microsoft.com/en-us/azure/firewall/log-analytics-samples
+Every now and then we get the question on how to lock down ingoing to and outgoing traffic from the kubernetes cluster in azure. One option that can be set up relativly easy but is not documented in detail is using the Azure Firewall (https://azure.microsoft.com/en-us/services/azure-firewall/).
+The end result will look like this and requires some steps to configure the vnet, subnets, routetable, firewall rules and azure kubernetes services which are described below:
+![](/img/aks-firewall.png)
 
-Download the azure firewall diagnostics dashboard and import it to log analytics
-https://raw.githubusercontent.com/Azure/azure-docs-json-samples/master/azure-firewall/AzureFirewall.omsview
+My personal recommendation on this scenario is to use the firewall to diagnose the network dependencies of your applications - which is why I am also documenting the services that are currently needed for aks to run. If you turn on the rules to block outgoing traffic, you risk that your cluster breaks if the engineering team brings in additional required network dependencies.
 
-## setting up vnet
+## setting up the vnet
+
+First we will setup the vnet - I prefer using azure cli over powershell but you can easy achieve the same using terraform or arm. If you have preferences on the naming conventions please adjust the variables below. In most companies the vnet is provided by the networking team so we should assume that the network configuration will not be done by the teams which is maintaining the aks cluster.
 
 0. Variables
 ```
-SUBSCRIPTION_ID=""
-KUBE_GROUP="kubes_fw_knet"
-KUBE_NAME="dzkubekube"
-LOCATION="westeurope"
-KUBE_VNET_NAME="knets"
-KUBE_FW_SUBNET_NAME="AzureFirewallSubnet"
-KUBE_ING_SUBNET_NAME="ing-4-subnet"
-KUBE_AGENT_SUBNET_NAME="aks-5-subnet"
-FW_NAME="dzkubenetfw"
-FW_IP_NAME="azureFirewalls-ip"
-KUBE_VERSION="1.11.4"
-SERVICE_PRINCIPAL_ID=
-SERVICE_PRINCIPAL_SECRET=
+SUBSCRIPTION_ID="" # here enter your subscription id
+KUBE_GROUP="kubes_fw_knet" # here enter the resources group name of your aks cluster
+KUBE_NAME="dzkubekube" # here enter the name of your kubernetes resource
+LOCATION="westeurope" # here enter the datacenter location
+KUBE_VNET_NAME="knets" # here enter the name of your vnet
+KUBE_FW_SUBNET_NAME="AzureFirewallSubnet" # this you cannot change
+KUBE_ING_SUBNET_NAME="ing-4-subnet" # here enter the name of your ingress subnet
+KUBE_AGENT_SUBNET_NAME="aks-5-subnet" # here enter the name of your aks subnet
+FW_NAME="dzkubenetfw" # here enter the name of your azure firewall resource
+FW_IP_NAME="azureFirewalls-ip" # here enter the name of your public ip resource for the firewall
+KUBE_VERSION="1.11.5" # here enter the kubernetes version of your aks
+SERVICE_PRINCIPAL_ID= # here enter the service principal of your aks
+SERVICE_PRINCIPAL_SECRET= # here enter the service principal secret
 ```
 
-Select subscription
+1. Select subscription, create the resource group and the vnet
 ```
 az account set --subscription $SUBSCRIPTION_ID
-```
 
-1. Create the resource group
-```
 az group create -n $KUBE_GROUP -l $LOCATION
-```
 
-2. Create VNETs
-```
 az network vnet create -g $KUBE_GROUP -n $KUBE_VNET_NAME 
 ```
 
-Assign permissions on vnet
+2. Assign permissions on vnet for your service principal - usually "virtual machine contributor is enough"
 ```
 az role assignment create --role "Contributor" --assignee $SERVICE_PRINCIPAL_ID -g $KUBE_GROUP
+az role assignment create --role "Virtual Machine Contributor" --assignee $SERVICE_PRINCIPAL_ID -g $KUBE_GROUP
 ```
 
-3. Create Subnets
+3. Create subnets for the firewall, ingress and aks
 
 ```
 az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_FW_SUBNET_NAME --address-prefix 10.0.3.0/24
@@ -52,7 +49,11 @@ az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUB
 az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --address-prefix 10.0.5.0/24 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault Microsoft.Storage
 ```
 
-## setting up cluster with kubenet
+## setting up the cluster
+As you might know there are two different options on how networking can be set up in aks called "Basic networking" and "Advanced Networking". I am not going into detail how they differ - you can look it up here: https://docs.microsoft.com/en-us/azure/aks/concepts-network . For the usage of azure firewall in this scenario it does not matter since both options work but need to be configured differently, which is why I am documenting both options.
+
+### setting up aks cluster with basic networking
+Basic networking requires to modify the routetable that will be created by the aks deployment, add another route and point it towards the internal ip of the azure firewall. If you want to use advanced networking skip this section and continue below.
 
 4. Create the aks cluster
 
@@ -70,6 +71,7 @@ az network firewall create --name $FW_NAME --resource-group $KUBE_GROUP --locati
 ```
 
 6. Create UDR
+After the deployment we create another route in the routetable and associate the route table to the subnet - which is required due to the known bug that is currently in aks (https://github.com/Azure/AKS/issues/718)
 ```
 FW_ROUTE_NAME="${FW_NAME}_fw_r"
 
@@ -89,6 +91,7 @@ az network route-table route list --resource-group $AKS_MC_RG --route-table-name
 ```
 
 ## setting up cluster with azure cni
+Advanced networking is a bit simpler but requires you to create the routetable first, create the route and then again associate it with the aks subnet.
 
 4. Create the aks cluster
 
@@ -124,6 +127,11 @@ az network route-table route list --resource-group $KUBE_GROUP --route-table-nam
 
 ## Configure azure firewall
 
+Setup the azure firewall diagnostics and create a dashboard by importing this file:
+https://docs.microsoft.com/en-us/azure/firewall/tutorial-diagnostics
+https://raw.githubusercontent.com/Azure/azure-docs-json-samples/master/azure-firewall/AzureFirewall.omsview
+
+
 Add firewall rules
 
 Add network rule for 22 (tunnel), and 443 (api server) for aks to work - this is needed for aks
@@ -158,6 +166,31 @@ az network firewall application-rule create  --firewall-name $FW_NAME --collecti
 az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "aksextended" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "download.opensuse.org" "*.ubuntu.com" "*azurecr.io" "*blob.core.windows.net" --priority 101
 ```
 
+test the outgoing traffic
+```
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: centos
+spec:
+  containers:
+  - name: centoss
+    image: centos
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+```
+
+```
+kubectl exec -ti centos -- /bin/bash
+curl bad.org
+curl ubuntu.com
+```
+
 ### public ip NET rules
 * THIS IS ONLY REQUIRED IF YOU HAVE PUBLIC IP LOADBALANCERS IN AKS*
 
@@ -172,11 +205,13 @@ cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Service
 metadata:
-  name: internal-nginx
+  name: nginx-internal
   annotations:
     service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "ing-4-subnet"
 spec:
   type: LoadBalancer
+  loadBalancerIP: 10.0.4.4
   ports:
   - port: 80
   selector:
@@ -186,12 +221,13 @@ EOF
 
 get the internal ip adress
 ```
-SERVICE_IP=$(kubectl get svc internal-nginx --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
+SERVICE_IP=$(kubectl get svc nginx-internal --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
 ```
 
 create an azure firewall nat rule for that internal service
 ```
 az network firewall nat-rule create  --firewall-name $FW_NAME --collection-name "inboundlbrules" --name "allow inbound load balancers" --protocols "TCP" --source-addresses "*" --resource-group $KUBE_GROUP --action "Dnat"  --destination-addresses $FW_PUBLIC_IP --destination-ports 80 --translated-address $SERVICE_IP --translated-port "80"  --priority 101
+open http://$FW_PUBLIC_IP:80
 ```
 
 now you can acces the internal service by going to the $FW_PUBLIC_IP on port 80
