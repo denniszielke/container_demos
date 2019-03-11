@@ -73,3 +73,13 @@ https://portal.azure.com
 ![](/img/copy-key.png)
 
 This key is your service principal client secret.
+
+## Minimal permission on AKS
+
+1- attach/detach does not happen on nodes. only controller manager. Volume Controller on the node just performers post attach stuff (wait for attach [by waiting for node object to reflect node.VolumesAttached reflecting whatever it is waiting for], mount, format) all does not need SPN  
+2- if the node has useInstanceMetadata turned on & no acr secrets then you don't need spn on nodes (iirc acr does not need SPNs only passwords).
+3- if the node has  useInstanceMetadata == false; then SPN is needed to call ARM
+4- You need contribution on NRP, CRP, DRP in RG scope (or other scope depending on the need to provision stuff outside RG). we nevers said otherwise. in fact o remember there was an excel sheet with table trimmed down to exactly what is needed.
+5- This is not the first time i raise this to Jack Francis we can bootstrap clusters with minimum shit on nodes. 
+6- please note that OSA can use MSI/explicit identities, it really does not need SPN.
+7- as a rule of thumb don't use SPN. We only have it because at some point of time that was the only thing provided, and we still have it because of backcompat 

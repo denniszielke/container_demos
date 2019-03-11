@@ -151,6 +151,8 @@ resource "azurerm_kubernetes_cluster" "akstf" {
   tags {
     Environment = "${var.environment}"
   }
+
+  # depends_on = ["azurerm_azuread_service_principal.aks_sp"]
 }
 
 output "id" {

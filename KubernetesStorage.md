@@ -81,3 +81,45 @@ kubectl exec frontend env
 
 ## Set up azure disk storage
 https://kubernetes.io/docs/concepts/storage/storage-classes/#azure-disk
+
+cat <<EOF | kubectl apply -f - 
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: azure-managed-disk
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: managed-premium
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nginx-azuredisk
+spec:
+  replicas: 1
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        name: nginx-azuredisk
+        app: storage-demo
+    spec:
+      containers:
+      - name: nginx-azuredisk
+        image: nginx
+        command:
+        - "/bin/sh"
+        - "-c"
+        - while true; do echo $(date) >> /mnt/disk/outfile; sleep 1; done
+        volumeMounts:
+        - name: disk01
+          mountPath: "/mnt/disk"
+      volumes:
+      - name: disk01
+        persistentVolumeClaim:
+          claimName: azure-managed-disk 
+EOF

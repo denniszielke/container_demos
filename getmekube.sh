@@ -17,6 +17,7 @@ VM_COUNT=3
 KUBE_TEMPLATE_FILE=$PWD/terraform/azurecni.tf
 SUBSCRIPTION_FILE=$CONFIG_PATH/variables_$subscription.tf
 VARIABLE_FILE=$CONFIG_PATH/variables_common.tf
+APP_FILE=$CONFIG_PATH/kubernetes.tf
 
 if [ "$subscription" == "" ]; then
 echo "Subscription [int], [dev]?: "
@@ -78,6 +79,12 @@ read -n 6 kube_version
 echo
 fi
 
+if [ "$helm" == "" ]; then
+echo "Install helm [y/n]?: "
+read -n 1 helm
+echo
+fi
+
 TERRAFORM_STORAGE_NAME=dzt$cluster_name
 KUBE_RG="kub_ter_"$cni_type"_"$cluster_size"_"$cluster_name
 LOCATION=$cluster_region
@@ -104,6 +111,10 @@ mkdir $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 
 cp $SUBSCRIPTION_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
 cp $KUBE_TEMPLATE_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+
+if [ "$helm" == "y" ]; then
+cp $APP_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+fi
 
 sed -e "s/VAR_AGENT_COUNT/$VM_COUNT/ ; s/VAR_KUBE_VERSION/$kube_version/ ; s/VAR_KUBE_NAME/$cluster_name/ ; s/VAR_KUBE_RG/$KUBE_RG/ ; s/VAR_KUBE_LOCATION/$LOCATION/" $VARIABLE_FILE >> $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
 

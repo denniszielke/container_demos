@@ -3,8 +3,8 @@
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="acskubevnet"
-KUBE_NAME="dzkubenet"
+KUBE_GROUP="aksupgradefoo"
+KUBE_NAME="k8s-master-foo123"
 LOCATION="westeurope"
 KUBE_VNET_NAME="KVNET"
 KUBE_AGENT_SUBNET_NAME="KVAGENTS"
@@ -62,19 +62,16 @@ az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUB
 4. Create cluster
 ```
 az group deployment create \
-    --name dz-vnet-acs \
+    --name $KUBE_NAME \
     --resource-group $KUBE_GROUP \
-    --template-file "_output/dz-vnet-acs/azuredeploy.json" \
-    --parameters "_output/dz-vnet-acs/azuredeploy.parameters.json"
+    --template-file "_output/$KUBE_NAME/azuredeploy.json" \
+    --parameters "_output/$KUBE_NAME/azuredeploy.parameters.json"
 ```
 
 # Create cluster role binding
 
 ```
-export KUBECONFIG=`pwd`/_output/dz-vnet-acs/kubeconfig/kubeconfig.northeurope.json
-export KUBECONFIG=`pwd`/_output/dz-vnet-acs/kubeconfig/kubeconfig.westeurope.json
-export KUBECONFIG=`pwd`/_output/dz-win-1803/kubeconfig/kubeconfig.northeurope.json
-export KUBECONFIG=`pwd`/_output/dz-win-1809/kubeconfig/kubeconfig.northeurope.json
+export KUBECONFIG=`pwd`/_output/$KUBE_NAME/kubeconfig/kubeconfig.$LOCATION.json
 
 # using rbac aad 
 ssh -i ~/.ssh/id_rsa dennis@dz-vnet-acs.northeurope.cloudapp.azure.com \

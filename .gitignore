@@ -11,6 +11,8 @@ demos
 twistlock.md
 Jenkins-ACI.md
 CommonIssues.md
+ManagedOpenShift.md
+appgw.yaml
 Presentation.md
 games/whack.yaml
 deployment/acsengvnet_out.json

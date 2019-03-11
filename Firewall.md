@@ -76,7 +76,7 @@ After the deployment we create another route in the routetable and associate the
 FW_ROUTE_NAME="${FW_NAME}_fw_r"
 
 FW_PUBLIC_IP=$(az network public-ip show -g $KUBE_GROUP -n $FW_IP_NAME --query ipAddress)
-FW_PRIVATE_IP="10.0.3.4"
+FW_PRIVATE_IP="10.0.6.4"
 
 AKS_MC_RG=$(az group list --query "[?starts_with(name, 'MC_${KUBE_GROUP}')].name | [0]" --output tsv)
 ROUTE_TABLE_ID=$(az network route-table list -g ${AKS_MC_RG} --query "[].id | [0]" -o tsv)
@@ -141,7 +141,7 @@ az network firewall network-rule create --firewall-name $FW_NAME --collection-na
 
 az network firewall network-rule create --firewall-name $FW_NAME --collection-name "time" --destination-addresses "*"  --destination-ports 123 --name "allow network" --protocols "UDP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks node time sync rule" --priority 101
 
-az network firewall network-rule create --firewall-name $FW_NAME --collection-name "dns" --destination-addresses "*"  --destination-ports 53 --name "allow network" --protocols "UDP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks node dns rule" --priority 102
+az network firewall network-rule create --firewall-name $FW_NAME --collection-name "dns" --destination-addresses "*"  --destination-ports 53 --name "allow network" --protocols "UDP" --resource-group $KUBE_GROUP --source-addresses "*" --actfion "Allow" --description "aks node dns rule" --priority 102
 ```
 
 Required application rule for:
@@ -211,11 +211,11 @@ metadata:
     service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "ing-4-subnet"
 spec:
   type: LoadBalancer
-  loadBalancerIP: 10.0.4.4
+  loadBalancerIP: 10.0.4.25
   ports:
   - port: 80
   selector:
-    run: nginx
+    name: nginx
 EOF
 ```
 

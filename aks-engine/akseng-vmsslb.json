@@ -1,0 +1,40 @@
+{
+    "apiVersion": "vlabs",
+    "properties": {
+        "orchestratorProfile": {
+            "orchestratorType": "Kubernetes",
+            "orchestratorRelease": "1.12",
+            "kubernetesConfig": {
+              "enableRbac": true,
+              "loadBalancerSku": "standard"
+            }
+        },
+        "masterProfile": {
+            "count": 1,
+            "dnsPrefix": "dz-aks-eng",
+            "vmSize": "Standard_D2_v2"
+        },
+        "agentPoolProfiles": [
+            {
+                "name": "agent",
+                "count": 3,
+                "vmSize": "Standard_D2_v2",
+                "availabilityProfile": "AvailabilitySet"
+            }
+        ],
+        "linuxProfile": {
+            "adminUsername": "dennis",
+            "ssh": {
+                "publicKeys": [
+                    {
+                        "keyData": "XXXX"
+                    }
+                ]
+            }
+        },
+        "servicePrincipalProfile": {
+            "clientId": "XXXX",
+            "secret": "XXX"
+        }
+    }
+}

@@ -11,6 +11,12 @@ Register a feature and reregister the provider
 ```
 az feature register --name MobyImage --namespace Microsoft.ContainerService
 az feature register --name AKSAuditLog --namespace Microsoft.ContainerService
+az feature register --name PodSecurityPolicyPreview --namespace Microsoft.ContainerService
+az feature register --name MultiAgentpoolPreview --namespace Microsoft.ContainerService
+az feature register --name APIServerSecurityPreview --namespace Microsoft.ContainerService
+az feature register --name V20180331API --namespace Microsoft.ContainerService
+az feature register --name AksBypassServiceGate --namespace Microsoft.ContainerService
+
 az provider register -n Microsoft.ContainerService
 ```
 

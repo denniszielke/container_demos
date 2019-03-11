@@ -418,7 +418,7 @@ spec:
     targetPort: 80
   selector:
     app: dummy-logger
-  type: LoadBalancer
+  type: ClusterIP
 EOF
 ```
 
@@ -469,23 +469,17 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-  - host: 13.80.244.73.xip.io
+  - host: 23.97.165.51.xip.io
     http:
       paths:
       - path: /
         backend:
-          serviceName: aks-helloworld
-          servicePort: 80
-      - path: /buggy
-        backend:
           serviceName: dummy-logger
-          servicePort: 80
-      - path: /web
-        backend:
-          serviceName: nginx
           servicePort: 80
 EOF
 ```
+
+curl -k -v -XGET  -H "User-Agent: kubectl/v1.12.2 (darwin/amd64) kubernetes/17c77c7" -H "Accept: application/json;as=Table;v=v1beta1;g=meta.k8s.io, application/json" -H "Authorization: Bearer xxxxx" 'https://acnie-34961d1e.hcp.westeurope.azmk8s.io:443/api/v1/componentstatuses?limit=500'
 
 ## Logging from ACI
 

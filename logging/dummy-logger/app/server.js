@@ -26,9 +26,11 @@ app.get('/ping', function(req, res) {
     var seconds = (((startDate.getSeconds())<10) ? '0' + (startDate.getSeconds()) : (startDate.getSeconds()));
     var logDate = startDate.getFullYear() + "-" +
         month+  "-" + day + " " + hour + ":" + minute + ":" + seconds; 
-    var sourceIp = (req.headers['x-forwarded-for'] || '').split(',').pop() || 
-        req.connection.remoteAddress;
-    var logObject = { timestamp: logDate, host: OS.hostname(), source: sourceIp, message: "Pong!"};
+    var sourceIp = req.connection.remoteAddress;
+    
+    var forwardedFrom = (req.headers['x-forwarded-for'] || '').split(',').pop();
+        
+    var logObject = { timestamp: logDate, host: OS.hostname(), source: sourceIp, forwarded: forwardedFrom, message: "Pong!"};
     var serverResult = JSON.stringify(logObject );
     console.log(serverResult.toString());
     res.send(serverResult.toString());

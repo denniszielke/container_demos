@@ -3,9 +3,10 @@
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="akskube"
-KUBE_NAME="dz-aks"
+KUBE_GROUP="aksekub"
+KUBE_NAME="dz-akse"
 LOCATION="westeurope"
+LOCATION="centralus"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
 YOUR_SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
@@ -65,3 +66,17 @@ export KUBECONFIG=`pwd`/_output/$KUBE_NAME/kubeconfig/kubeconfig.$LOCATION.json
 ```
 az group delete -n $KUBE_GROUP
 ```
+
+# Upgrade
+The kubeadm configuration is also accessible by standard kubectl ConfigMap interrogation and is, by convention, named the cluster-info ConfigMap in the kube-public namespace.
+```
+./aks-engine upgrade \
+  --subscription-id $SUBSCRIPTION_ID \
+  --deployment-dir _output/$KUBE_NAME/ \
+  --location $LOCATION \
+  --resource-group $KUBE_GROUP \
+  --upgrade-version 1.10.4 \
+  --auth-method client_secret \
+  --client-id $SERVICE_PRINCIPAL_ID \
+  --client-secret $SERVICE_PRINCIPAL_SECRET
+  ```

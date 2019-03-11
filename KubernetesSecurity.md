@@ -31,7 +31,7 @@ EOF
 ```
 
 after 1.8
-````
+```
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
@@ -63,3 +63,15 @@ kubectl config set-context low-context --cluster=low-cluster --user=edit-user
 
 kubectl config use-context low-context
 ```
+
+## Lock down api server
+https://github.com/Azure/azure-cli-extensions/tree/master/src/aks-preview#enable-apiserver-authorized-ip-ranges
+
+MYIP=$(curl ipinfo.io/ip)
+
+KUBE_GROUP="kubvmss"
+KUBE_NAME="dzkubvmss"
+
+az aks update -g $KUBE_GROUP  -n $KUBE_NAME --api-server-authorized-ip-ranges "$MYIP"
+
+az aks list -g $KUBE_GROUP -n $KUBE_NAME
