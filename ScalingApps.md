@@ -54,3 +54,23 @@ https://azure.microsoft.com/en-us/blog/creating-a-web-test-alert-programmaticall
 flexlab/azure-mesh-fireworks-worker-v2
 
 OBJECT_TYPE=RED
+
+https://github.com/Azure-Samples/virtual-node-autoscale
+
+
+export VK_NODE_NAME=virtual-node-aci-linux
+export INGRESS_EXTERNAL_IP=52.166.60.97
+
+export INGRESS_CLASS_ANNOTATION=addon-http-application-routing
+
+export POD_NAME=$(kubectl get pods --namespace default -l "app=grafana" -o jsonpath="{.items[0].metadata.name}")
+kubectl --namespace default port-forward $POD_NAME 3000
+open http://localhost:3000
+
+az aks get-credentials --resource-group dzburstdemo2 --name dzburst
+
+export GOPATH=~/go
+export PATH=$GOPATH/bin:$PATH
+go get -u github.com/rakyll/hey
+PUBLIC_IP="store.52.166.60.97.nip.io"
+hey -z 20m http://$PUBLIC_IP

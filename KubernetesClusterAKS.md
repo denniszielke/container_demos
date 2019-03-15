@@ -70,6 +70,23 @@ deactivate routing addon
 az aks disable-addons --addons http_application_routing --resource-group $KUBE_GROUP --name $KUBE_NAME
 ```
 
+deploy zones
+```
+az group create -n $KUBE_GROUP -l $LOCATION
+
+az group deployment create \
+    --name pspzones \
+    --resource-group $KUBE_GROUP \
+    --template-file "arm/zones_template.json" \
+    --parameters "arm/zones_parameters.json" \
+    --parameters "resourceName=$KUBE_NAME" \
+        "location=$LOCATION" \
+        "dnsPrefix=$KUBE_NAME" \
+        "servicePrincipalClientId=$SERVICE_PRINCIPAL_ID" \
+        "servicePrincipalClientSecret=$SERVICE_PRINCIPAL_SECRET" \
+        "kubernetesVersion=$KUBE_VERSION"
+```
+
 3. Export the kubectrl credentials files
 ```
 az aks get-credentials --resource-group=$KUBE_GROUP --name=$KUBE_NAME

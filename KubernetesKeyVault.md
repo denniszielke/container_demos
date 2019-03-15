@@ -141,6 +141,10 @@ spec:
 EOF
 ```
 
+VAULT_NAME=dzdevkeyvault
+AZURE_KEYVAULT_SECRET_NAME=mysupersecret
+SECRET_VERSION=
+
 key vault demo
 ```
 cat <<EOF | kubectl apply -f -

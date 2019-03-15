@@ -159,6 +159,7 @@ log into the box
 kubectl exec -ti runclient -- sh
 
 kubectl run -it  debian --image=debian
+kubectl attach debian-867c666ddc-fgjdn -c debian -i -t
 ```
 
 install dependencies for tracing + wget

@@ -148,3 +148,12 @@ done
 for i in `seq 1 1000`; do time curl -s google.com > /dev/null; done
 
 kubectl run -i --tty busybox --image=busybox --restart=Never -- sh   
+
+
+scp /path/to/file username@a:/path/to/destination
+
+
+scp username@b:/path/to/file /path/to/destination
+
+scp dennis@40.114.247.218:/var/log/azure/cluster-provision.log cluster-provision.log
+scp dennis@40.114.247.218:/var/log/cloud-init-output.log cloud-init-output.log

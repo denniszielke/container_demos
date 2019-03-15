@@ -4,7 +4,7 @@
 ```
 SUBSCRIPTION_ID=""
 KUBE_GROUP="aksupgradefoo"
-KUBE_NAME="k8s-master-foo123"
+KUBE_NAME="k8s-master-foo111"
 LOCATION="westeurope"
 KUBE_VNET_NAME="KVNET"
 KUBE_AGENT_SUBNET_NAME="KVAGENTS"
@@ -136,3 +136,23 @@ spec:
 ```
 az group delete -n $KUBE_GROUP
 ```
+
+# upgrade
+
+```
+./acs-engine orchestrators --orchestrator Kubernetes --version 1.10.4
+
+cd ../acs-engine-v0.22.4-darwin-amd64
+
+./acs-engine upgrade \
+  --subscription-id $SUBSCRIPTION_ID \
+  --deployment-dir ../acs-engine-v0.18.8-darwin-amd64/_output/$KUBE_NAME/ \
+  --location $LOCATION \
+  --resource-group $KUBE_GROUP \
+  --upgrade-version 1.11.4 \
+  --auth-method client_secret \
+  --client-id $SERVICE_PRINCIPAL_ID \
+  --client-secret $SERVICE_PRINCIPAL_SECRET
+```
+
+https://github.com/Azure/acs-engine/blob/master/docs/kubernetes/troubleshooting.md

@@ -1,0 +1,33 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "resourceName": {
+            "value": "pspaks101"
+        },
+        "location": {
+            "value": "eastus"
+        },
+        "dnsPrefix": {
+            "value": "pspaks101"
+        },
+        "agentCount": {
+            "value": 2
+        },
+        "agentVMSize": {
+            "value": "Standard_DS2_v2"
+        },
+        "servicePrincipalClientId": {
+            "value": "dummy"
+        },
+        "servicePrincipalClientSecret": {
+            "value": "dummy"
+        },
+        "kubernetesVersion": {
+            "value": "1.12.6"
+        },
+        "networkPlugin": {
+            "value": "kubenet"
+        }
+    }
+}

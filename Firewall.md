@@ -28,6 +28,11 @@ SERVICE_PRINCIPAL_SECRET= # here enter the service principal secret
 
 1. Select subscription, create the resource group and the vnet
 ```
+
+az feature register --name APIServerSecurityPreview --namespace Microsoft.ContainerService
+az feature list -o table --query "[?contains(name, 'Microsoft.Container‐Service/APIServerSecurityPreview')].{Name:name,State:properties.state}"
+az provider register --namespace Microsoft.ContainerService
+
 az account set --subscription $SUBSCRIPTION_ID
 
 az group create -n $KUBE_GROUP -l $LOCATION
@@ -131,39 +136,50 @@ Setup the azure firewall diagnostics and create a dashboard by importing this fi
 https://docs.microsoft.com/en-us/azure/firewall/tutorial-diagnostics
 https://raw.githubusercontent.com/Azure/azure-docs-json-samples/master/azure-firewall/AzureFirewall.omsview
 
+get hcp ip
+HCP_IP=40.91.201.147
 
 Add firewall rules
 
-Add network rule for 22 (tunnel), and 443 (api server) for aks to work - this is needed for aks
+Add network rule for 9000 (tunnel), and 443 (api server) for aks to work - this is needed for aks
 Add network rule for 123 (time sync) and 53 (dns) for the worker nodes - this is optional for ubuntu patches
 ```
-az network firewall network-rule create --firewall-name $FW_NAME --collection-name "aksnetwork" --destination-addresses "*"  --destination-ports 22 443 --name "allow network" --protocols "TCP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks network rule" --priority 100
+az network firewall network-rule create --firewall-name $FW_NAME --collection-name "aksnetwork" --destination-addresses $HCP_IP  --destination-ports 9000 --name "allow network" --protocols "TCP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks network rule" --priority 100
 
 az network firewall network-rule create --firewall-name $FW_NAME --collection-name "time" --destination-addresses "*"  --destination-ports 123 --name "allow network" --protocols "UDP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks node time sync rule" --priority 101
 
 az network firewall network-rule create --firewall-name $FW_NAME --collection-name "dns" --destination-addresses "*"  --destination-ports 53 --name "allow network" --protocols "UDP" --resource-group $KUBE_GROUP --source-addresses "*" --actfion "Allow" --description "aks node dns rule" --priority 102
+
+az network firewall network-rule create --firewall-name $FW_NAME --collection-name "kubesvc" --destination-addresses 10.2.0.0/24  --destination-ports 443 --name "allow network" --protocols "TCP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks kube svc rule" --priority 103
 ```
 
 Required application rule for:
 - `*<region>.azmk8s.io` (eg. `*westeurope.azmk8s.io`) – this is the dns that is running your masters
-- `*cloudflare.docker.io` – This is a CDN endpoint for cached Container Images on Docker Hub.
-- `*registry-1.docker.io` – This is Docker Hub’s registry. We still use this for things like the Dashboard and when GPU nodes are used.
+- `*cloudflare.docker.io` – docker hub cdn
+- `*registry-1.docker.io` – docker hub
+- `*azurecr.io` – storing your images in azure container registry
+- `*blob.core.windows.net` – the storage behind acr
+- `k8s.gcr.io` - images stored in gcr
+- `storage.googleapis.com` - storage behind google gcr
 
 Optional:
 - `*.ubuntu.com, download.opensuse.org` – This is needed for security patches and updates - if the customer wants them to be applied automatically
-- `*azurecr.io` – This is only required if you are using azure container registry.
-- `*blob.core.windows.net` – This is the backing store for ACR and needed to be able to properly pull from ACR.
-- `*login.microsoftonline.com` - This is only required for azure aad login
+- `snapcraft.io, api.snapcraft.io` - used by ubuntu for packages
+- `packages.microsoft.com`- packages from microsoft
+- `login.microsoftonline.com` - for azure aad login
+- `dc.services.visualstudio.com` - application insights
+- `*.opinsights.azure.com` - azure monitor
+- `*.monitoring.azure.com` - azure monitor
+- `*.management.azure.com` - azure tooling
 
-### create the basic application rules
+### create the application rules
 
 ```
-az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "aksbasics" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "*.azmk8s.io" "*auth.docker.io" "*cloudflare.docker.io" "*registry-1.docker.io" --priority 100
-```
+az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "aksbasics" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "*.azmk8s.io" "*auth.docker.io" "*cloudflare.docker.io" "*cloudflare.docker.com" "*registry-1.docker.io" "k8s.gcr.io" "storage.googleapis.com"  --priority 100
 
-### create the extended application rules
-```
-az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "aksextended" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "download.opensuse.org" "*.ubuntu.com" "*azurecr.io" "*blob.core.windows.net" --priority 101
+az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "akstools" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "download.opensuse.org" "login.microsoftonline.com" "*azurecr.io" "*blob.core.windows.net" "dc.services.visualstudio.com" "*.opinsights.azure.com" "*.monitoring.azure.com" "*.management.azure.com"  "management.azure.com" --priority 101
+
+az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "osupdates" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "download.opensuse.org" "*.ubuntu.com" "packages.microsoft.com" "snapcraft.io" "api.snapcraft.io"  --priority 102
 ```
 
 test the outgoing traffic
