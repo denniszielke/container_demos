@@ -3,8 +3,8 @@
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="aksupgradefoo"
-KUBE_NAME="k8s-master-foo111"
+KUBE_GROUP="aksupgrade104a"
+KUBE_NAME="k8s-master-104a"
 LOCATION="westeurope"
 KUBE_VNET_NAME="KVNET"
 KUBE_AGENT_SUBNET_NAME="KVAGENTS"
@@ -31,7 +31,7 @@ sed -e "s/AAD_APP_ID/$AAD_APP_ID/ ; s/AAD_CLIENT_ID/$AAD_CLIENT_ID/ ; s/SERVICE_
 # Prepare acs-engine
 
 ```
-./acs-engine generate acseng_out.json
+./acs-engine generate acseng.json
 ```
 
 # Deploy cluster
@@ -140,16 +140,32 @@ az group delete -n $KUBE_GROUP
 # upgrade
 
 ```
-./acs-engine orchestrators --orchestrator Kubernetes --version 1.10.4
+./acs-engine orchestrators --orchestrator Kubernetes --version 1.10.5
 
 cd ../acs-engine-v0.22.4-darwin-amd64
 
 ./acs-engine upgrade \
   --subscription-id $SUBSCRIPTION_ID \
-  --deployment-dir ../acs-engine-v0.18.8-darwin-amd64/_output/$KUBE_NAME/ \
+  --deployment-dir _output/$KUBE_NAME/ \
   --location $LOCATION \
   --resource-group $KUBE_GROUP \
-  --upgrade-version 1.11.4 \
+  --upgrade-version 1.10.5 \
+  --auth-method client_secret \
+  --client-id $SERVICE_PRINCIPAL_ID \
+  --client-secret $SERVICE_PRINCIPAL_SECRET
+```
+
+```
+./acs-engine orchestrators --orchestrator Kubernetes --version 1.10.5
+
+cd ../acs-engine-v0.22.4-darwin-amd64
+EXPECTED_ORCHESTRATOR_VERSION=1.10.5
+./acs-engine upgrade \
+  --subscription-id $SUBSCRIPTION_ID \
+  --deployment-dir _output/$KUBE_NAME/ \
+  --location $LOCATION \
+  --resource-group $KUBE_GROUP \
+  --upgrade-version 1.10.5 \
   --auth-method client_secret \
   --client-id $SERVICE_PRINCIPAL_ID \
   --client-secret $SERVICE_PRINCIPAL_SECRET

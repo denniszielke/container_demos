@@ -100,7 +100,7 @@
       },
       "enablePodSecurityPolicy": {
          "type": "bool",
-         "defaultValue": true,
+         "defaultValue": false,
          "metadata": {
              "description": "Booleab flag to turn on and off PSP."
         }

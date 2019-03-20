@@ -164,7 +164,7 @@ kubectl create secret generic appinsightsecret --from-literal=appinsightskey=$AP
 
 5. Install
 ```
-helm install multicalchart --name=$APP_IN --set frontendReplicaCount=1 --set backendReplicaCount=1 --set image.frontendTag=118 --set image.backendTag=120 --set usePodRedis=no --namespace $APP_NS
+helm install multicalchart --name=$APP_IN --set frontendReplicaCount=3 --set backendReplicaCount=3 --set usePodRedis=no --namespace $APP_NS
 ```
 
 verify

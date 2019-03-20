@@ -4,7 +4,7 @@ metadata:
   name: helloworld
   labels:
     release: V76
-    app: helloworld-demo
+    run: nginx
 spec:
   containers:
     - name: aci-helloworld
@@ -20,3 +20,13 @@ spec:
         limits:
           memory: "256Mi"
           cpu: "1000m"
+        livenessProbe:
+            httpGet:
+              path: /ping
+              port: 3000
+        readinessProbe:
+          httpGet:
+            path: /ping
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5

@@ -67,15 +67,21 @@ export KUBECONFIG=`pwd`/_output/$KUBE_NAME/kubeconfig/kubeconfig.$LOCATION.json
 az group delete -n $KUBE_GROUP
 ```
 
+./aks-engine get-versions
+
 # Upgrade
 The kubeadm configuration is also accessible by standard kubectl ConfigMap interrogation and is, by convention, named the cluster-info ConfigMap in the kube-public namespace.
+
+./aks-engine get-versions --version 1.11.8
+
+EXPECTED_ORCHESTRATOR_VERSION=1.12.6
 ```
-./aks-engine upgrade \
+./aks-engine upgrade --debug \
   --subscription-id $SUBSCRIPTION_ID \
   --deployment-dir _output/$KUBE_NAME/ \
   --location $LOCATION \
   --resource-group $KUBE_GROUP \
-  --upgrade-version 1.10.4 \
+  --upgrade-version $EXPECTED_ORCHESTRATOR_VERSION \
   --auth-method client_secret \
   --client-id $SERVICE_PRINCIPAL_ID \
   --client-secret $SERVICE_PRINCIPAL_SECRET
