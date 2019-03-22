@@ -1,0 +1,42 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: check-reboot
+  labels:
+    app: check-reboot
+spec:
+  template:
+    metadata:
+      labels:
+        name: check-reboot
+    spec:
+      containers:
+        - name: check-reboot
+          securityContext:
+            privileged: true
+          image: busybox
+          imagePullPolicy: Always
+          env:
+            - name: MY_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          command: [ "sh", "-c"]
+          args:
+          - while true; do
+              [ -f /host/reboot/reboot-required ] && echo "$MY_NODE_NAME reboot required" || echo "$MY_NODE_NAME no action required";
+              sleep 1000;
+            done;
+          resources:
+            requests:
+              cpu: 5m
+              memory: 50Mi
+          volumeMounts:
+            - name: host-reboot
+              mountPath: /host/reboot
+              readOnly: true
+      volumes:
+      - name: host-reboot
+        hostPath:
+          path: /var/run/
+          type: Directory

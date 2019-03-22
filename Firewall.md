@@ -9,6 +9,23 @@ My personal recommendation on this scenario is to use the firewall to diagnose t
 
 First we will setup the vnet - I prefer using azure cli over powershell but you can easy achieve the same using terraform or arm. If you have preferences on the naming conventions please adjust the variables below. In most companies the vnet is provided by the networking team so we should assume that the network configuration will not be done by the teams which is maintaining the aks cluster.
 
+You have to register the following features:
+```
+az feature register --name EnableSingleIPPerCCP --namespace Microsoft.ContainerService
+az feature register --name APIServerSecurityPreview --namespace Microsoft.ContainerService
+```
+
+Check if the feature is active
+```
+az feature list -o table --query "[?contains(name, 'Microsoft.Container‐Service/APIServerSecurityPreview')].{Name:name,State:properties.state}"
+az feature list -o table --query "[?contains(name, 'Microsoft.Container‐Service/EnableSingleIPPerCCP')].{Name:name,State:properties.state}"
+```
+
+Re-register the provider
+```
+az provider register --namespace Microsoft.ContainerService
+```
+
 0. Variables
 ```
 SUBSCRIPTION_ID="" # here enter your subscription id
