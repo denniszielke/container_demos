@@ -4,6 +4,7 @@ metadata:
   name: check-reboot
   labels:
     app: check-reboot
+  namespace: kube-system
 spec:
   template:
     metadata:
@@ -24,7 +25,7 @@ spec:
           command: [ "sh", "-c"]
           args:
           - while true; do
-              [ -f /host/reboot/reboot-required ] && echo "$MY_NODE_NAME reboot required" || echo "$MY_NODE_NAME no action required";
+              [ -f /host/reboot/reboot-required ] && echo "check-reboot status - $MY_NODE_NAME reboot required" || echo "check-reboot status - $MY_NODE_NAME no action required";
               sleep 1000;
             done;
           resources:
