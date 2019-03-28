@@ -2,7 +2,7 @@
 
 Get AKS features
 ```
-az feature list --namespace Microsoft.ContainerService 
+az feature list --namespace Microsoft.ContainerService -o table
 
 az feature list --namespace  Microsoft.DocumentDB 
 ```
@@ -20,6 +20,9 @@ az feature register --name APIServerSecurityPreview --namespace Microsoft.Contai
 az feature register --name V20180331API --namespace Microsoft.ContainerService
 az feature register --name AksBypassServiceGate --namespace Microsoft.ContainerService
 az feature register --name AvailabilityZonePreview --namespace Microsoft.ContainerService
+az feature register --name WindowsPreview --namespace Microsoft.ContainerService
+az feature register --name AKSLockingDownEgressPreview --namespace Microsoft.ContainerService
+
 ```
 
 Check if the feature is active

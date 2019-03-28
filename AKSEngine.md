@@ -3,8 +3,8 @@
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="aksekub"
-KUBE_NAME="dz-akse"
+KUBE_GROUP="k8s-master-104d"
+KUBE_NAME="k8s-master-104d"
 LOCATION="westeurope"
 LOCATION="centralus"
 SERVICE_PRINCIPAL_ID=
@@ -37,7 +37,7 @@ sed -e "s/SERVICE_PRINCIPAL_ID/$SERVICE_PRINCIPAL_ID/ ; s/SERVICE_PRINCIPAL_SECR
 # Generate aks-engine
 
 ```
-./aks-engine generate akseng_out.json
+./aks-engine generate akseng.json
 ```
 
 # Deploy cluster
@@ -72,13 +72,23 @@ az group delete -n $KUBE_GROUP
 # Upgrade
 The kubeadm configuration is also accessible by standard kubectl ConfigMap interrogation and is, by convention, named the cluster-info ConfigMap in the kube-public namespace.
 
-./aks-engine get-versions --version 1.11.8
+./aks-engine get-versions --version 1.11.9
 
-EXPECTED_ORCHESTRATOR_VERSION=1.12.6
+EXPECTED_ORCHESTRATOR_VERSION=1.11.9
 ```
 ./aks-engine upgrade --debug \
   --subscription-id $SUBSCRIPTION_ID \
   --deployment-dir _output/$KUBE_NAME/ \
+  --location $LOCATION \
+  --resource-group $KUBE_GROUP \
+  --upgrade-version $EXPECTED_ORCHESTRATOR_VERSION \
+  --auth-method client_secret \
+  --client-id $SERVICE_PRINCIPAL_ID \
+  --client-secret $SERVICE_PRINCIPAL_SECRET
+
+  ./aks-engine upgrade --debug \
+  --subscription-id $SUBSCRIPTION_ID \
+  --deployment-dir ../acs-engine-v0.18.8-darwin-amd64/_output/$KUBE_NAME/ \
   --location $LOCATION \
   --resource-group $KUBE_GROUP \
   --upgrade-version $EXPECTED_ORCHESTRATOR_VERSION \

@@ -155,6 +155,29 @@ resource "azurerm_kubernetes_cluster" "akstf" {
   # depends_on = ["azurerm_azuread_service_principal.aks_sp"]
 }
 
+# merge kubeconfig from the cluster
+resource "null_resource" "get-credentials" {
+  provisioner "local-exec" {
+    command = "az aks get-credentials --resource-group ${azurerm_resource_group.aksrg.name} --name ${azurerm_kubernetes_cluster.akstf.name}"
+  }
+  depends_on = ["azurerm_kubernetes_cluster.akstf"]
+}
+
+# set env variables for scripts
+resource "null_resource" "set-env-vars" {
+  provisioner "local-exec" {
+    command = "export KUBE_GROUP=${azurerm_resource_group.aksrg.name}; export KUBE_NAME=${azurerm_kubernetes_cluster.akstf.name}; export LOCATION=${var.location}"
+  }
+  depends_on = ["azurerm_kubernetes_cluster.akstf"]
+}
+
+output "KUBE_NAME" {
+    value = "${var.cluster_name}"
+}
+
+output "KUBE_GROUP" {
+    value = "${azurerm_resource_group.aksrg.name}"
+}
 output "id" {
     value = "${azurerm_kubernetes_cluster.akstf.id}"
 }

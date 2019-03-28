@@ -1,5 +1,7 @@
 # Using storage in AKS
 
+https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/aks/azure-disks-dynamic-pv.md
+
 0. Define variables
 ```
 SUBSCRIPTION_ID=""
@@ -82,6 +84,8 @@ kubectl exec frontend env
 ## Set up azure disk storage
 https://kubernetes.io/docs/concepts/storage/storage-classes/#azure-disk
 
+create claim
+```
 cat <<EOF | kubectl apply -f - 
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -94,7 +98,12 @@ spec:
   resources:
     requests:
       storage: 5Gi
----
+EOF
+```
+
+assign claim
+```
+cat <<EOF | kubectl apply -f - 
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -123,3 +132,102 @@ spec:
         persistentVolumeClaim:
           claimName: azure-managed-disk 
 EOF
+```
+
+## Resizin an azure disk
+supported as beta since 1.11
+https://github.com/kubernetes/kubernetes/pull/64386
+
+make sure that the storage class contains allowVolumeExpansion: true
+
+```
+cat <<EOF | kubectl apply -f - 
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: hdd
+provisioner: kubernetes.io/azure-disk
+parameters:
+  skuname: Standard_LRS
+  kind: Managed
+  cachingmode: None
+allowVolumeExpansion: true
+provisioner: kubernetes.io/azure-disk
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+EOF
+```
+
+create a claim that is too small
+
+```
+cat <<EOF | kubectl apply -f - 
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysmalldisk
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: hdd
+  resources:
+    requests:
+      storage: 5Gi
+EOF
+```
+
+create deployment to bind that claim
+```
+cat <<EOF | kubectl apply -f - 
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nginx-hdd
+spec:
+  replicas: 1
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        name: nginx-hdd
+        app: storage-demo
+    spec:
+      containers:
+      - name: nginx-hdd
+        image: nginx
+        command:
+        - "/bin/sh"
+        - "-c"
+        - while true; do echo $(date) >> /mnt/disk/outfile; sleep 1; done
+        volumeMounts:
+        - name: disk02
+          mountPath: "/mnt/disk"
+      volumes:
+      - name: disk02
+        persistentVolumeClaim:
+          claimName: mysmalldisk
+EOF
+```
+
+log into the pod and check the disk space
+```
+POD_NAME=$(kubectl get pod -l name=nginx-hdd -o template --template "{{(index .items 0).metadata.name}}")
+kubectl get pvc -o template --template "{{(index .items 0).spec.volumeName}}"
+
+kubectl exec -it $POD_NAME -- /bin/bash
+
+df -h
+```
+
+scale down deployment
+```
+
+kubectl scale deployment nginx-hdd --replicas=0
+
+KUBE_EDITOR="nano" kubectl edit pvc/mysmalldisk
+
+change 5Gi to 10Gi
+rescale the deployment
+```
+kubectl scale deployment nginx-hdd --replicas=1
+```
