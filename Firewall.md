@@ -153,9 +153,10 @@ Setup the azure firewall diagnostics and create a dashboard by importing this fi
 https://docs.microsoft.com/en-us/azure/firewall/tutorial-diagnostics
 https://raw.githubusercontent.com/Azure/azure-docs-json-samples/master/azure-firewall/AzureFirewall.omsview
 
-get hcp ip
+get hcp ip (if the feature is active you can resolve your dedicated api server ip)
+```
 HCP_IP=40.91.201.147
-
+```
 Add firewall rules
 
 Add network rule for 9000 (tunnel), and 443 (api server) for aks to work - this is needed for aks
@@ -190,6 +191,8 @@ Optional:
 - `*.management.azure.com` - azure tooling
 
 ### create the application rules
+
+![](/img/hcp-new.png)
 
 ```
 az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "aksbasics" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "*.azmk8s.io" "*auth.docker.io" "*cloudflare.docker.io" "*cloudflare.docker.com" "*registry-1.docker.io" "k8s.gcr.io" "storage.googleapis.com"  --priority 100
