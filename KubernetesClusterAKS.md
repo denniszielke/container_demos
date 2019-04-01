@@ -129,35 +129,18 @@ az aks get-upgrades --resource-group=$KUBE_GROUP --name=$KUBE_NAME --output tabl
 az aks upgrade --resource-group=$KUBE_GROUP --name=$KUBE_NAME --kubernetes-version 1.10.6
 ```
 
-# Create and configure container registry
+# Add agent pool
 
-1. Create container registr
-```
-az acr create --resource-group "$KUBE_GROUP" --name "$REGISTRY_NAME" --sku Basic --admin-enabled true
-```
+az aks nodepool add -g $KUBE_GROUP --cluster-name $KUBE_NAME -n linuxpool2 -c 1
 
-2. Login to ACR
-```
-az acr login --name $REGISTRY_NAME
-```
+az aks nodepool list -g $KUBE_GROUP --cluster-name $KUBE_NAME -o table
 
-3. Read login servier
-```
-export REGISTRY_URL=$(az acr show -g $KUBE_GROUP -n $REGISTRY_NAME --query "loginServer")
-export REGISTRY_URL=("${REGISTRY_URL[@]//\"/}")
-```
+az aks nodepool scale -g $KUBE_GROUP --cluster-name $KUBE_NAME  -n agentpool1 -c 3
 
-# Deploy everything
-
-kubectl create -f fulldeply.yml
-
-Check status of the deployment
-kubectl rollout history deployment/nginx-deployment
-
-Rollback deployment
-kubectl rollout undo deployment/nginx-deployment
 
 # Delete everything
 ```
 az group delete -n $KUBE_GROUP
 ```
+
+Adesso, Daimler, Bundesbank, E.ON, E

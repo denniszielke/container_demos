@@ -221,10 +221,10 @@ df -h
 
 scale down deployment
 ```
-
 kubectl scale deployment nginx-hdd --replicas=0
 
 KUBE_EDITOR="nano" kubectl edit pvc/mysmalldisk
+```
 
 change 5Gi to 10Gi
 rescale the deployment
