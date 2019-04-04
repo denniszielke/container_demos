@@ -4,8 +4,8 @@ https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="kubedemo"
-KUBE_NAME="dzkubes"
+KUBE_GROUP="security"
+KUBE_NAME="pspcluster"
 LOCATION="westeurope"
 REGISTRY_NAME=""
 APPINSIGHTS_KEY=""
@@ -132,6 +132,7 @@ az aks upgrade --resource-group=$KUBE_GROUP --name=$KUBE_NAME --kubernetes-versi
 # Add agent pool
 
 az aks nodepool add -g $KUBE_GROUP --cluster-name $KUBE_NAME -n linuxpool2 -c 1
+az aks nodepool add -g $KUBE_GROUP --cluster-name $KUBE_NAME --os-type Windows -n winpoo -c 1 --node-vm-size Standard_D2_v2
 
 az aks nodepool list -g $KUBE_GROUP --cluster-name $KUBE_NAME -o table
 

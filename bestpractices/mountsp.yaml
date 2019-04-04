@@ -11,6 +11,8 @@ spec:
     spec:
       containers:
       - image: alpine:latest
+        securityContext:
+          privileged: true
         name: test-app
         command: ["/bin/sh", "-c", "--"]
         args: ["while true; do sleep 5; done;"]
