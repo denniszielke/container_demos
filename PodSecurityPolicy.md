@@ -1,4 +1,6 @@
 # Pod Security policy
+https://docs.bitnami.com/kubernetes/how-to/secure-kubernetes-cluster-psp/
+https://kubernetes.io/docs/concepts/policy/pod-security-policy/
 
 0. Variables
 ```
@@ -37,6 +39,121 @@ az aks get-credentials --resource-group=$KUBE_GROUP --name=$KUBE_NAME
 ```
 
 1. Create psp
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: centos1
+spec:
+  containers:
+  - name: centoss
+    image: centos
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+kubectl exec -ti centos1 -- /bin/bash
+
+kubectl get psp
+kubectl get clusterrolebindings default:restricted -o yaml
+
+kubectl create namespace psp-aks
+kubectl create serviceaccount --namespace psp-aks nonadmin-user
+kubectl create rolebinding --namespace psp-aks psp-aks-editor --clusterrole=edit --serviceaccount=psp-aks:nonadmin-user
+
+alias kubectl-admin='kubectl --namespace psp-aks'
+alias kubectl-nonadminuser='kubectl --as=system:serviceaccount:psp-aks:nonadmin-user --namespace psp-aks'
+
+cat <<EOF | kubectl apply --as=system:serviceaccount:psp-aks:nonadmin-user --namespace psp-aks -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-privileged
+spec:
+  containers:
+    - name: nginx-privileged
+      image: nginx:1.14.2
+      securityContext:
+        privileged: true
+EOF
+
+cat <<EOF | kubectl apply --as=system:serviceaccount:psp-aks:nonadmin-user --namespace psp-aks -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-unprivileged
+spec:
+  containers:
+    - name: nginx-unprivileged
+      image: nginx:1.14.2
+EOF
+
+cat <<EOF | kubectl apply --as=system:serviceaccount:psp-aks:nonadmin-user --namespace psp-aks -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-unprivileged-high-port
+  labels:
+    nginx: unprivileged
+spec:
+  containers:
+    - name: nginx-unprivileged-high-port
+      image: nginx:1.14.2
+      env:
+        - name: NGINX_PORT
+          value: "3000"
+      ports:
+        - containerPort: 3000
+      securityContext:
+        runAsUser: 2000
+EOF
+
+
+cat <<EOF | kubectl apply --as=system:serviceaccount:psp-aks:nonadmin-user --namespace psp-aks -f -
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    nginx: unprivileged
+  name: nginx-unprivileged
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    nginx: unprivileged
+  sessionAffinity: None
+  type: LoadBalancer
+EOF
+
+kubectl delete svc nginx-unprivileged -n psp-aks
+
+kubectl logs nginx-unprivileged-high-port -n psp-aks
+
+kubectl delete pod nginx-unprivileged-high-port -n psp-aks
+
+cat <<EOF | kubectl apply --as=system:serviceaccount:psp-aks:nonadmin-user --namespace psp-aks -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bitnami-nginx-unprivileged-high-port
+  labels:
+    nginx: unprivileged
+spec:
+  containers:
+    - name: bitnami-nginx-unprivileged-high-port
+      image: bitnami/nginx
+      ports:
+        - containerPort: 8080
+      securityContext:
+        runAsUser: 2000
+EOF
+
+kubectl delete pod bitnami-nginx-unprivileged-high-port -n psp-aks
 
 cat <<EOF | kubectl apply -f -
 apiVersion: policy/v1beta1
@@ -115,6 +232,8 @@ spec:
     - name: nginx-unprivileged
       image: nginx:1.14.2
 EOF
+
+
 
 # Delete everything
 ```

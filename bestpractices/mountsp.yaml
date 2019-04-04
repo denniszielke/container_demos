@@ -1,28 +1,22 @@
-apiVersion: extensions/v1beta1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
   name: get-sp
 spec:
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: get-sp
-    spec:
-      containers:
-      - image: alpine:latest
-        securityContext:
-          privileged: true
-        name: test-app
-        command: ["/bin/sh", "-c", "--"]
-        args: ["while true; do sleep 5; done;"]
-        volumeMounts:
-        - name: host-sp
-          mountPath: /host/azure.json
-          readOnly: false
-      volumes:
+  containers:
+    - image: alpine:latest
+      securityContext:
+        privileged: true
+      name: sp-app
+      command: ["/bin/sh", "-c", "--"]
+      args: ["while true; do sleep 5; done;"]
+      volumeMounts:
       - name: host-sp
-        hostPath:
-          # this file contains the cluster service-principal, it exists on every node by default
-          path: /etc/kubernetes/azure.json
-          type: File
+        mountPath: /host/azure.json
+        readOnly: false
+  volumes:
+    - name: host-sp
+      hostPath:
+        # this file contains the cluster service-principal, it exists on every node by default
+        path: /etc/kubernetes/azure.json
+        type: File
