@@ -59,9 +59,14 @@ https://github.com/Azure-Samples/virtual-node-autoscale
 
 
 export VK_NODE_NAME=virtual-node-aci-linux
-export INGRESS_EXTERNAL_IP=52.166.60.97
+export INGRESS_EXTERNAL_IP=13.95.228.243
 
-export INGRESS_CLASS_ANNOTATION=addon-http-application-routing
+kubectl -n kube-system get po intended-gopher-nginx-ingress-controller-96c8f95cd-6l5kp -o yaml | grep ingress-class | sed -e 's/.*=//'
+
+export INGRESS_CLASS_ANNOTATION=nginx
+helm install stable/grafana --version 1.26.1 --name grafana -f grafana/values.yaml
+
+TkfbbN0KTXrlTGCbpZzPu8NONFv6ZPbZrs9iesr3
 
 export POD_NAME=$(kubectl get pods --namespace default -l "app=grafana" -o jsonpath="{.items[0].metadata.name}")
 kubectl --namespace default port-forward $POD_NAME 3000
@@ -72,5 +77,5 @@ az aks get-credentials --resource-group dzburstdemo2 --name dzburst
 export GOPATH=~/go
 export PATH=$GOPATH/bin:$PATH
 go get -u github.com/rakyll/hey
-PUBLIC_IP="store.52.166.60.97.nip.io"
+PUBLIC_IP="store.13.95.228.243.nip.io/"
 hey -z 20m http://$PUBLIC_IP

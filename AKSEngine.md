@@ -3,8 +3,8 @@
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="k8s-master-104d"
-KUBE_NAME="k8s-master-104d"
+KUBE_GROUP="dz-k8s-12"
+KUBE_NAME="dz-k8s-12"
 LOCATION="westeurope"
 LOCATION="centralus"
 SERVICE_PRINCIPAL_ID=

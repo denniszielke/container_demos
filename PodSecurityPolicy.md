@@ -64,6 +64,8 @@ kubectl create namespace psp-aks
 kubectl create serviceaccount --namespace psp-aks nonadmin-user
 kubectl create rolebinding --namespace psp-aks psp-aks-editor --clusterrole=edit --serviceaccount=psp-aks:nonadmin-user
 
+kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/bestpractices/mountsp.yaml --as=system:serviceaccount:psp-aks:nonadmin-user -n psp-aks
+
 alias kubectl-admin='kubectl --namespace psp-aks'
 alias kubectl-nonadminuser='kubectl --as=system:serviceaccount:psp-aks:nonadmin-user --namespace psp-aks'
 
