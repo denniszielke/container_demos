@@ -88,3 +88,20 @@ helm install --name grafana stable/grafana --namespace grafana
 kubectl --namespace grafana port-forward $(kubectl get pod --namespace grafana -l app=kube-prometheus-grafana -o template --template "{{(index .items 0).metadata.name}}") 3000:3000
 
 kubectl apply -f https://github.com/weaveworks/kured/releases/download/1.1.0/kured-1.1.0.yaml
+
+az vmss extension list --resource-group $KUBE_GROUP --vmss-name k8s-workers-14540501-vmss
+
+az vmss extension set \
+  --publisher Folder.Creator \
+  --version 2.0 \
+  --name CustomScript \
+  --resource-group $KUBE_GROUP \
+  --vmss-name k8s-workers-14540501-vmss \
+  --settings arm/cse-config.json
+
+az vm extension set \
+  --resource-group $KUBE_GROUP \
+  --vm-name exttest \
+  --name customScript \
+  --publisher Microsoft.Azure.Extensions \
+  --protected-settings '{"fileUris": ["https://raw.githubusercontent.com/Microsoft/dotnet-core-sample-templates/master/dotnet-core-music-linux/scripts/config-music.sh"],"commandToExecute": "./config-music.sh"}'

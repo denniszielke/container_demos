@@ -16,7 +16,7 @@ az feature register --name APIServerSecurityPreview --namespace Microsoft.Contai
 az feature register --name PodSecurityPolicyPreview --namespace Microsoft.ContainerService
 az feature register --name EnableNetworkPolicy --namespace Microsoft.ContainerService
 az feature register --name MultiAgentpoolPreview --namespace Microsoft.ContainerService
-az feature register --name APIServerSecurityPreview --namespace Microsoft.ContainerService
+az feature register --name AKS-RegionEarlyAccess --namespace Microsoft.ContainerService
 az feature register --name V20180331API --namespace Microsoft.ContainerService
 az feature register --name AksBypassServiceGate --namespace Microsoft.ContainerService
 az feature register --name AvailabilityZonePreview --namespace Microsoft.ContainerService
@@ -32,6 +32,7 @@ az feature list -o table --query "[?contains(name, 'Microsoft.Container‐Servic
 Re-register the provider
 ```
 az provider register --namespace Microsoft.ContainerService
+az provider unregister --namespace Microsoft.ContainerService
 ```
 
 Install the preview cli
@@ -39,12 +40,17 @@ Install the preview cli
 az extension add -n aks-preview
 ```
 
-Get list of clusters
-```
-az aks list -o table
-```
+Unregister a feature
+https://github.com/yangl900/armclient-go
 
-Upgrade a cluster
 ```
-az aks upgrade --resource-group kub_ter_a_m_kwsdemo1 --name kwsdemo1 --kubernetes-version 1.11.4
+curl -sL https://github.com/yangl900/armclient-go/releases/download/v0.2.3/armclient-go_linux_64-bit.tar.gz | tar xz
+
+./armclient post /subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.Features/providers/Microsoft.ContainerService/features/EnableSingleIPPerCCP/unregister?api-version=2015-12-01
+
+./armclient post /subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.Features/providers/Microsoft.ContainerService/features/APIServerSecurityPreview/unregister?api-version=2015-12-01
+
+./armclient post /subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.Features/providers/Microsoft.ContainerService/features/MultiAgentpoolPreview/unregister?api-version=2015-12-01
+
+./armclient post /subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.Features/providers/Microsoft.ContainerService/features/AKS-RegionEarlyAccess/unregister?api-version=2015-12-01
 ```

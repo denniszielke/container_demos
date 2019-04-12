@@ -134,6 +134,7 @@ resource "azurerm_kubernetes_cluster" "akstf" {
       dns_service_ip = "10.2.0.10"
       docker_bridge_cidr = "172.17.0.1/16"
       #pod_cidr = "" selected by subnet_id
+      network_policy = "calico"
   }
 
   service_principal {
@@ -150,6 +151,8 @@ resource "azurerm_kubernetes_cluster" "akstf" {
 
   tags {
     Environment = "${var.environment}"
+    Network = "azurecni"
+    RBAC = "true"
   }
 
   # depends_on = ["azurerm_azuread_service_principal.aks_sp"]

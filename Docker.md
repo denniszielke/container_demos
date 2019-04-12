@@ -29,3 +29,8 @@ Log in and out to re-evaluate your group membership
 ~~~
 docker run hello-world
 ~~~
+
+4. Delete all docker images
+```
+docker rmi $(docker images -q)
+```

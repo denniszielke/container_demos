@@ -20,7 +20,7 @@ VARIABLE_FILE=$CONFIG_PATH/variables_common.tf
 APP_FILE=$CONFIG_PATH/kubernetes.tf
 
 if [ "$subscription" == "" ]; then
-echo "Subscription [int], [dev]?: "
+echo "Subscription [int], [dev], [nin]?: "
 read -n 3 subscription
 echo
 fi
@@ -73,9 +73,12 @@ VM_SIZE="Standard_D3s_v3"
 VM_COUNT=4
 fi
 
+
+
 if [ "$kube_version" == "" ]; then
 echo "Kubernetes version [1.10.9], [1.11.3], [1.11.4]?: "
-read -n 6 kube_version
+az aks get-versions --location $cluster_region -o table
+read kube_version
 echo
 fi
 

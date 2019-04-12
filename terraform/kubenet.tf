@@ -150,6 +150,8 @@ resource "azurerm_kubernetes_cluster" "akstf" {
 
   tags {
     Environment = "${var.environment}"
+    Network = "kubenet"
+    RBAC = "true"
   }
 
   # depends_on = ["azurerm_azuread_service_principal.aks_sp"]

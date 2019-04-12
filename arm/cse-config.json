@@ -1,0 +1,4 @@
+{
+    "fileUris": ["https://raw.githubusercontent.com/denniszielke/container_demos/master/arm/cse.sh"],
+    "commandToExecute": "./cse.sh"
+}
