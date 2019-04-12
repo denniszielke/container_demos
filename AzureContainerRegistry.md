@@ -47,10 +47,10 @@ kubectl run helloworld --image $REGISTRY_NAME.azurecr.io/aci-helloworld-ci:lates
 ```
 ACR_NAME=dzkubereg
 RES_GROUP=kuberegistry
-LOCATION=westeurope
+LOCATION=northeurope
 USER=denniszielke
 
-GIT_PAT=a425dcf3895818e502f8895bfbbe0d0e317b497d
+GIT_PAT=
 
 az group create --resource-group $RES_GROUP --location $LOCATION
 
@@ -58,8 +58,9 @@ az acr create --resource-group $RES_GROUP --name $ACR_NAME --sku Standard --loca
 
 az acr build --registry $ACR_NAME --image helloacr:v1 .
 
+az acr task list -o table
 
-az acr task create --registry $ACR_NAME --name go-calc-backend --image go-calc-backend:{{.Run.ID}} --context https://github.com/$USER/container_demos.git  --branch master --file multi-calculator/go-calc-backend/Dockerfile --git-access-token $GIT_PAT
+az acr task create --registry $ACR_NAME --name go-calc-backend --image go-calc-backend:{{.Run.ID}} --context https://github.com/$USER/container_demos.git  --branch master --file apps/go-calc-backend/Dockerfile --git-access-token $GIT_PAT --arg basedir="apps/go-calc-backend/app"
 
 az acr task run --registry $ACR_NAME --name go-calc-backend
 
