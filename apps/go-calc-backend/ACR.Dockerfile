@@ -5,7 +5,7 @@ ARG appfolder
 RUN apk update && apk add --no-cache git
 RUN adduser -D -g '' appuser
 WORKDIR /go/src/phoenix/go-calc-backend
-COPY ${basedir}/ .
+COPY ${appfolder}/ .
 RUN go get -d -v
 RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/go-calc-backend 
 
