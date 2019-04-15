@@ -34,3 +34,8 @@ docker run hello-world
 ```
 docker rmi $(docker images -q)
 ```
+
+5. Remove unused containers
+```
+docker system prune -a
+```

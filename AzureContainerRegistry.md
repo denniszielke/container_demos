@@ -62,11 +62,14 @@ az acr build --registry $ACR_NAME --image helloacr:v1 .
 
 az acr task list -o table
 
-az acr task create --registry $ACR_NAME --name go-calc-backend --image go-calc-backend:{{.Run.ID}} --context https://github.com/$USER/container_demos.git  --branch master --file apps/go-calc-backend/Dockerfile --git-access-token $GIT_PAT --no-cache true --set basedir="apps/go-calc-backend/app" --arg basedir="apps/go-calc-backend/app"
+az acr task create --registry $ACR_NAME --name go-calc-backend-acr --image go-calc-backend:{{.Run.ID}} --context https://github.com/$USER/container_demos.git  --branch master --file apps/go-calc-backend/ACR.Dockerfile --git-access-token $GIT_PAT --no-cache true --set appfolder="apps/go-calc-backend/app" --arg appfolder="apps/go-calc-backend/app"
 
-az acr task create --registry $ACR_NAME --name go-calc-backend --image go-calc-backend:{{.Run.ID}} --context https://github.com/$USER/container_demos.git  --branch master --file apps/go-calc-backend/ACR.Dockerfile --git-access-token $GIT_PAT --no-cache true --set basedir="apps/go-calc-backend/app" --arg basedir="apps/go-calc-backend/app"
+az acr task create --registry $ACR_NAME --name js-calc-backend-acr --image js-calc-backend:{{.Run.ID}} --context https://github.com/$USER/container_demos.git  --branch master --file apps/js-calc-backend/ACR.Dockerfile --git-access-token $GIT_PAT --no-cache true --set appfolder="apps/js-calc-backend/app" --arg appfolder="apps/js-calc-backend/app"
 
+az acr task create --registry $ACR_NAME --name js-calc-frontend-acr --image js-calc-frontend:{{.Run.ID}} --context https://github.com/$USER/container_demos.git  --branch master --file apps/js-calc-frontend/ACR.Dockerfile --git-access-token $GIT_PAT --no-cache true --set appfolder="apps/js-calc-frontend/app" --arg appfolder="apps/js-calc-frontend/app"
 
-az acr task run --registry $ACR_NAME --name go-calc-backend
+az acr task run --registry $ACR_NAME --name go-calc-backend-acr
+az acr task run --registry $ACR_NAME --name js-calc-backend-acr
+az acr task run --registry $ACR_NAME --name js-calc-frontend-acr
 
 ```
