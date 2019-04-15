@@ -1,6 +1,5 @@
-ARG appfolder="app"
-
 FROM golang:alpine AS builder
+ARG appfolder="app"
 RUN apk update && apk add --no-cache git
 RUN adduser -D -g '' appuser
 WORKDIR /go/src/phoenix/go-calc-backend
@@ -14,6 +13,4 @@ WORKDIR /root/
 COPY --from=builder /go/bin/go-calc-backend /go/bin/go-calc-backend
 EXPOSE 8080
 USER appuser
-ENV NODE_ENV production
-ENV BUILD_INFO $build_info
 ENTRYPOINT ["/go/bin/go-calc-backend"]
