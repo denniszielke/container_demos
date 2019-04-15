@@ -75,3 +75,7 @@ KUBE_NAME="dzkubvmss"
 az aks update -g $KUBE_GROUP  -n $KUBE_NAME --api-server-authorized-ip-ranges "$MYIP"
 
 az aks list -g $KUBE_GROUP -n $KUBE_NAME
+
+## Minimum roles
+
+https://docs.microsoft.com/en-us/azure/role-based-access-control/built-in-roles

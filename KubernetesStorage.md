@@ -231,3 +231,42 @@ rescale the deployment
 ```
 kubectl scale deployment nginx-hdd --replicas=1
 ```
+
+# Manually attach disk
+
+```
+az disk create \
+  --resource-group $KUBE_GROUP \
+  --name myAKSDisk  \
+  --size-gb 20 \
+  --query id --output tsv
+```
+
+```
+cat <<EOF | kubectl apply -f - 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod
+spec:
+  containers:
+  - image: nginx:1.15.5
+    name: mypod
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    volumeMounts:
+      - name: azure
+        mountPath: /mnt/azure
+  volumes:
+      - name: azure
+        azureDisk:
+          kind: Managed
+          diskName: myAKSDisk
+          diskURI: /subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourceGroups/dz-k8s-12/providers/Microsoft.Compute/disks/myAKSDisk
+EOF
+```

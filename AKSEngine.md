@@ -45,6 +45,8 @@ sed -e "s/SERVICE_PRINCIPAL_ID/$SERVICE_PRINCIPAL_ID/ ; s/SERVICE_PRINCIPAL_SECR
 1. Create the resource group
 ```
 az group create -n $KUBE_GROUP -l $LOCATION
+
+az identity create -g $KUBE_GROUP -n dzaksmsi
 ```
 
 2. Create cluster
