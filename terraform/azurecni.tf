@@ -83,7 +83,7 @@ resource "azurerm_log_analytics_workspace" "akslogs" {
   name                = "${var.dns_prefix}-lga"
   location            = "${azurerm_resource_group.aksrg.location}"
   resource_group_name = "${azurerm_resource_group.aksrg.name}"
-  sku                 = "Free"
+  sku                 = "PerGB2018"
 }
 
 resource "azurerm_log_analytics_solution" "akslogs" {
@@ -134,7 +134,7 @@ resource "azurerm_kubernetes_cluster" "akstf" {
       dns_service_ip = "10.2.0.10"
       docker_bridge_cidr = "172.17.0.1/16"
       #pod_cidr = "" selected by subnet_id
-      network_policy = "calico"
+      # network_policy = "calico"
   }
 
   service_principal {

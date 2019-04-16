@@ -164,6 +164,12 @@ kubectl create secret generic appinsightsecret --from-literal=appinsightskey=$AP
 
 5. Install
 ```
+az configure --defaults acr=dzkubereg
+
+az acr helm repo add
+
+CHARTREPO=dzkubereg
+
 helm install multicalchart --name=$APP_IN --set frontendReplicaCount=3 --set backendReplicaCount=3 --set usePodRedis=no --namespace $APP_NS
 ```
 

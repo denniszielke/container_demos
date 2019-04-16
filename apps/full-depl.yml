@@ -125,7 +125,7 @@ spec:
       - name: go-calc-backend
         image: denniszielke/go-calc-backend:latest
         ports:
-          - containerPort: 80
+          - containerPort: 3001
             name: http         
             protocol: TCP
         env: 
@@ -135,4 +135,4 @@ spec:
                 name: appinsightsecret
                 key: appinsightskey
           - name: "PORT"
-            value: "80"
+            value: "3001"

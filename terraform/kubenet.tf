@@ -83,7 +83,7 @@ resource "azurerm_log_analytics_workspace" "akslogs" {
   name                = "${var.dns_prefix}-lga"
   location            = "${azurerm_resource_group.aksrg.location}"
   resource_group_name = "${azurerm_resource_group.aksrg.name}"
-  sku                 = "Free"
+  sku                 = "PerGB2018"
 }
 
 resource "azurerm_log_analytics_solution" "akslogs" {
