@@ -8,7 +8,8 @@ RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/go-calc-backend
 
 FROM alpine:latest as go-calc-backend
 RUN apk --no-cache add ca-certificates
-RUN useradd -ms /bin/bash gouser
+RUN addgroup -g 1000 -S gouser && \
+    adduser -u 1000 -S gouser -G gouser
 RUN mkdir -p /home/gouser/app && chown -R gouser:gouser /home/gouser/app
 WORKDIR /home/gouser/app
 COPY --from=builder /go/bin/go-calc-backend /home/gouser/app
