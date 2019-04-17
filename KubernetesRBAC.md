@@ -120,6 +120,11 @@ subjects:
 EOF
 ```
 
+check if RBAC is active
+```
+kubectl cluster-info dump --namespace kube-system | grep authorization-mode
+```
+
 ## Create namespaces and trimmed roles
 
 ```

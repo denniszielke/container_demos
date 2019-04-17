@@ -36,9 +36,10 @@ spec:
       containers:
       - name: js-calc-frontend
         image: denniszielke/js-calc-frontend:latest
+        imagePullPolicy: Always
         ports:
-          - containerPort: 3000
-            name: http         
+          - containerPort: 8080
+            name: calc-frontend         
             protocol: TCP
         env: 
           - name: "ENDPOINT"
@@ -49,7 +50,7 @@ spec:
                 name: appinsightsecret
                 key: appinsightskey
           - name: "PORT"
-            value: "3000"
+            value: "8080"
 ---
 apiVersion: v1
 kind: Service
@@ -62,7 +63,7 @@ spec:
   ports:
   - port: 80
     name: calc-backend
-    targetPort: 3001
+    targetPort: 8080
   selector:
     role: calc-backend
     app: calculator
@@ -87,11 +88,12 @@ spec:
         app: calculator
     spec:
       containers:
-      - name: calc-backend
+      - name: js-calc-backend
         image: denniszielke/js-calc-backend:latest
+        imagePullPolicy: Always
         ports:
-          - containerPort: 3001
-            name: http         
+          - containerPort: 8080
+            name: calc-backend         
             protocol: TCP
         env: 
           - name: "INSTRUMENTATIONKEY"
@@ -100,7 +102,7 @@ spec:
                 name: appinsightsecret
                 key: appinsightskey
           - name: "PORT"
-            value: "3001"
+            value: "8080"
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -124,9 +126,10 @@ spec:
       containers:
       - name: go-calc-backend
         image: denniszielke/go-calc-backend:latest
+        imagePullPolicy: Always
         ports:
-          - containerPort: 3001
-            name: http         
+          - containerPort: 8080
+            name: calc-backend         
             protocol: TCP
         env: 
           - name: "INSTRUMENTATIONKEY"
@@ -135,4 +138,4 @@ spec:
                 name: appinsightsecret
                 key: appinsightskey
           - name: "PORT"
-            value: "3001"
+            value: "8080"

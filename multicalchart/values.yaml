@@ -7,8 +7,7 @@ dependencies:
   useRedis: no
   usePodRedis: no
   redisSecret: rediscachesecret
-  useAppInsights: no
-  appInsightsSecret: appinsightsecret
+  useAppInsights: yes
   appInsightsSecretValue: dummyValue
   useIngress: no
 image:
@@ -17,7 +16,7 @@ image:
   frontendTag: latest
   backendImage: js-calc-backend
   backendTag: latest
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   pullSecret: kuberegistry
 service:
   frontendType: LoadBalancer

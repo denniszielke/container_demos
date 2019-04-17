@@ -34,7 +34,7 @@ func main() {
 	fmt.Println("hostname:", hostname)
 	var appInsightsKey, appInsightsKeyExists = os.LookupEnv("INSTRUMENTATIONKEY")
 	var client appinsights.TelemetryClient
-	if appInsightsKeyExists {
+	if appInsightsKeyExists && appInsightsKey != "dummyValue" {
 		fmt.Println("appinsights set:", appInsightsKey)
 		client = appinsights.NewTelemetryClient(appInsightsKey)
 		client.TrackEvent("go-backend-initializing")
@@ -103,7 +103,7 @@ func GetCalculation(res http.ResponseWriter, req *http.Request) {
 	start := time.Now()
 	var client appinsights.TelemetryClient
 	var appInsightsKey, appInsightsKeyExists = os.LookupEnv("INSTRUMENTATIONKEY")
-	if appInsightsKeyExists {
+	if appInsightsKeyExists && appInsightsKey != "dummyValue" {
 		client = appinsights.NewTelemetryClient(appInsightsKey)
 		client.Context().Tags.Cloud().SetRole("calc-backend-svc")
 		client.TrackEvent("calculation-go-backend-call")
@@ -126,7 +126,7 @@ func GetCalculation(res http.ResponseWriter, req *http.Request) {
 	var calcResult = Calculation{Value: "[" + primestr + "]", Timestamp: time.Now(), Host: hostname, Remote: remoteip}
 	elapsed := time.Since(start)
 	var milliseconds = int64(elapsed / time.Millisecond)
-	if appInsightsKeyExists {
+	if appInsightsKeyExists && appInsightsKey != "dummyValue" {
 		client.TrackEvent("calculation-go-backend-result")
 		client.TrackMetric("calculation-go-backend-duration", float64(milliseconds))
 	}

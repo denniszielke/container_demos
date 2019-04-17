@@ -3,8 +3,8 @@
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="dz-k8s-12"
-KUBE_NAME="dz-k8s-12"
+KUBE_GROUP="dz-akse-13a"
+KUBE_NAME="dz-akse-13"
 LOCATION="westeurope"
 LOCATION="centralus"
 SERVICE_PRINCIPAL_ID=
@@ -87,6 +87,13 @@ EXPECTED_ORCHESTRATOR_VERSION=1.11.9
   --auth-method client_secret \
   --client-id $SERVICE_PRINCIPAL_ID \
   --client-secret $SERVICE_PRINCIPAL_SECRET
+
+./aks-engine scale --subscription-id $SUBSCRIPTION_ID \
+    --resource-group $KUBE_GROUP  --location $LOCATION \
+    --client-id $SERVICE_PRINCIPAL_ID \
+    --client-secret $SERVICE_PRINCIPAL_SECRET \
+    --api-model  _output/$KUBE_NAME/apimodel.json --new-node-count 4 \
+    --node-pool agentpool2 --master-FQDN $KUBE_NAME.$LOCATION.cloudapp.azure.com
 
   ./aks-engine upgrade --debug \
   --subscription-id $SUBSCRIPTION_ID \

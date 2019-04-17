@@ -180,8 +180,8 @@ helm get values calculator
 
 6. Change config and perform an upgrade
 ```
-helm upgrade --set backendReplicaCount=3 --set frontendReplicaCount=3 $APP_IN multicalchart --namespace $APP_NS
-helm upgrade --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.frontendTag=118 --set image.backendTag=120 --set dependencies.usePodRedis=yes $APP_IN multicalchart --namespace $APP_NS
+helm upgrade --recreate-pods --set backendReplicaCount=3 --set frontendReplicaCount=3 $APP_IN multicalchart --namespace $APP_NS
+helm upgrade --recreate-pods --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.frontendTag=118 --set image.backendTag=120 --set dependencies.usePodRedis=yes $APP_IN multicalchart --namespace $APP_NS 
 
 ```
 
@@ -189,7 +189,7 @@ If you have a redis secret you can turn on the redis cache
 ```
 kubectl create secret generic rediscachesecret --from-literal=redishostkey=$REDIS_HOST --from-literal=redisauthkey=$REDIS_AUTH
 
-helm upgrade --set backendReplicaCount=4 --set frontendReplicaCount=4 --set useAppInsights=yes --set useRedis=yes calculator $APP_IN --namespace $APP_NS
+helm upgrade --recreate-pods --set backendReplicaCount=4 --set frontendReplicaCount=4 --set useAppInsights=yes --set useRedis=yes calculator $APP_IN --namespace $APP_NS
 ```
 
 7. See rollout history

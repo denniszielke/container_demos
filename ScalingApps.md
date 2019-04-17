@@ -10,7 +10,7 @@ kubectl create -f deploy/1.8+/
 kubectl delete pod heapster
 
 ```
-kubectl create -f https://raw.githubusercontent.com/Azure-Samples/azure-voting-app-redis/master/azure-vote-all-in-one-redis.yaml
+kubectl apply -f https://raw.githubusercontent.com/Azure-Samples/azure-voting-app-redis/master/azure-vote-all-in-one-redis.yaml
 
 kubectl get pod -o wide
 

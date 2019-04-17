@@ -11,8 +11,8 @@ spec:
   type: LoadBalancer
   ports:
    - port: 80
-     name: http
-     targetPort: 3000
+     name: calc-frontend
+     targetPort: 8080
      protocol: TCP
 ---
 apiVersion: extensions/v1beta1
@@ -34,11 +34,11 @@ spec:
         app: calculator
     spec:
       containers:
-      - name: calcfrontend
-        image: dzregistry.azurecr.io/calc/calc-frontend:latest
+      - name: js-calc-frontend
+        image: denniszielke/js-calc-frontend:latest
         ports:
-          - containerPort: 80
-            name: http         
+          - containerPort: 8080
+            name: calc-frontend         
             protocol: TCP
         env: 
           - name: "ENDPOINT"
@@ -49,6 +49,4 @@ spec:
                 name: appinsightsecret
                 key: appinsightskey
           - name: "PORT"
-            value: "80"
-      imagePullSecrets:
-      - name: kuberegistry
+            value: "8080"

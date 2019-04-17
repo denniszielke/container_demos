@@ -17,6 +17,11 @@ reset nic via cli
 az network nic update -g MC_* -n aks-nodepool1-*-nic-0
 ```
 
+## Check if your cluster has RBAC
+```
+kubectl cluster-info dump --namespace kube-system | grep authorization-mode
+```
+
 ## Find out source ip
 
 ```
@@ -77,7 +82,7 @@ then finally connect with SSH
     ssh azureuser@<public ip address>
 
 ```
-cat <<EOF | kubectl create -f -
+cat <<EOF | kubectl apply -f -
 kind: Pod
 apiVersion: v1
 metadata:

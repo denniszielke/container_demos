@@ -9,18 +9,11 @@ metadata:
 spec:
   containers:
     - name: js-calc-backend
-      image: dzkubereg.azurecr.io/calc/js-calc-backend:1001
+      image: denniszielke/js-calc-backend:latest
       ports:
-        - containerPort: 80
-          name: http         
+        - containerPort: 8080
+          name: calc-backend        
           protocol: TCP
       env: 
-        - name: "INSTRUMENTATIONKEY"
-          valueFrom:
-            secretKeyRef:
-              name: appinsightsecret
-              key: appinsightskey
         - name: "PORT"
-          value: "80"
-  imagePullSecrets:
-    - name: kuberegistry
+          value: "8080"
