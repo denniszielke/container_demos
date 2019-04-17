@@ -170,7 +170,7 @@ az acr helm repo add
 
 CHARTREPO=dzkubereg
 
-helm install multicalchart --name=$APP_IN --set frontendReplicaCount=3 --set backendReplicaCount=3 --set usePodRedis=no --namespace $APP_NS
+helm install ./multicalchart --name=$APP_IN --set frontendReplicaCount=3 --set backendReplicaCount=3 --set dependencies.usePodRedis=false --set dependencies.useAppInsights=false --set image.repository=denniszielke --namespace $APP_NS --dry-run --debug
 ```
 
 verify
@@ -180,8 +180,13 @@ helm get values calculator
 
 6. Change config and perform an upgrade
 ```
-helm upgrade --recreate-pods --set backendReplicaCount=3 --set frontendReplicaCount=3 $APP_IN multicalchart --namespace $APP_NS
-helm upgrade --recreate-pods --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.frontendTag=118 --set image.backendTag=120 --set dependencies.usePodRedis=yes $APP_IN multicalchart --namespace $APP_NS 
+helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=3 --set frontendReplicaCount=3 $APP_IN multicalchart --namespace $APP_NS
+
+helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.repository=denniszielke --set image.backendImage=go-calc-backend --set dependencies.usePodRedis=true  --namespace $APP_NS 
+
+helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.repository=denniszielke --set image.backendImage=js-calc-backend --set dependencies.usePodRedis=false  --namespace $APP_NS 
+
+helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY  --namespace $APP_NS 
 
 ```
 

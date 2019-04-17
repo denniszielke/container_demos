@@ -59,11 +59,6 @@ spec:
                 secretKeyRef:
                   name: rediscachesecret
                   key: redisauthkey
-{{- else }}
-            - name: "REDIS_HOST"
-              value: ""
-            - name: "REDIS_AUTH"
-              value: ""
 {{- end }}
 {{- end }}
           livenessProbe:

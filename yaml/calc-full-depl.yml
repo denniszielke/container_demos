@@ -11,8 +11,8 @@ spec:
   type: LoadBalancer
   ports:
    - port: 80
-     name: http
-     targetPort: 3000
+     name: calc-frontend 
+     targetPort: 8080
      protocol: TCP
 ---
 apiVersion: extensions/v1beta1
@@ -20,7 +20,7 @@ kind: Deployment
 metadata:
   name: js-calc-frontend-depl
 spec:
-  replicas: 3
+  replicas: 1
   minReadySeconds: 5
   strategy:
     type: RollingUpdate
@@ -73,7 +73,7 @@ kind: Deployment
 metadata:
   name: js-calc-backend-depl
 spec:
-  replicas: 3
+  replicas: 1
   minReadySeconds: 5
   strategy:
     type: RollingUpdate
@@ -109,7 +109,7 @@ kind: Deployment
 metadata:
   name: go-calc-backend-depl
 spec:
-  replicas: 3
+  replicas: 1
   minReadySeconds: 5
   strategy:
     type: RollingUpdate
