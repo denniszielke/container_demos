@@ -27,7 +27,10 @@
             "value": "1.12.6"
         },
         "networkPlugin": {
-            "value": "kubenet"
+            "value": "azure"
+        },
+        "networkPolicy": {
+            "value": "calico"
         }
     }
 }

@@ -13,6 +13,15 @@ variable "client_id" {
 variable "client_secret" {
     default = ""
 }
+
+variable "aks_client_id" {
+    default = ""
+}
+
+variable "aks_client_secret" {
+    default = ""
+}
+
 variable "environment" {
     default = "stg"
 }

@@ -187,7 +187,6 @@ helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=1 --set frontendR
 helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.repository=denniszielke --set image.backendImage=js-calc-backend --set dependencies.usePodRedis=false  --namespace $APP_NS 
 
 helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY  --namespace $APP_NS 
-
 ```
 
 If you have a redis secret you can turn on the redis cache
@@ -206,4 +205,24 @@ helm rollback $APP_IN 1
 6. Cleanup
 ```
 helm delete $APP_IN --purge
+```
+
+## Helm Template for Linkerd
+
+```
+APP_IN=calc1
+APP_NS=calculator
+export PATH=$PATH:$HOME/.linkerd2/bin 
+
+helm template --name=$APP_IN --set frontendReplicaCount=1 --set backendReplicaCount=1 --set dependencies.usePodRedis=false --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set image.repository=denniszielke --output-dir ./manifests ./multicalchart
+
+kubectl apply --recursive --filename ./manifests/multicalchart --namespace $APP_NS
+
+kubectl get -n $APP_NS deploy -o yaml \
+  | linkerd inject - \
+  | kubectl apply -f -
+
+export SERVICE_IP=$(kubectl get svc --namespace $APP_NS $APP_IN-calc-frontend-svc -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+open http://$SERVICE_IP:80
+
 ```

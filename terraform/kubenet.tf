@@ -137,8 +137,8 @@ resource "azurerm_kubernetes_cluster" "akstf" {
   }
 
   service_principal {
-    client_id     = "${var.client_id}"
-    client_secret = "${var.client_secret}"
+    client_id     = "${var.aks_client_id}"
+    client_secret = "${var.aks_client_secret}"
   }
 
   addon_profile {

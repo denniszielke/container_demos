@@ -8,7 +8,7 @@ https://kubernetes.io/docs/concepts/policy/pod-security-policy/
 KUBE_GROUP="KubePSPs"
 KUBE_NAME="kubesecurity"
 LOCATION="westeurope"
-KUBE_VERSION="1.12.6"
+KUBE_VERSION="1.12.7"
 CLUSTER_NAME="security"
 
 az group create -n $KUBE_GROUP -l $LOCATION

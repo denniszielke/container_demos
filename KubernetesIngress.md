@@ -150,6 +150,7 @@ apiVersion: certmanager.k8s.io/v1alpha1
 kind: ClusterIssuer
 metadata:
   name: letsencrypt-prod
+  namespace: ingress-basic
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
@@ -218,6 +219,7 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: hello-world-ingress
+  namespace: ingress-basic
   annotations:
     kubernetes.io/ingress.class: nginx
     certmanager.k8s.io/cluster-issuer: letsencrypt-prod
@@ -226,7 +228,7 @@ spec:
   tls:
   - hosts:
     - $DNS
-    secretName: hello-tls-secret
+    secretName: tls-secret
   rules:
   - host: $DNS
     http:

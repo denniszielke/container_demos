@@ -11,6 +11,8 @@ spec:
       labels:
         name: check-reboot
     spec:
+      nodeSelector:
+        beta.kubernetes.io/os: linux
       containers:
         - name: check-reboot
           securityContext:

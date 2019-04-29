@@ -4,7 +4,7 @@
 ```
 SUBSCRIPTION_ID=""
 KUBE_GROUP="dz-akse-13a"
-KUBE_NAME="dz-akse-13"
+KUBE_NAME="dz-akse-13a"
 LOCATION="westeurope"
 LOCATION="centralus"
 SERVICE_PRINCIPAL_ID=

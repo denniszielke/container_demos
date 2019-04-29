@@ -53,6 +53,16 @@ with rbac (is now default)
 
 ```
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3  --ssh-key-value ~/.ssh/id_rsa.pub --kubernetes-version $KUBE_VERSION --enable-rbac --aad-server-app-id $AAD_APP_ID --aad-server-app-secret $AAD_APP_SECRET --aad-client-app-id $AAD_CLIENT_ID --aad-tenant-id $TENANT_ID --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --node-vm-size "Standard_B1ms" --enable-addons http_application_routing monitoring
+
+az aks create \
+    --resource-group $KUBE_GROUP \
+    --name $KUBE_NAME \
+    --enable-vmss \
+    --node-count 1 \
+    --ssh-key-value ~/.ssh/id_rsa.pub \
+    --kubernetes-version $KUBE_VERSION \
+    --enable-rbac \
+    --enable-addons monitoring
 ```
 
 without rbac ()
@@ -136,12 +146,10 @@ az aks nodepool add -g $KUBE_GROUP --cluster-name $KUBE_NAME --os-type Windows -
 
 az aks nodepool list -g $KUBE_GROUP --cluster-name $KUBE_NAME -o table
 
-az aks nodepool scale -g $KUBE_GROUP --cluster-name $KUBE_NAME  -n agentpool1 -c 3
-
+az aks nodepool scale -g $KUBE_GROUP --cluster-name $KUBE_NAME  -n cheap -c 1
+az aks nodepool scale -g $KUBE_GROUP --cluster-name $KUBE_NAME  -n agentpool -c 1
 
 # Delete everything
 ```
 az group delete -n $KUBE_GROUP
 ```
-
-Adesso, Daimler, Bundesbank, E.ON, E

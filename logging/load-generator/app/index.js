@@ -7,7 +7,7 @@ function intervalFuncPost() {
     'number': randomNumber
   }; 
   var options = { 
-    'url': endpoint,
+    'url': process.env.POST_ENDPOINT,
     'headers': headers
   }; 
 
@@ -18,17 +18,7 @@ function intervalFuncPost() {
 }
 
 function intervalFuncGet() {
-  var randomNumber = Math.floor((Math.random() * 10000000) + 1);
-  var headers = {
-    'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8;',
-    'number': randomNumber
-  }; 
-  var options = { 
-    'url': endpoint,
-    'headers': headers
-  }; 
-
-  request.get(options, function(err, res, body) {
+  request.get(process.env.GET_ENDPOINT, function(err, res, body) {
     var endDate = new Date();
     console.log(endDate.getTime() + " " + body);
   });
@@ -39,9 +29,12 @@ function noop() {
   console.log(endDate.getTime() + " doing nothing");
 }
 
-if ( process.env.ENDPOINT ) {
-  var endpoint = process.env.ENDPOINT;
-  setInterval(intervalFunc, 10);
-} else {
+if ( process.env.GET_ENDPOINT ) {
+  setInterval(intervalFuncGet, 10);
+} else if (process.env.GET_ENDPOINT)
+{
+  setInterval(intervalFuncPost, 10);
+}
+else {
   setInterval(noop, 10000);
 }

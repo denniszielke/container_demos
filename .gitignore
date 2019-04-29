@@ -15,6 +15,7 @@ CommonIssues.md
 appgw.yaml
 Presentation.md
 games/whack.yaml
+manifests/*
 deployment/acsengvnet_out.json
 multi-calculator/.DS_Store
 multi-calculator/go-calc-backend/.DS_Store

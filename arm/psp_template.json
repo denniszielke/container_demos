@@ -84,6 +84,16 @@
                 "description": "Network plugin used for building Kubernetes network."
             }
         },
+        "networkPolicy": {
+            "type": "string",
+            "allowedValues": [
+                "azure",
+                "calico"
+            ],
+            "metadata": {
+                "description": "Network policy plugin used for building Kubernetes network."
+            }
+        },
         "maxPods": {
             "type": "int",
             "defaultValue": 30,
@@ -133,7 +143,8 @@
                     "Secret": "[parameters('servicePrincipalClientSecret')]"
                 },
                 "networkProfile": {
-                    "networkPlugin": "[parameters('networkPlugin')]"
+                    "networkPlugin": "[parameters('networkPlugin')]", 
+                    "networkPolicy": "[parameters('networkPolicy')]"
                 }
             },
             "tags": {}

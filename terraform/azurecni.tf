@@ -134,12 +134,12 @@ resource "azurerm_kubernetes_cluster" "akstf" {
       dns_service_ip = "10.2.0.10"
       docker_bridge_cidr = "172.17.0.1/16"
       #pod_cidr = "" selected by subnet_id
-      # network_policy = "calico"
+      network_policy = "calico"
   }
 
   service_principal {
-    client_id     = "${var.client_id}"
-    client_secret = "${var.client_secret}"
+    client_id     = "${var.aks_client_id}"
+    client_secret = "${var.aks_client_secret}"
   }
 
   addon_profile {
@@ -153,6 +153,7 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     Environment = "${var.environment}"
     Network = "azurecni"
     RBAC = "true"
+    Policy = "calico"
   }
 
   # depends_on = ["azurerm_azuread_service_principal.aks_sp"]
@@ -185,21 +186,21 @@ output "id" {
     value = "${azurerm_kubernetes_cluster.akstf.id}"
 }
 
-output "kube_config" {
-  value = "${azurerm_kubernetes_cluster.akstf.kube_config_raw}"
-}
+# output "kube_config" {
+#   value = "${azurerm_kubernetes_cluster.akstf.kube_config_raw}"
+# }
 
-output "client_key" {
-  value = "${azurerm_kubernetes_cluster.akstf.kube_config.0.client_key}"
-}
+# output "client_key" {
+#   value = "${azurerm_kubernetes_cluster.akstf.kube_config.0.client_key}"
+# }
 
-output "client_certificate" {
-  value = "${azurerm_kubernetes_cluster.akstf.kube_config.0.client_certificate}"
-}
+# output "client_certificate" {
+#   value = "${azurerm_kubernetes_cluster.akstf.kube_config.0.client_certificate}"
+# }
 
-output "cluster_ca_certificate" {
-  value = "${azurerm_kubernetes_cluster.akstf.kube_config.0.cluster_ca_certificate}"
-}
+# output "cluster_ca_certificate" {
+#   value = "${azurerm_kubernetes_cluster.akstf.kube_config.0.cluster_ca_certificate}"
+# }
 
 output "host" {
   value = "${azurerm_kubernetes_cluster.akstf.kube_config.0.host}"

@@ -14,7 +14,7 @@ KUBE_ACI_SUBNET_NAME="aci-2-subnet"
 KUBE_FW_SUBNET_NAME="AzureFirewallSubnet"
 KUBE_ING_SUBNET_NAME="ing-4-subnet"
 KUBE_AGENT_SUBNET_NAME="aks-5-subnet"
-KUBE_VERSION="1.11.5"
+KUBE_VERSION="1.12.7"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
 AAD_APP_NAME=""
@@ -85,7 +85,7 @@ create cluster without rbac
 
 KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT_SUBNET_NAME"
 
-az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 4  --ssh-key-value ~/.ssh/id_rsa.pub --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 1 --ssh-key-value ~/.ssh/id_rsa.pub  --enable-vmss --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --network-policy calico --enable-rbac --enable-addons monitoring
 ```
 
 for additional rbac

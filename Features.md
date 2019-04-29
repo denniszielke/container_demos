@@ -3,8 +3,8 @@
 Get AKS features
 ```
 az feature list --namespace Microsoft.ContainerService -o table
-
-az feature list --namespace  Microsoft.DocumentDB 
+az feature list --namespace  Microsoft.PolicyInsights -o table
+az feature list --namespace  Microsoft.DocumentDB -o table
 ```
 
 Register a feature and reregister the provider
@@ -22,11 +22,14 @@ az feature register --name AksBypassServiceGate --namespace Microsoft.ContainerS
 az feature register --name AvailabilityZonePreview --namespace Microsoft.ContainerService
 az feature register --name WindowsPreview --namespace Microsoft.ContainerService
 az feature register --name AKSLockingDownEgressPreview --namespace Microsoft.ContainerService
+az feature register --name AKS-AzurePolicyAutoApprove --namespace Microsoft.ContainerService
+az feature register --namespace Microsoft.PolicyInsights --name AKS-DataplaneAutoApprove
+
 ```
 
 Check if the feature is active
 ```
-az feature list -o table --query "[?contains(name, 'Microsoft.Container‐Service/APIServerSecurityPreview')].{Name:name,State:properties.state}"
+az feature list -o table --query "[?contains(name, 'Microsoft.Container‐Service/AKS-AzurePolicyAutoApprove')].{Name:name,State:properties.state}"
 ```
 
 Re-register the provider

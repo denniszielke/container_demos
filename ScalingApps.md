@@ -23,6 +23,7 @@ kubectl autoscale deployment azure-vote-front --cpu-percent=20 --min=20 --max=30
 kubectl get hpa
 
 
+
 kubectl run -it busybox-replicas --rm --image=busybox -- sh
 
 for i in 1 2 3 4 5; do
@@ -47,13 +48,6 @@ wget -q -O- http://65.52.144.134?{1..2000}
 
 ```
 
-Create a webtest and use application insights
-https://azure.microsoft.com/en-us/blog/creating-a-web-test-alert-programmatically-with-application-insights/
-
-
-flexlab/azure-mesh-fireworks-worker-v2
-
-OBJECT_TYPE=RED
 
 https://github.com/Azure-Samples/virtual-node-autoscale
 
