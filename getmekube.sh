@@ -17,8 +17,10 @@ VM_COUNT=3
 KUBE_TEMPLATE_FILE=$PWD/terraform/azurecni.tf
 SUBSCRIPTION_FILE=$CONFIG_PATH/variables_$subscription.tf
 VARIABLE_FILE=$CONFIG_PATH/variables_common.tf
-APP_FILE=$CONFIG_PATH/kubernetes.tf
-ACR_FILE=$CONFIG_PATH/containerregistry.tf
+HELM_FILE=$PWD/terraform/helm.tf
+NGINX_FILE=$PWD/terraform/nginx.tf
+ACR_FILE=$PWD/terraform/containerregistry.tf
+SP_FILE=$PWD/terraform/serviceprincipal.tf
 
 if [ "$subscription" == "" ]; then
 echo "Subscription [int], [dev], [nin]?: "
@@ -89,6 +91,12 @@ read -n 1 helm
 echo
 fi
 
+if [ "$nginx" == "" ]; then
+echo "Install nginx [y/n]?: "
+read -n 1 nginx
+echo
+fi
+
 if [ "$acr" == "" ]; then
 echo "deploy acr [y/n]?: "
 read -n 1 acr
@@ -148,9 +156,14 @@ fi
 
 cp $SUBSCRIPTION_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
 cp $KUBE_TEMPLATE_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+cp $SP_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 
 if [ "$helm" == "y" ]; then
-cp $APP_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+cp $HELM_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+fi
+
+if [ "$nginx" == "y" ]; then
+cp $NGINX_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 fi
 
 if [ "$acr" == "y" ]; then

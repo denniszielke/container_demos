@@ -6,21 +6,13 @@ variable "tenant_id" {
     default = ""
 }
 
-variable "client_id" {
-    default = ""
-}
+# variable "terraform_client_id" {
+#     default = ""
+# }
 
-variable "client_secret" {
-    default = ""
-}
-
-variable "aks_client_id" {
-    default = ""
-}
-
-variable "aks_client_secret" {
-    default = ""
-}
+# variable "terraform_client_secret" {
+#     default = ""
+# }
 
 variable "environment" {
     default = "stg"
@@ -31,7 +23,7 @@ variable "agent_count" {
 }
 
 variable "kubernetes_version" {
-    default = "1.10.9"
+    default = "1.12.7"
 }
 
 variable "ssh_public_key" {

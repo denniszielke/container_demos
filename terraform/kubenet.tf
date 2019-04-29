@@ -3,8 +3,8 @@
 
 provider "azurerm" {
     subscription_id = "${var.subscription_id}"
-    client_id       = "${var.client_id}"
-    client_secret   = "${var.client_secret}"
+    # client_id       = "${var.terraform_client_id}"
+    # client_secret   = "${var.terraform_client_secret}"
     tenant_id       = "${var.tenant_id}"
 }
 
@@ -78,6 +78,15 @@ resource "azurerm_subnet" "aksnet" {
   virtual_network_name      = "${azurerm_virtual_network.kubevnet.name}"
 }
 
+# assign virtual machine contributor on subnet to aks sp
+resource "azurerm_role_assignment" "aksvnetrole" {
+  scope                = "${azurerm_virtual_network.kubevnet.id}"
+  role_definition_name = "Virtual Machine Contributor"
+  principal_id         = "${azuread_service_principal.aks_sp.id}"
+  
+  depends_on = ["azurerm_subnet.aksnet"]
+}
+
 # https://www.terraform.io/docs/providers/azurerm/d/log_analytics_workspace.html
 resource "azurerm_log_analytics_workspace" "akslogs" {
   name                = "${var.dns_prefix}-lga"
@@ -137,8 +146,10 @@ resource "azurerm_kubernetes_cluster" "akstf" {
   }
 
   service_principal {
-    client_id     = "${var.aks_client_id}"
-    client_secret = "${var.aks_client_secret}"
+    client_id     = "${azuread_application.aks_app.application_id}"
+    client_secret = "${random_string.aks_sp_password.result}"
+    # client_id     = "${var.aks_client_id}"
+    # client_secret = "${var.aks_client_secret}"
   }
 
   addon_profile {
@@ -154,7 +165,7 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     RBAC = "true"
   }
 
-  # depends_on = ["azurerm_azuread_service_principal.aks_sp"]
+  depends_on = ["azurerm_subnet.aksnet", "azuread_service_principal.aks_sp"]
 }
 
 # this is needed to fix https://github.com/Azure/AKS/issues/718
@@ -192,21 +203,21 @@ output "id" {
     value = "${azurerm_kubernetes_cluster.akstf.id}"
 }
 
-output "kube_config" {
-  value = "${azurerm_kubernetes_cluster.akstf.kube_config_raw}"
-}
+# output "kube_config" {
+#   value = "${azurerm_kubernetes_cluster.akstf.kube_config_raw}"
+# }
 
-output "client_key" {
-  value = "${azurerm_kubernetes_cluster.akstf.kube_config.0.client_key}"
-}
+# output "client_key" {
+#   value = "${azurerm_kubernetes_cluster.akstf.kube_config.0.client_key}"
+# }
 
-output "client_certificate" {
-  value = "${azurerm_kubernetes_cluster.akstf.kube_config.0.client_certificate}"
-}
+# output "client_certificate" {
+#   value = "${azurerm_kubernetes_cluster.akstf.kube_config.0.client_certificate}"
+# }
 
-output "cluster_ca_certificate" {
-  value = "${azurerm_kubernetes_cluster.akstf.kube_config.0.cluster_ca_certificate}"
-}
+# output "cluster_ca_certificate" {
+#   value = "${azurerm_kubernetes_cluster.akstf.kube_config.0.cluster_ca_certificate}"
+# }
 
 output "host" {
   value = "${azurerm_kubernetes_cluster.akstf.kube_config.0.host}"

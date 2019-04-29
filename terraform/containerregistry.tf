@@ -1,10 +1,10 @@
 # https://www.terraform.io/docs/providers/azurerm/r/role_assignment.html
 resource "azurerm_role_assignment" "aksacrrole" {
-  scope                = "${data.azurerm_subscription.primary.id}"
+  scope                = "${azurerm_container_registry.aksacr.id}"
   role_definition_name = "Reader"
-  principal_id         = "${data.azurerm_client_config.test.service_principal_object_id}"
+  principal_id         = "${azuread_service_principal.aks_sp.id}"
   
-  depends_on = ["azurerm_kubernetes_cluster.akstf"]
+  depends_on = ["azuread_service_principal.aks_sp", "azurerm_container_registry.aksacr", "azurerm_subnet.aksnet"]
 }
 
 # https://www.terraform.io/docs/providers/azurerm/r/container_registry.html
