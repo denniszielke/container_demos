@@ -158,12 +158,12 @@ resource "azurerm_kubernetes_cluster" "akstf" {
 }
 
 # this is needed to fix https://github.com/Azure/AKS/issues/718
-resource "null_resource" "fix_routetable" {
-  provisioner "local-exec" {
-    command = "az network vnet subnet update -n ${azurerm_subnet.aksnet.name} -g ${azurerm_resource_group.aksrg.name} --vnet-name ${azurerm_virtual_network.kubevnet.name} --route-table $(az resource list --resource-group MC_${azurerm_resource_group.aksrg.name}_${azurerm_kubernetes_cluster.akstf.name}_${azurerm_resource_group.aksrg.location} --resource-type Microsoft.Network/routeTables --query '[].{ID:id}' -o tsv)"
-  }
-  depends_on = ["azurerm_kubernetes_cluster.akstf"]
-}
+# resource "null_resource" "fix_routetable" {
+#   provisioner "local-exec" {
+#     command = "az network vnet subnet update -n ${azurerm_subnet.aksnet.name} -g ${azurerm_resource_group.aksrg.name} --vnet-name ${azurerm_virtual_network.kubevnet.name} --route-table $(az resource list --resource-group MC_${azurerm_resource_group.aksrg.name}_${azurerm_kubernetes_cluster.akstf.name}_${azurerm_resource_group.aksrg.location} --resource-type Microsoft.Network/routeTables --query '[].{ID:id}' -o tsv)"
+#   }
+#   depends_on = ["azurerm_kubernetes_cluster.akstf"]
+# }
 
 # merge kubeconfig from the cluster
 resource "null_resource" "get-credentials" {
