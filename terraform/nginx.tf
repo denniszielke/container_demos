@@ -32,7 +32,7 @@ data "helm_repository" "stable" {
 # https://www.terraform.io/docs/providers/helm/release.html
 resource "helm_release" "nginx_ingress" {
   name       = "nginx-ingress"
-  repository = "${helm_repository.stable.metadata.0.name}"
+  repository = "${data.helm_repository.stable.metadata.0.name}"
   chart      = "nginx-ingress"
   namespace  = "kube-system"
 
