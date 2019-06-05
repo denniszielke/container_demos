@@ -44,7 +44,7 @@ app.get('/leak', function(req, res) {
     console.error('Leaks: %d', leaks.length);
     }, 500);
     process.stdout.write('received leak request - leaking');
-    res.send('crashing');
+    res.send('leaking');
 });
 
 console.log(config);

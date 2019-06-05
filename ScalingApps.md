@@ -51,16 +51,25 @@ wget -q -O- http://65.52.144.134?{1..2000}
 
 https://github.com/Azure-Samples/virtual-node-autoscale
 
+helm install --name vn-affinity ./charts/vn-affinity-admission-controller
+
+kubectl label namespace store vn-affinity-injection=enabled --overwrite
+
+
+helm install ./charts/online-store --name online-store --set counter.specialNodeName=$VK_NODE_NAME,app.ingress.host=store.$INGRESS_EXTERNAL_IP.nip.io,appInsight.enabled=false,app.ingress.annotations."kubernetes\.io/ingress\.class"=$INGRESS_CLASS_ANNOTATION --namespace store 
+
 
 export VK_NODE_NAME=virtual-node-aci-linux
-export INGRESS_EXTERNAL_IP=13.95.228.243
+export INGRESS_EXTERNAL_IP=104.46.49.182
 
-kubectl -n kube-system get po intended-gopher-nginx-ingress-controller-96c8f95cd-6l5kp -o yaml | grep ingress-class | sed -e 's/.*=//'
+kubectl -n kube-system get po nginx-ingress-controller-7db8d69bcc-t5zww -o yaml | grep ingress-class | sed -e 's/.*=//'
 
 export INGRESS_CLASS_ANNOTATION=nginx
 helm install stable/grafana --version 1.26.1 --name grafana -f grafana/values.yaml
 
-TkfbbN0KTXrlTGCbpZzPu8NONFv6ZPbZrs9iesr3
+kubectl get secret --namespace default grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+
+m1ZdZov9gKgLk77SRAQDykTthvdMHY3tdwwyxbn8
 
 export POD_NAME=$(kubectl get pods --namespace default -l "app=grafana" -o jsonpath="{.items[0].metadata.name}")
 kubectl --namespace default port-forward $POD_NAME 3000
@@ -73,3 +82,39 @@ export PATH=$GOPATH/bin:$PATH
 go get -u github.com/rakyll/hey
 PUBLIC_IP="store.13.95.228.243.nip.io/"
 hey -z 20m http://$PUBLIC_IP
+
+
+# Keda
+https://github.com/kedacore/sample-hello-world-azure-functions
+
+KEDA_STORAGE=dzmesh33
+
+az group create -l $LOCATION -n $KUBE_GROUP
+az storage account create --sku Standard_LRS --location $LOCATION -g $KUBE_GROUP -n $KEDA_STORAGE
+
+CONNECTION_STRING=$(az storage account show-connection-string --name $KEDA_STORAGE --query connectionString)
+
+az storage queue create -n js-queue-items --connection-string $CONNECTION_STRING
+
+az storage account show-connection-string --name $KEDA_STORAGE --query connectionString
+
+kubectl create namespace keda-app
+helm install --name vn-affinity ./charts/vn-affinity-admission-controller
+
+kubectl label namespace keda vn-affinity-injection=disabled --overwrite
+
+
+func kubernetes deploy --name hello-keda --registry denniszielke --namespace keda-app --polling-interval 5 --cooldown-period 30
+
+kubectl get ScaledObject hello-keda --namespace keda-app -o yaml
+
+kubectl delete deploy hello-keda --namespace keda-app
+kubectl delete ScaledObject hello-keda --namespace keda-app
+kubectl delete Secret hello-keda --namespace keda-app
+
+helm install --name vn-affinity ./charts/vn-affinity-admission-controller
+kubectl label namespace default vn-affinity-injection=enabled
+
+
+helm install ./charts/online-store --name online-store --set counter.specialNodeName=$VK_NODE_NAME,app.ingress.host=store.$INGRESS_EXTERNAL_IP.nip.io,appInsight.enabled=false,app.ingress.annotations."kubernetes\.io/ingress\.class"=$INGRESS_CLASS_ANNOTATION
+

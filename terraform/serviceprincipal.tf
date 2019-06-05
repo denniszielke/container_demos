@@ -1,7 +1,7 @@
 
 # https://www.terraform.io/docs/providers/azuread/index.html
 provider "azuread" {
-  version = "=0.3.0"
+  version = "~> 0.3"
 }
 resource "azuread_application" "aks_app" {
     name = "${var.cluster_name}-sp"

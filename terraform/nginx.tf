@@ -2,6 +2,7 @@
 provider "helm" {
   install_tiller = "true"
   service_account = "${kubernetes_service_account.tiller_service_account.metadata.0.name}"
+  tiller_image    = "gcr.io/kubernetes-helm/tiller:v2.13.1"
 
   kubernetes {
     host                   = "${azurerm_kubernetes_cluster.akstf.kube_config.0.host}"
@@ -49,6 +50,11 @@ resource "helm_release" "nginx_ingress" {
   set {
     name  = "controller.service.loadBalancerIP"
     value = "${azurerm_public_ip.nginx_ingress.ip_address}"
+  }
+  
+  set {
+    name  = "controller.replicaCount"
+    value = "2"
   }
 
   depends_on = ["azurerm_kubernetes_cluster.akstf", "azurerm_public_ip.nginx_ingress"]

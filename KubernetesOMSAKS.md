@@ -437,6 +437,30 @@ ContainerInventory | where Image contains "buggy-app" and TimeGenerated > ago(10
 
 ## Crash or leak app
 
+cat <<EOF | kubectl apply -f -
+apiVersion: rbac.authorization.k8s.io/v1 
+kind: ClusterRole 
+metadata: 
+   name: containerHealth-log-reader 
+rules: 
+   - apiGroups: [""] 
+     resources: ["pods/log", "events"] 
+     verbs: ["get", "list"]  
+--- 
+apiVersion: rbac.authorization.k8s.io/v1 
+kind: ClusterRoleBinding 
+metadata: 
+   name: containerHealth-read-logs-global 
+roleRef: 
+    kind: ClusterRole 
+    name: containerHealth-log-reader 
+    apiGroup: rbac.authorization.k8s.io 
+subjects: 
+   - kind: User 
+     name: clusterUser 
+     apiGroup: rbac.authorization.k8s.io
+EOF
+
 the app has a route called crash - it you call it the app will crash
 /crash 
 
@@ -445,15 +469,15 @@ the app has a route called leak - if you call it it will leak memory
 
 ```
 LOGGER_IP=40.74.50.209
-LOGGER_IP=
+LOGGER_IP=10.0.147.7
 LEAKER_IP=40.74.50.209
-CRASHER_IP=40.74.50.209
+CRASHER_IP=52.233.129.228
 
 curl -H "message: hi" -X POST http://$LOGGER_IP/api/log
 
 curl -X GET http://$CRASHER_IP/crash
 
-curl -X GET http://$LEAKER_IP/leak
+curl -X GET http://$LOGGER_IP/leak
 ```
 
 ## Log nginx http errors
@@ -498,7 +522,7 @@ curl -H "message: hi" -X POST http://$LOGGER_IP/api/log
 
 curl -X GET http://$CRASHER_IP/crash
 
-curl -X GET http://$LEAKER_IP/leak
+curl -X GET http://$CRASHER_IP/leak
 
 for i in `seq 1 20`; do time curl -s $LEAKER_IP/leak > /dev/null; done
 ```

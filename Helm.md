@@ -182,18 +182,23 @@ helm get values calculator
 ```
 helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=3 --set frontendReplicaCount=3 $APP_IN multicalchart --namespace $APP_NS
 
-helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.repository=denniszielke --set image.backendImage=go-calc-backend --set dependencies.usePodRedis=true  --namespace $APP_NS 
+helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set image.backendImage=go-calc-backend --set dependencies.usePodRedis=true  --namespace $APP_NS 
 
 helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.repository=denniszielke --set image.backendImage=js-calc-backend --set dependencies.usePodRedis=false  --namespace $APP_NS 
 
-helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY  --namespace $APP_NS 
+helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.usePodRedis=true  --namespace $APP_NS 
 ```
 
 If you have a redis secret you can turn on the redis cache
 ```
-kubectl create secret generic rediscachesecret --from-literal=redishostkey=$REDIS_HOST --from-literal=redisauthkey=$REDIS_AUTH
+REDIS_HOST=xxx.redis.cache.windows.net
+REDIS_AUTH=XXXX=
+kubectl create secret generic rediscachesecret --from-literal=redishostkey=$REDIS_HOST --from-literal=redisauthkey=$REDIS_AUTH --namespace $APP_NS
 
-helm upgrade --recreate-pods --set backendReplicaCount=4 --set frontendReplicaCount=4 --set useAppInsights=yes --set useRedis=yes calculator $APP_IN --namespace $APP_NS
+helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useRedis=false --set dependencies.usePodRedis=false --namespace $APP_NS
+
+
+helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.repository=denniszielke --set dependencies.useAppInsights=false --set dependencies.useRedis=true --set dependencies.usePodRedis=false  --namespace $APP_NS
 ```
 
 7. See rollout history

@@ -16,6 +16,9 @@ helm template install/kubernetes/helm/istio --name istio --namespace istio-syste
 
 kubectl -n istio-system port-forward $(kubectl -n istio-system get pod -l app=grafana -o jsonpath='{.items[0].metadata.name}') 3000:3000 &
 
+kubectl label namespace calculator istio-injection=enabled
+kubectl label namespace calculator istio-injection=disabled
+
 
 ## Install grafana dashboard
 https://istio.io/docs/tasks/telemetry/using-istio-dashboard/

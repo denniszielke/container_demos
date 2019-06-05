@@ -13,7 +13,7 @@ resource "azurerm_resource_group" "aksrg" {
   name     = "${var.resource_group_name}"
   location = "${var.location}"
     
-  tags {
+  tags = {
     Environment = "${var.environment}"
   }
 }
@@ -36,7 +36,7 @@ resource "azurerm_virtual_network" "kubevnet" {
   location            = "${azurerm_resource_group.aksrg.location}"
   resource_group_name = "${azurerm_resource_group.aksrg.name}"
 
-  tags {
+  tags = {
     Environment = "${var.environment}"
   }
 }
@@ -81,7 +81,7 @@ resource "azurerm_subnet" "aksnet" {
 # assign virtual machine contributor on subnet to aks sp
 resource "azurerm_role_assignment" "aksvnetrole" {
   scope                = "${azurerm_virtual_network.kubevnet.id}"
-  role_definition_name = "Virtual Machine Contributor"
+  role_definition_name = "Contributor" # "Virtual Machine Contributor"
   principal_id         = "${azuread_service_principal.aks_sp.id}"
   
   depends_on = ["azurerm_subnet.aksnet"]
@@ -127,9 +127,10 @@ resource "azurerm_kubernetes_cluster" "akstf" {
   agent_pool_profile {
     name            = "default"
     count           =  "${var.agent_count}"
-    vm_size         = "Standard_DS2_v2"
+    vm_size         = "Standard_F4s"
     os_type         = "Linux"
     os_disk_size_gb = 30
+    max_pods = 30
     vnet_subnet_id = "${azurerm_subnet.aksnet.id}"
   }
 
@@ -160,7 +161,7 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     }
   }
 
-  tags {
+  tags = {
     Environment = "${var.environment}"
     Network = "azurecni"
     RBAC = "true"

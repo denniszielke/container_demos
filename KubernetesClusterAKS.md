@@ -80,6 +80,12 @@ deactivate routing addon
 az aks disable-addons --addons http_application_routing --resource-group $KUBE_GROUP --name $KUBE_NAME
 ```
 
+az aks enable-addons \
+    --resource-group $KUBE_GROUP \
+    --name $KUBE_NAME \
+    --addons virtual-node \
+    --subnet-name aci-2-subnet
+
 deploy zones
 ```
 az group create -n $KUBE_GROUP -l $LOCATION
@@ -140,6 +146,46 @@ az aks upgrade --resource-group=$KUBE_GROUP --name=$KUBE_NAME --kubernetes-versi
 ```
 
 # Add agent pool
+
+az aks enable-addons \
+    --resource-group $KUBE_GROUP \
+    --name $KUBE_NAME \
+    --addons virtual-node \
+    --subnet-name aci-2-subnet
+
+az aks disable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME --addons virtual-node
+
+
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aci-helloworld
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aci-helloworld
+  template:
+    metadata:
+      labels:
+        app: aci-helloworld
+    spec:
+      containers:
+      - name: aci-helloworld
+        image: microsoft/aci-helloworld
+        ports:
+        - containerPort: 80
+      nodeSelector:
+        kubernetes.io/role: agent
+        beta.kubernetes.io/os: linux
+        type: virtual-kubelet
+      tolerations:
+      - key: virtual-kubelet.io/provider
+        operator: Exists
+      - key: azure.com/aci
+        effect: NoSchedule
+EOF
 
 az aks nodepool add -g $KUBE_GROUP --cluster-name $KUBE_NAME -n linuxpool2 -c 1
 az aks nodepool add -g $KUBE_GROUP --cluster-name $KUBE_NAME --os-type Windows -n winpoo -c 1 --node-vm-size Standard_D2_v2

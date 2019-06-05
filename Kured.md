@@ -1,6 +1,16 @@
 https://github.com/weaveworks/kured#installation
 https://docs.microsoft.com/en-us/azure/aks/node-updates-kured
 
+Check reboot status
+```
+kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/bestpractices/checkreboot.yaml
+kubectl logs -l name=check-reboot --tail 1 -n kube-system
+```
+
+Restrat all vm in resource group
+```
+az vm restart --ids $(az vm list -g $KUBE_GROUP --query "[].id" -o tsv)
+```
 
 let ContainerIdList = KubePodInventory
 | where TimeGenerated > ago(1d)

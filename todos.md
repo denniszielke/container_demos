@@ -1,3 +1,3 @@
 Ingress
-- traefik
 - https://www.express-gateway.io/
+- https://github.com/kubernetes-incubator/external-dns/blob/master/docs/tutorials/azure.md

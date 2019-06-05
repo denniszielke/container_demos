@@ -29,6 +29,9 @@ az openshift create --resource-group $OSA_RG_NAME --name $OSA_CLUSTER_NAME -l $L
 open https://dzosa123.westeurope.cloudapp.azure.com
 
 oc new-app openshift/ruby:25~https://github.com/denniszielke/ruby-ex 
+
+https://dzosa123.westeurope.cloudapp.azure.com/oauth2callback/Azure%20AD
+
 ```
 
 ## create via arm
@@ -56,3 +59,7 @@ az openshift scale --resource-group $OSA_RG_NAME --name $OSA_CLUSTER_NAME --comp
 
 az openshift delete --resource-group $OSA_RG_NAME --name $OSA_CLUSTER_NAME 
 ```
+
+## delete via arm
+
+https://docs.microsoft.com/en-us/rest/api/resources/resourcegroups/delete

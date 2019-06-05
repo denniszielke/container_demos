@@ -62,6 +62,7 @@ https://kubernetes.io/docs/tasks/tools/install-kubectl/
 ```
 az aks install-cli 
 brew install kubernetes-cli
+brew upgrade kubernetes-cli
 ```
 
 Install autocompletion

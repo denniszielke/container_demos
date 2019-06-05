@@ -24,6 +24,11 @@ az feature register --name WindowsPreview --namespace Microsoft.ContainerService
 az feature register --name AKSLockingDownEgressPreview --namespace Microsoft.ContainerService
 az feature register --name AKS-AzurePolicyAutoApprove --namespace Microsoft.ContainerService
 az feature register --namespace Microsoft.PolicyInsights --name AKS-DataplaneAutoApprove
+az feature register --namespace Microsoft.ContainerService/AROGA --name AKS-DataplaneAutoApprove
+
+az feature register --name OSABypassMarketplace --namespace Microsoft.ContainerService
+az feature register --name AROGA --namespace Microsoft.ContainerService
+
 
 ```
 
@@ -35,6 +40,7 @@ az feature list -o table --query "[?contains(name, 'Microsoft.Container‐Servic
 Re-register the provider
 ```
 az provider register --namespace Microsoft.ContainerService
+az provider register --namespace Microsoft.PolicyInsights
 az provider unregister --namespace Microsoft.ContainerService
 ```
 
