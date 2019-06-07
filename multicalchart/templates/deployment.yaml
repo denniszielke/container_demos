@@ -122,6 +122,12 @@ spec:
               name: http-calcback  
               protocol: TCP
           env: 
+{{- if .Values.introduceRandomResponseLag }}
+            - name: "LAGGY"
+              value: "{{ .Values.introduceRandomResponseLagValue }}"
+            - name: "BUGGY"
+              value: "true"
+{{- end }}
 {{- if .Values.dependencies.useAppInsights }}
             - name: "INSTRUMENTATIONKEY"
               valueFrom:

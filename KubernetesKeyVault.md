@@ -21,23 +21,36 @@ MY_OBJECT_ID=
 KUBE_ADMIN_ID=
 READER_USER_ID=
 
-VAULT_GROUP=""
-VAULT_NAME=""
+VAULT_GROUP="byokdemo"
+VAULT_NAME="dzbyokdemo"
 MSA_CLIENT_ID=""
 MSA_PRINCIPAL_ID=""
 SECRET_NAME="mySecret"
 SECRET_VERSION=""
+KEY_NAME="mykey"
+STORAGE_NAME="dzbyokdemo"
 ```
 
 1. create key vault
 ```
 az group create -n $VAULT_GROUP -l $LOCATION
 az keyvault create -n $VAULT_NAME -g $VAULT_GROUP -l $LOCATION
+az keyvault create -n $VAULT_NAME -g $VAULT_GROUP -l $LOCATION --enable-soft-delete true --enable-purge-protection true --sku premium
+az keyvault list -g $VAULT_GROUP -o table --query [].{Name:name,ResourceGroup:resourceGroup,PurgeProtection:properties.enablePurgeProtection,SoftDelete:properties.enableSoftDelete}
 ```
 
 2. add dummy secret
 ```
 az keyvault secret set -n $SECRET_NAME --vault-name $VAULT_NAME --value MySuperSecretThatIDontWantToShareWithYou!
+```
+
+add a key
+```
+az keyvault key create -n $KEY_NAME --vault-name $VAULT_NAME --kty RSA --ops encrypt decrypt wrapKey unwrapKey sign verify --protection hsm --size 2048
+```
+list keys
+```
+az keyvault key list --vault-name $VAULT_NAME -o table
 ```
 
 3. create kubernetes crds
@@ -200,3 +213,47 @@ kubectl delete pods --selector=component=mic
 
 PODNAME=`kubectl get pods --namespace=${NAMESPACE} --selector="app=tf-hub" --output=template --template="{{with index .items 0}}{{.metadata.name}}{{end}}"`
 ```
+
+## create storage with byok key
+
+
+1. create key vault
+```
+az group create -n $VAULT_GROUP -l $LOCATION
+az keyvault create -n $VAULT_NAME -g $VAULT_GROUP -l $LOCATION --enable-soft-delete true --enable-purge-protection true --sku premium
+az keyvault list -g $VAULT_GROUP -o table --query [].{Name:name,ResourceGroup:resourceGroup,PurgeProtection:properties.enablePurgeProtection,SoftDelete:properties.enableSoftDelete}
+```
+
+2. add a key
+```
+az keyvault key create -n $KEY_NAME --vault-name $VAULT_NAME --kty RSA --ops encrypt decrypt wrapKey unwrapKey sign verify --protection hsm --size 2048
+```
+list keys
+```
+az keyvault key list --vault-name $VAULT_NAME -o table
+```
+
+3. create storage account
+```
+az storage account create -n $STORAGE_NAME -g $VAULT_GROUP --https-only true --encryption-services table queue blob file --assign-identity
+```
+
+4. get storage account identity
+```
+az storage account show -g $VAULT_GROUP -n $STORAGE_NAME --query identity.principalId
+```
+
+5. set policy for storage identity to access keyvault
+```
+az keyvault set-policy -n $VAULT_NAME --object-id cae12840-2557-4469-909e-c29283a82c45 --key-permissions get wrapkey unwrapkey
+```
+
+6. Create or Update your Azure Storage Account to use your new keys from your Key Vault:
+```
+az storage account update -g $VAULT_GROUP -n $STORAGE_NAME --encryption-key-name $KEY_NAME --encryption-key-source Microsoft.KeyVault --encryption-key-vault https://$VAULT_NAME.vault.azure.net --encryption-key-version 2ce0b736baff47a4b5691edc2c53a597 --encryption-services blob file queue table
+```
+
+
+
+az acr create -n dzdemoky23 -g $VAULT_GROUP --sku Classic --location $LOCATION --storage-account-name $STORAGE_NAME
+

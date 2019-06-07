@@ -32,6 +32,9 @@ oc new-app openshift/ruby:25~https://github.com/denniszielke/ruby-ex
 
 https://dzosa123.westeurope.cloudapp.azure.com/oauth2callback/Azure%20AD
 
+https://openshift.xxxxxxx.westeurope.azmosa.io/oauth2callback/Azure%20AD
+
+
 ```
 
 ## create via arm

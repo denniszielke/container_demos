@@ -19,6 +19,9 @@ kubectl get deploy -o yaml | linkerd inject -
 
 inject yaml
 kubectl get deploy -o yaml | linkerd inject - | kubectl apply -f -
+kubectl get deploy -o yaml -n $APP_NS | linkerd inject - | kubectl apply -f -
+
+
 
 ## get swagger and create service profile
 curl https://run.linkerd.io/booksapp/authors.swagger
@@ -29,8 +32,11 @@ curl https://run.linkerd.io/booksapp/authors.swagger | linkerd profile --open-ap
 apply service profile
 curl https://run.linkerd.io/booksapp/authors.swagger | linkerd profile --open-api - authors | kubectl apply -f -
 
+cat apps/js-calc-backend/app/swagger.json | linkerd profile --open-api - $APP_IN-calc-backend-svc | kubectl apply -f - 
+
 check routes
 linkerd routes svc/authors
+linkerd routes svc/$APP_IN-calc-backend-svc -n $APP_NS
 
 ## create ingress
 
@@ -58,6 +64,13 @@ linkerd routes svc/authors
 https://linkerd.io/2/tasks/configuring-retries/
 linkerd routes deploy/books --to svc/authors
 
+linkerd routes deployment/multicalchart-backend --namespace $APP_NS --to svc/$APP_IN-calc-backend-svc --to-namespace $APP_NS
+
+linkerd routes deployment/multicalchart-frontend --namespace $APP_NS --to deployment/multicalchart-backend --to-namespace $APP_NS -o wide
+
+
+KUBE_EDITOR="nano"
+
 kubectl edit sp/authors.default.svc.cluster.local
 add isRetryable: true
   - condition:
@@ -65,6 +78,9 @@ add isRetryable: true
       pathRegex: /authors/[^/]*\.json
     name: HEAD /authors/{id}.json
     isRetryable: true
+
+kubectl edit sp/$APP_IN-calc-backend-svc.default.svc.cluster.local -n $APP_NS
+kubectl edit sp/calc1-calc-backend-svc.default.svc.cluster.local
 
 check for effective succeess
 linkerd routes deploy/books --to svc/authors -o wide
@@ -98,6 +114,7 @@ HEAD /authors/{id}.json     authors              88.54%          2.6rps         
 POST /authors.json          authors               0.00%          0.0rps            0.00%       0.0rps           0ms           0ms           0ms
 [DEFAULT]                   authors               0.00%          0.0rps            0.00%       0.0rps           0ms           0ms           0ms
 
+linkerd routes deployment/multicalchart-frontend -n $APP_NS --to svc/calc1-calc-backend-svc -n $APP_NS -o wide
 
 # Linkerd Security
 

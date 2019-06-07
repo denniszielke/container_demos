@@ -1,0 +1,19 @@
+apiVersion: "v1"
+kind: Pod
+metadata:
+  name: kmeasure
+  labels:
+    name: kmeasure    
+spec:
+  containers:
+    - name: calcbackend
+      image: danielmeixner/kmeasure:latest      
+      env: 
+        - name: "MEASURE_NAMESPACE"
+          value: "calculator"
+        - name: "MEASURE_PODNAME"
+          value: "multicalchart-frontend-54d4b8cd4c-4njlz"
+        - name: "MEASURE_INTERVAL"
+          value: "5000"
+        - name: "MEASURE_TIME"
+          value: "60"

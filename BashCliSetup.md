@@ -69,3 +69,5 @@ Install autocompletion
 ```
 kubectl completion -h
 ```
+
+### install the preview cli

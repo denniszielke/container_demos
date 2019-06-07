@@ -19,12 +19,24 @@ az acr create --resource-group "$KUBE_GROUP" --name "$REGISTRY_NAME" --sku Basic
 2. Login to ACR
 ```
 az acr login --name $REGISTRY_NAME
+az acr update --name $REGISTRY_NAME --admin-enabled true
 ```
 
 3. Read login servier
 ```
 export REGISTRY_URL=$(az acr show -g $KUBE_GROUP -n $REGISTRY_NAME --query "loginServer")
 export REGISTRY_URL=("${REGISTRY_URL[@]//\"/}")
+export REGISTRY_PW=
+```
+
+4. import images
+```
+az acr import -n $REGISTRY_NAME --source docker.io/denniszielke/aci-helloworld:latest -t aci-helloworld:latest
+
+docker tag denniszielke/aci-helloworld $REGISTRY_NAME.azurecr.io/aci-helloworld
+docker push $REGISTRY_NAME.azurecr.io/aci-helloworld
+
+az container create --name "acidemohello" --image "$REGISTRY_NAME.azurecr.io/aci-helloworld" --resource-group "byokdemo" --ip-address public --registry-password $REGISTRY_PW --registry-username "dzdemoky23" --ports 80 --os-type Linux
 ```
 
 # Schedule container deployment

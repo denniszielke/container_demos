@@ -11,6 +11,11 @@ WORKING_VERSION=2.0.23-1
 sudo apt-get install azure-cli=$WORKING_VERSION
 ```
 
+## Edit using NANO
+```
+KUBE_EDITOR="nano" kubectl edit svc/nginxpod-service
+```
+
 ## NIC in failed state
 reset nic via cli
 ```
