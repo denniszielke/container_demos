@@ -1,10 +1,12 @@
 # Setting up oauth2 on your ingress
 https://github.com/helm/charts/tree/master/stable/oauth2-proxy
+https://geek-cookbook.funkypenguin.co.nz/reference/oauth_proxy/
 
 Requirements
 - nginx ingress controller deployed with dns
 - trusted ssl certificate (letsencrypt-prod) on your dns
 - use https://github.com/buzzfeed/sso instead of oauthproxy
+- https://github.com/pusher/oauth2_proxy
 
 sample for azure ad
 https://github.com/brbarnett/k8s-aad-auth/tree/master/k8s-manifests

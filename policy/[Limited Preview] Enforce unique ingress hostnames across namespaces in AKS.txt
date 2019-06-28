@@ -1,0 +1,17 @@
+{
+  "mode": "Microsoft.ContainerService.Data",
+  "policyRule": {
+    "if": {
+      "field": "type",
+      "equals": "Microsoft.ContainerService/managedClusters"
+    },
+    "then": {
+      "effect": "EnforceRegoPolicy",
+      "details": {
+        "policyId": "UniqueIngressHostnames",
+        "policy": "https://raw.githubusercontent.com/Azure/azure-policy/master/samples/KubernetesService/ingress-hostnames-conflict/gatekeeperpolicy.rego"
+      }
+    }
+  },
+  "parameters": {}
+}

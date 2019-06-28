@@ -88,6 +88,7 @@ hey -z 20m http://$PUBLIC_IP
 https://github.com/kedacore/sample-hello-world-azure-functions
 
 KEDA_STORAGE=dzmesh33
+LOCATION=westeurope
 
 az group create -l $LOCATION -n $KUBE_GROUP
 az storage account create --sku Standard_LRS --location $LOCATION -g $KUBE_GROUP -n $KEDA_STORAGE
@@ -103,14 +104,18 @@ helm install --name vn-affinity ./charts/vn-affinity-admission-controller
 
 kubectl label namespace keda vn-affinity-injection=disabled --overwrite
 
+KEDA_NS=keda-app
+KEDA_IN=hello-keda
 
-func kubernetes deploy --name hello-keda --registry denniszielke --namespace keda-app --polling-interval 5 --cooldown-period 30
+func kubernetes install --namespace $KEDA_NS
 
-kubectl get ScaledObject hello-keda --namespace keda-app -o yaml
+func kubernetes deploy --name $KEDA_IN --registry denniszielke --namespace $KEDA_NS --polling-interval 5 --cooldown-period 30
 
-kubectl delete deploy hello-keda --namespace keda-app
-kubectl delete ScaledObject hello-keda --namespace keda-app
-kubectl delete Secret hello-keda --namespace keda-app
+kubectl get ScaledObject $KEDA_IN --namespace $KEDA_NS -o yaml
+
+kubectl delete deploy $KEDA_IN --namespace $KEDA_NS
+kubectl delete ScaledObject $KEDA_IN --namespace $KEDA_NS
+kubectl delete Secret $KEDA_IN --namespace $KEDA_NS
 
 helm install --name vn-affinity ./charts/vn-affinity-admission-controller
 kubectl label namespace default vn-affinity-injection=enabled

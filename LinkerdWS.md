@@ -6,7 +6,12 @@ export KUBECONFIG=~/kubecon-workshop-20-kubeconfig
 export PATH=$PATH:$HOME/.linkerd2/bin
 
 ## setup books app
-curl https://run.linkerd.io/booksapp.yml
+
+curl -sL https://run.linkerd.io/booksapp.yml \
+  | kubectl apply -f -
+
+curl -sL https://run.linkerd.io/emojivoto.yml \
+  | kubectl apply -f -
 
 kubectl apply -f booksapp.yml
 
@@ -21,7 +26,9 @@ inject yaml
 kubectl get deploy -o yaml | linkerd inject - | kubectl apply -f -
 kubectl get deploy -o yaml -n $APP_NS | linkerd inject - | kubectl apply -f -
 
-
+kubectl get -n emojivoto deploy -o yaml \
+  | linkerd inject - \
+  | kubectl apply -f -
 
 ## get swagger and create service profile
 curl https://run.linkerd.io/booksapp/authors.swagger
@@ -123,6 +130,28 @@ kubectl get secret linkerd-identity-issuer  -n linkerd  -o yaml
 
 check trust root
 kubectl get configmap linkerd-config -n linkerd -o yaml
+
+https://medium.com/solo-io/linkerd-or-istio-6fcd2aad6e42
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: centos
+spec:
+  containers:
+  - name: centoss
+    image: centos
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+
+http_proxy=$HOST_IP:$(kubectl get svc l5d -o 'jsonpath={.spec.ports[0].nodePort}') curl -s http://hello
+http_proxy=$INGRESS_LB:4140 curl -s http://hello
+curl -skH 'l5d-dtab: /svc=>/#/io.l5d.k8s/default/admin/l5d;' https://$INGRESS_LB:4141/admin/ping
 
 # Linkerd Debugging 
 

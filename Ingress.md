@@ -43,7 +43,7 @@ https://docs.microsoft.com/en-us/azure/aks/ingress#install-an-ingress-controller
 Create a public ip adress
 ```
 
-az network public-ip create --resource-group MC_kubeaksvmss_dzkubes_westeurope --name myAKSPublicIP --allocation-method static
+az network public-ip create --resource-group MC_kub_ter_a_m_mesh11_mesh11_westeurope --name myAKSPublicIP --allocation-method static
 
 az network public-ip list --resource-group MC_kubeaksvmss_dzkubes_westeurope* --query [0].ipAddress --output tsv
 
@@ -52,12 +52,28 @@ IP="1.1.1.1"
 Use the assigned ip address in the helm chart
 
 ```
-helm install stable/nginx-ingress --name ingress-controller --namespace kube-system --set rbac.create=true --set controller.service.loadBalancerIP="$IP" --set controller.stats.enabled=true --set controller.service.externalTrafficPolicy=Local
+helm install stable/nginx-ingress --name ingress-controller --namespace kube-system --set rbac.create=true --set controller.service.loadBalancerIP="$IP" --set controller.stats.enabled=true --set controller.replicaCount=2 --set controller.service.externalTrafficPolicy=Local
 
 helm install stable/nginx-ingress --name ingress-controller --namespace kube-system --set controller.service.externalTrafficPolicy=Local
 helm upgrade quiet-echidna stable/nginx-ingress  --set controller.service.externalTrafficPolicy=Local
 
 helm upgrade nginx-ingress stable/nginx-ingress  --set controller.service.externalTrafficPolicy=Local --set controller.replicaCount=2 --set controller.service.loadBalancerIP=104.46.49.182 --set rbac.create=true --namespace kube-system
+
+helm upgrade nginx-ingress stable/nginx-ingress  --set controller.service.externalTrafficPolicy=Local --set controller.replicaCount=2 --set rbac.create=true --set controller.service.annotations="{service.beta.kubernetes.io/azure-load-balancer-internal:\\"true"} --namespace kube-system
+
+
+KUBE_EDITOR="nano" kubectl edit svc/nginx-ingress-controller -n kube-system
+
+service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+
+controller:
+  service:
+    loadBalancerIP: 10.240.0.42
+    annotations:
+      service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+
+     --set ingress.annotations={kubernetes.io/ingress.class:\\n\\nginx} config-service
+--set alertmanager.ingress.annotations."alb\.ingress\.kubernetes\.io/scheme"=internet-facing
 
 ```
 
@@ -148,7 +164,7 @@ helm install stable/cert-manager --name cert-issuer-manager --namespace kube-sys
 
 create cert manager cluster issuer for stage or prod
 ```
-cat <<EOF | kubectl create -f -
+cat <<EOF | kubectl apply -f -
 apiVersion: certmanager.k8s.io/v1alpha1
 kind: ClusterIssuer
 metadata:
@@ -167,7 +183,7 @@ EOF
 staging
 
 ```
-cat <<EOF | kubectl create -f -
+cat <<EOF | kubectl apply -f -
 apiVersion: certmanager.k8s.io/v1alpha1
 kind: ClusterIssuer
 metadata:
@@ -187,7 +203,7 @@ create certificate
 
 ```
 
-cat <<EOF | kubectl create -f -
+cat <<EOF | kubectl apply -f -
 apiVersion: certmanager.k8s.io/v1alpha1
 kind: Certificate
 metadata:
@@ -217,7 +233,7 @@ create ingress
 
 ```
 
-cat <<EOF | kubectl create -f -
+cat <<EOF | kubectl apply -f -
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -225,25 +241,21 @@ metadata:
   namespace: ingress-basic
   annotations:
     kubernetes.io/ingress.class: nginx
-    certmanager.k8s.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    certmanager.k8s.io/cluster-issuer: letsencrypt-staging
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
 spec:
   tls:
   - hosts:
-    - $DNS
+    - dzapis.westeurope.cloudapp.azure.com
     secretName: tls-secret
   rules:
-  - host: $DNS
+  - host: dzapis.westeurope.cloudapp.azure.com
     http:
       paths:
-      - path: /hello-world-one
-        backend:
+      - backend:
           serviceName: aks-helloworld
           servicePort: 80
-      - path: /hello-world-two
-        backend:
-          serviceName: ingress-demo
-          servicePort: 80
+        path: /(.*)
 EOF
 ```
 

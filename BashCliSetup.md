@@ -71,3 +71,11 @@ kubectl completion -h
 ```
 
 ### install the preview cli
+```
+az extension add --name aks-preview
+```
+
+remove existing installation of preview cli
+```
+az extension remove --name aks-preview
+```

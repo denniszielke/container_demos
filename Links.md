@@ -1,3 +1,10 @@
+Public Release Notes:
+https://aka.ms/aks/releasenotes 
+Public Roadmap:
+http://aka.ms/aks/roadmap
+Public Previews:
+https://aka.ms/aks/previewfeatures
+
 AKS Release:
 https://github.com/Azure/AKS/releases
 https://github.com/Azure/AKS/blob/master/CHANGELOG.md
@@ -22,11 +29,15 @@ https://docs.microsoft.com/en-us/azure/templates/microsoft.containerservice/2019
 https://docs.microsoft.com/en-us/azure/templates/microsoft.containerservice/2019-06-01/managedclusters
 
 Review docs:
+https://github.com/MicrosoftDocs/azure-docs/tree/master/articles/aks
 https://review.docs.microsoft.com/en-us/azure/aks/?branch=pr-en-us-67074
 https://review.docs.microsoft.com/en-us/azure/templates/microsoft.containerservice/2019-02-01/managedclusters?branch=master
 
 Preview cli:
 https://github.com/Azure/azure-cli-extensions/tree/master/src/
+
+Azure Load Balancer annotations:
+https://github.com/kubernetes/cloud-provider-azure/blob/master/docs/azure-loadbalancer.md#loadbalancer-annotations
 
 - Azure Dev Spaces -> GA https://azure.microsoft.com/en-us/blog/introducing-dev-spaces-for-aks/ 
 - AKS Authenticated IP for AKS API Server -> Public Preview https://docs.microsoft.com/en-us/azure/aks/api-server-authorized-ip-ranges
@@ -40,6 +51,9 @@ https://github.com/Azure/azure-cli-extensions/tree/master/src/
 - AKS Virtual Nodes -> GA https://docs.microsoft.com/en-us/azure/aks/virtual-nodes-cli 
 - Container Registry | Public Preview - HELM https://azure.microsoft.com/en-us/updates/azure-container-registry-helm-repositories-public-preview/
 - Container Registry | Service Endpoints Public Preview https://docs.microsoft.com/en-us/azure/container-registry/container-registry-vnet
+
+Keda scaler:
+https://github.com/kedacore/keda/wiki/Scaler-prioritization
 
 
 ## Addons extras

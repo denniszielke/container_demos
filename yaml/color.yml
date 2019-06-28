@@ -17,7 +17,7 @@ spec:
   type: ClusterIP
   ports:
    - port: 80
-     name: color-blue 
+     name: http-blue 
      targetPort: 80
      protocol: TCP
 ---
@@ -40,7 +40,7 @@ spec:
         imagePullPolicy: Always
         ports:
           - containerPort: 80
-            name: color-blue        
+            name: http-blue        
             protocol: TCP
 ---
 apiVersion: v1
@@ -57,7 +57,7 @@ spec:
   type: ClusterIP
   ports:
    - port: 80
-     name: color-green 
+     name: http-green 
      targetPort: 80
      protocol: TCP
 ---
@@ -80,5 +80,5 @@ spec:
         imagePullPolicy: Always
         ports:
           - containerPort: 80
-            name: color-green        
+            name: http-green        
             protocol: TCP

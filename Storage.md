@@ -270,3 +270,5 @@ spec:
           diskURI: /subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourceGroups/dz-k8s-12/providers/Microsoft.Compute/disks/myAKSDisk
 EOF
 ```
+
+## flex volume blob fuse

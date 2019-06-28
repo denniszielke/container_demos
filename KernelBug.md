@@ -4,7 +4,7 @@ cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
-  name: centos1
+  name: centos
 spec:
   containers:
   - name: centoss

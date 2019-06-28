@@ -1,0 +1,35 @@
+{
+  "mode": "Microsoft.ContainerService.Data",
+  "policyRule": {
+    "if": {
+      "field": "type",
+      "equals": "Microsoft.ContainerService/managedClusters"
+    },
+    "then": {
+      "effect": "enforceRegoPolicy",
+      "details": {
+        "policyId": "LoadBalancersInternal",
+        "policy": "https://raw.githubusercontent.com/Azure/azure-policy/master/samples/KubernetesService/loadbalancer-no-publicips/gatekeeperpolicy.rego"
+      }
+    }
+  },
+  "parameters": {}
+}
+
+{
+  "mode": "audit",
+  "policyRule": {
+    "if": {
+      "field": "type",
+      "equals": "Microsoft.ContainerService/managedClusters"
+    },
+    "then": {
+      "effect": "audit",
+      "details": {
+        "policyId": "LoadBalancersInternal",
+        "policy": "https://raw.githubusercontent.com/Azure/azure-policy/master/samples/KubernetesService/loadbalancer-no-publicips/gatekeeperpolicy.rego"
+      }
+    }
+  },
+  "parameters": {}
+}

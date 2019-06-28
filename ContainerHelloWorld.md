@@ -111,3 +111,45 @@ eval "docker push $DOCKER_SERVER/aci-tut-app:v1"
 CONTAINER_APP_NAME="acihelloworldapp"
 az container create -g $RESOURCE_GROUP --name $CONTAINER_APP_NAME --image hellodemo345.azurecr.io/aci-tut-app:v1 --registry-password $DOCKER_PASSWORD
 ```
+
+cat <<EOF | kubectl apply -f -
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: hello-app
+spec:
+  replicas: 1  
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1 
+  template:
+    metadata:
+      labels:
+        app: hello-app
+    spec:
+      containers:
+      - name: hello-app
+        image: gcr.io/google-samples/hello-app:1.0 #microsoft/aci-helloworld:latest       
+        ports:
+        - containerPort: 80
+        imagePullPolicy: Always   
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hellofromgoogle
+spec:
+  containers:
+  - name: hellofromgoogle
+    image: gcr.io/google-samples/hello-app:1.0
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+
