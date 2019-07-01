@@ -231,3 +231,27 @@ containers:
   args:
   - --authentication-mode=token
   - --enable-insecure-login
+
+
+## Create SSH Box
+
+kubectl run -it aks-ssh --image=debian
+
+apt-get update && apt-get install openssh-client -y
+
+aks-ssh-6fd7758688-9crp5 
+
+kubectl cp ~/.ssh/id_rsa aks-ssh-6fd7758688-9crp5:/id_rsa
+chmod 0600 id_rsa
+
+ssh -i id_rsa dennis@10.0.5.4
+
+sudo add-apt-repository ppa:wireshark-dev/stable
+sudo apt-get update
+sudo apt-get install wireshark
+sudo apt install tshark
+sudo dpkg-reconfigure wireshark-common
+sudo usermod -a -G wireshark dennis
+
+tshark -Q -i2 -O http -T json tcp port 7001 | grep http.file_data
+
