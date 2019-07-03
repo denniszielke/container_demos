@@ -53,6 +53,11 @@ roleRef:
 EOF
 ```
 
+get oms agent version
+```
+kubectl get pods -l component=oms-agent -o yaml -n kube-system | grep image:
+```
+
 ## Create custom logs via dummy logger
 
 1. Create host to log from dummy logger

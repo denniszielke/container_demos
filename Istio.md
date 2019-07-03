@@ -117,3 +117,43 @@ spec:
     - destination:
         host: calc-backend-svc
 EOF
+
+
+kubectl apply -f https://raw.githubusercontent.com/CSA-OCP-GER/unicorn/master/hints/yaml/challenge-istio/base-sample-app.yaml
+
+helm install install/kubernetes/helm/istio --name istio --namespace istio-system --values install/kubernetes/helm/istio/values.yaml
+
+kubectl get po -n istio-system
+
+kubectl port-forward grafana-749c78bcc5-mrw8f 3000:3000 -n istio-system
+
+
+KIALI_USERNAME=$(read '?Kiali Username: ' uval && echo -n $uval | base64)
+KIALI_PASSPHRASE=$(read -s "?Kiali Passphrase: " pval && echo -n $pval | base64)
+NAMESPACE=istio-system
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kiali
+  namespace: $NAMESPACE
+  labels:
+    app: kiali
+type: Opaque
+data:
+  username: $KIALI_USERNAME
+  passphrase: $KIALI_PASSPHRASE
+EOF
+
+kubectl port-forward kiali-5df77dc9b6-kvnkp 20001:20001 -n istio-system
+
+kubectl apply -f https://raw.githubusercontent.com/CSA-OCP-GER/unicorn/master/hints/yaml/challenge-istio/request-routing/c2-ingress-rr.yaml
+
+kubectl delete -f https://raw.githubusercontent.com/CSA-OCP-GER/unicorn/master/hints/yaml/challenge-istio/faultinjection/c2-ingress-rr-faulty-delay.yaml
+
+kubectl apply -f https://raw.githubusercontent.com/CSA-OCP-GER/unicorn/master/hints/yaml/challenge-istio/faultinjection/c2-error-frontend.yaml
+
+kubectl apply -f https://raw.githubusercontent.com/CSA-OCP-GER/unicorn/master/hints/yaml/challenge-istio/faultinjection/c2-ingress-rr-faulty-error.yaml
+
+kubectl delete -f https://raw.githubusercontent.com/CSA-OCP-GER/unicorn/master/hints/yaml/challenge-istio/faultinjection/c2-ingress-rr-faulty-error.yaml

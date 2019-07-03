@@ -78,7 +78,7 @@ linkerd routes deployment/multicalchart-frontend --namespace $APP_NS --to deploy
 
 KUBE_EDITOR="nano"
 
-kubectl edit sp/authors.default.svc.cluster.local
+KUBE_EDITOR="nano" kubectl edit sp/authors.default.svc.cluster.local
 add isRetryable: true
   - condition:
       method: HEAD

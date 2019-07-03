@@ -142,7 +142,9 @@
                "loadBalancerSku": "standard"
            }
          },
-         "identity": "SystemAssigned"
+         "identity": {
+             "type": "SystemAssigned"
+         } 
       }
    ],
    "outputs":{  

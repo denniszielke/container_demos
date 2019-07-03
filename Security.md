@@ -242,6 +242,7 @@ apt-get update && apt-get install openssh-client -y
 aks-ssh-6fd7758688-9crp5 
 
 kubectl cp ~/.ssh/id_rsa aks-ssh-6fd7758688-9crp5:/id_rsa
+
 chmod 0600 id_rsa
 
 ssh -i id_rsa dennis@10.0.5.4
