@@ -25,6 +25,7 @@ To install the CLI on Windows and use it in the Windows command-line, download a
 ```bash
 echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ wheezy main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
 echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ wheezy main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
+curl -L https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
 ```
 
 4. Run the following sudo commands:
