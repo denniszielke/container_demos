@@ -19,6 +19,8 @@ SUBSCRIPTION_FILE=$CONFIG_PATH/variables_$subscription.tf
 VARIABLE_FILE=$CONFIG_PATH/variables_common.tf
 HELM_FILE=$PWD/terraform/helm.tf
 NGINX_FILE=$PWD/terraform/nginx.tf
+TRAEFIK_FILE=$PWD/terraform/traefik.tf
+KONG_FILE=$PWD/terraform/kong.tf
 ACR_FILE=$PWD/terraform/containerregistry.tf
 SP_FILE=$PWD/terraform/serviceprincipal.tf
 
@@ -91,9 +93,9 @@ read -n 1 helm
 echo
 fi
 
-if [ "$nginx" == "" ]; then
-echo "Install nginx [y/n]?: "
-read -n 1 nginx
+if [ "$ingress" == "" ]; then
+echo "Install ingress [n]nginx, [t]raefik, [k]ong, [s]kip?: "
+read -n 1 ingress
 echo
 fi
 
@@ -162,8 +164,12 @@ if [ "$helm" == "y" ]; then
 cp $HELM_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 fi
 
-if [ "$nginx" == "y" ]; then
+if [ "$ingress" == "n" ]; then
 cp $NGINX_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+elif [ "$ingress" == "t" ]; then
+cp $TRAEFIK_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+elif [ "$ingress" == "k" ]; then
+cp $KONG_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 fi
 
 if [ "$acr" == "y" ]; then

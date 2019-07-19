@@ -2,6 +2,12 @@ Upgrades
 
 less /etc/apt/apt.conf.d/50unattended-upgrades
 
+unatted upgrade log
+/var/log/unattended-upgrades/unattended-upgrades.log
+
+check kernel versions
+dpkg -l 'linux-image-*'
+
 Unattended-Upgrade::Allowed-Origins {
         "${distro_id}:${distro_codename}";
         "${distro_id}:${distro_codename}-security";

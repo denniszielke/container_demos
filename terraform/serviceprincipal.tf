@@ -1,7 +1,6 @@
 
 # https://www.terraform.io/docs/providers/azuread/index.html
 provider "azuread" {
-  version = "0.3.1"
 }
 resource "azuread_application" "aks_app" {
     name = "${var.cluster_name}-sp"
@@ -12,6 +11,8 @@ resource "azuread_application" "aks_app" {
 # https://www.terraform.io/docs/providers/azuread/r/service_principal.html
 resource "azuread_service_principal" "aks_sp" {
     application_id = "${azuread_application.aks_app.application_id}"
+
+    tags = ["${var.environment}", "AKS"]
 }
  
 resource "random_string" "aks_sp_password" {

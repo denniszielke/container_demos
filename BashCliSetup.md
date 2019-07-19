@@ -79,3 +79,10 @@ remove existing installation of preview cli
 ```
 az extension remove --name aks-preview
 ```
+
+### install 
+
+https://github.com/robbyrussell/oh-my-zsh/tree/master/plugins/kube-ps1
+https://github.com/jonmosco/kube-ps1
+PROMPT=$PROMPT'$(kube_ps1) ' 
+source "/usr/local/opt/kube-ps1/share/kube-ps1.sh"

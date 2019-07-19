@@ -3,6 +3,7 @@ resource "azurerm_role_assignment" "aksacrrole" {
   scope                = "${azurerm_container_registry.aksacr.id}"
   role_definition_name = "Reader"
   principal_id         = "${azuread_service_principal.aks_sp.id}"
+  # principal_id         = "${var.aks_client_id}"
   
   depends_on = ["azuread_service_principal.aks_sp", "azurerm_container_registry.aksacr", "azurerm_subnet.aksnet"]
 }

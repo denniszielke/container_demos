@@ -16,6 +16,22 @@ spec:
     - "3600"
 EOF
 
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: debian
+spec:
+  containers:
+  - name: debian
+    image: debian
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+
 postStart:
   exec:
     command:
@@ -87,7 +103,7 @@ cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
-  name: centos1
+  name: centos
 spec:
   containers:
   - name: centoss

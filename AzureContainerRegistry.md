@@ -91,6 +91,6 @@ az acr task run --registry $ACR_NAME --name js-calc-frontend-acr
 https://docs.microsoft.com/en-gb/azure/container-registry/container-registry-helm-repos
 set default registry
 ```
-az configure --defaults acr=dzkubereg
+az configure --defaults acr=dzcorp
 az acr helm repo add
 ```

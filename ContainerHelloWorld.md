@@ -136,6 +136,7 @@ spec:
         ports:
         - containerPort: 80
         imagePullPolicy: Always   
+EOF
 
 cat <<EOF | kubectl apply -f -
 apiVersion: v1

@@ -10,6 +10,3 @@ spec:
   selector:
     app: dummy-logger
   type: LoadBalancer
-  loadBalancerIP: 10.2.2.55
-  loadBalancerSourceRanges:
-  - 10.0.0.0/8

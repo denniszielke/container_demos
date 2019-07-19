@@ -238,3 +238,7 @@ export SERVICE_IP=$(kubectl get svc --namespace $APP_NS $APP_IN-calc-frontend-sv
 open http://$SERVICE_IP:80
 
 ```
+
+## Helm3
+
+alias helm3='/Users/dennis/lib/darwin-amd64/helm3 --home /Users/dennis/lib/darwin-amd64'

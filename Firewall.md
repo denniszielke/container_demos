@@ -225,6 +225,8 @@ EOF
 kubectl exec -ti centos -- /bin/bash
 curl bad.org
 curl ubuntu.com
+
+kubectl get endpoints -o=jsonpath='{.items[?(@.metadata.name == "kubernetes")].subsets[].addresses[].ip}' -o wide --all-namespaces
 ```
 
 ### public ip NET rules

@@ -13,8 +13,8 @@ provider "helm" {
 }
 
 # Create Static Public IP Address to be used by Nginx Ingress
-resource "azurerm_public_ip" "nginx_ingress" {
-  name                         = "nginx-ingress-pip"
+resource "azurerm_public_ip" "kong_ingress" {
+  name                         = "kong-ingress-pip"
   location                     = "${azurerm_kubernetes_cluster.akstf.location}"
   resource_group_name          = "${azurerm_kubernetes_cluster.akstf.node_resource_group}"
   allocation_method            = "Static"
@@ -31,33 +31,38 @@ data "helm_repository" "stable" {
 
 # Install Nginx Ingress using Helm Chart
 # https://www.terraform.io/docs/providers/helm/release.html
-resource "helm_release" "nginx_ingress" {
-  name       = "nginx-ingress"
+resource "helm_release" "kong_ingress" {
+  name       = "kong-ingress"
   repository = "${data.helm_repository.stable.metadata.0.name}"
-  chart      = "nginx-ingress"
-  namespace  = "kube-system"
+  chart      = "kong"
+  namespace  = "kong"
   force_update = "true"
   timeout = "500"
 
   set {
-    name  = "rbac.create"
+    name  = "ingressController.enabled"
     value = "true"
   }
 
   set {
-    name  = "controller.service.externalTrafficPolicy"
-    value = "Local"
+    name  = "env.database"
+    value = "off"
   }
 
   set {
-    name  = "controller.service.loadBalancerIP"
-    value = "${azurerm_public_ip.nginx_ingress.ip_address}"
+    name  = "postgresql.enabled"
+    value = "false"
   }
   
   set {
-    name  = "controller.replicaCount"
-    value = "2"
+    name  = "proxy.type"
+    value = "LoadBalancer"
   }
 
-  depends_on = ["azurerm_kubernetes_cluster.akstf", "azurerm_public_ip.nginx_ingress"]
+  set {
+    name  = "proxy.loadBalancerIP"
+    value = "${azurerm_public_ip.kong_ingress.ip_address}"
+  }
+
+  depends_on = ["azurerm_kubernetes_cluster.akstf", "azurerm_public_ip.kong_ingress"]
 }

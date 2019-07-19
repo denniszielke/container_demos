@@ -167,3 +167,14 @@ scp username@b:/path/to/file /path/to/destination
 
 scp dennis@40.114.247.218:/var/log/azure/cluster-provision.log cluster-provision.log
 scp dennis@40.114.247.218:/var/log/cloud-init-output.log cloud-init-output.log
+
+
+CLUSTER_RESOURCE_GROUP=$(az aks show --resource-group security --name slbrouter --query nodeResourceGroup -o tsv)
+
+az vmss extension set  \
+    --resource-group $CLUSTER_RESOURCE_GROUP \
+    --vmss-name $SCALE_SET_NAME \
+    --name VMAccessForLinux \
+    --publisher Microsoft.OSTCExtensions \
+    --version 1.4 \
+    --protected-settings "{\"username\":\"dennis\", \"ssh_key\":\"$(cat ~/.ssh/id_rsa.pub)\"}"

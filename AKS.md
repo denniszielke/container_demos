@@ -5,11 +5,14 @@ https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough
 ```
 SUBSCRIPTION_ID=""
 KUBE_GROUP="security"
-KUBE_NAME="pspcluster"
+KUBE_NAME="slbrouter"
 LOCATION="westeurope"
+KUBE_VERSION="1.13.5"
 REGISTRY_NAME=""
 APPINSIGHTS_KEY=""
-KUBE_VERSION="1.12.5"
+
+SERVICE_PRINCIPAL_ID=
+SERVICE_PRINCIPAL_SECRET=
 ```
 
 Select subscription
@@ -24,7 +27,7 @@ az group create -n $KUBE_GROUP -l $LOCATION
 
 get available version
 ```
-az aks get-versions -l $LOCATION
+az aks get-versions -l $LOCATION -o table
 ```
 
 2. Create the aks cluster

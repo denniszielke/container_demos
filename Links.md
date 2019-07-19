@@ -11,6 +11,13 @@ https://github.com/Azure/AKS/blob/master/CHANGELOG.md
 
 AKS VHD Release Page:
 https://github.com/Azure/aks-engine/tree/master/releases/vhd-notes
+Packer script:
+https://github.com/Azure/aks-engine/blob/master/packer/install-dependencies.sh
+
+See all aks vhd version
+```
+az vm image list --publisher microsoft-aks --all -o table
+```
 
 AKS CIS Status:
 https://github.com/Azure/aks-engine/projects/7
@@ -55,6 +62,8 @@ https://github.com/kubernetes/cloud-provider-azure/blob/master/docs/azure-loadba
 Keda scaler:
 https://github.com/kedacore/keda/wiki/Scaler-prioritization
 
+Spring cloud:
+https://github.com/Azure/azure-managed-service-for-spring-cloud-docs
 
 ## Addons extras
 Getting a public ip per node:

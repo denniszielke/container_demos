@@ -1,6 +1,6 @@
 # Installing virtual kubelet
 
-https://github.com/virtual-kubelet/virtual-kubelet/tree/master/providers/azure
+https://github.com/virtual-kubelet/virtual-kubelet
 
 0. Variables
 ```

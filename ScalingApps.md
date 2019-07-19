@@ -53,23 +53,24 @@ https://github.com/Azure-Samples/virtual-node-autoscale
 
 helm install --name vn-affinity ./charts/vn-affinity-admission-controller
 
-kubectl label namespace store vn-affinity-injection=enabled --overwrite
+kubectl label namespace default vn-affinity-injection=enabled --overwrite
+
+
+export VK_NODE_NAME=virtual-node-aci-linux
+export INGRESS_EXTERNAL_IP=13.69.125.59
+export INGRESS_CLASS_ANNOTATION=nginx
 
 
 helm install ./charts/online-store --name online-store --set counter.specialNodeName=$VK_NODE_NAME,app.ingress.host=store.$INGRESS_EXTERNAL_IP.nip.io,appInsight.enabled=false,app.ingress.annotations."kubernetes\.io/ingress\.class"=$INGRESS_CLASS_ANNOTATION --namespace store 
 
-
-export VK_NODE_NAME=virtual-node-aci-linux
-export INGRESS_EXTERNAL_IP=104.46.49.182
-
 kubectl -n kube-system get po nginx-ingress-controller-7db8d69bcc-t5zww -o yaml | grep ingress-class | sed -e 's/.*=//'
 
-export INGRESS_CLASS_ANNOTATION=nginx
+
 helm install stable/grafana --version 1.26.1 --name grafana -f grafana/values.yaml
 
 kubectl get secret --namespace default grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
 
-m1ZdZov9gKgLk77SRAQDykTthvdMHY3tdwwyxbn8
+5D7bs0dkBOxvutbEbpGBHRghxMhCWAuHyyYXawfH
 
 export POD_NAME=$(kubectl get pods --namespace default -l "app=grafana" -o jsonpath="{.items[0].metadata.name}")
 kubectl --namespace default port-forward $POD_NAME 3000

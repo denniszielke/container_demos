@@ -1,0 +1,54 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: crashing-app
+spec:
+  replicas: 1
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        name: crashing-app
+        demo: logging
+        app: crashing-app
+    spec:
+      containers:
+      - name: crashing-app
+        image: denniszielke/crashing-app:latest
+        livenessProbe:
+          httpGet:
+            path: /ping
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 20
+          timeoutSeconds: 5
+        ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+        imagePullPolicy: Always   
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "500m"
+          limits:
+            memory: "256Mi"
+            cpu: "1000m"    
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crashing-app
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: crashing-app
+  type: LoadBalancer

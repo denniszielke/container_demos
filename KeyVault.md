@@ -257,3 +257,104 @@ az storage account update -g $VAULT_GROUP -n $STORAGE_NAME --encryption-key-name
 
 az acr create -n dzdemoky23 -g $VAULT_GROUP --sku Classic --location $LOCATION --storage-account-name $STORAGE_NAME
 
+## CSI 
+https://github.com/deislabs/secrets-store-csi-driver/tree/master/pkg/providers/azure
+```
+SERVICE_PRINCIPAL_ID=
+SERVICE_PRINCIPAL_SECRET=
+VAULT_GROUP=security
+VAULT_NAME=dzk8s
+LOCATION=westeurope
+SUBSCRIPTION_ID=
+
+```
+
+```
+kubectl create secret generic secrets-store-creds --from-literal clientid=$SERVICE_PRINCIPAL_ID --from-literal clientsecret=$SERVICE_PRINCIPAL_SECRET
+
+az role assignment create --role Reader --assignee $SERVICE_PRINCIPAL_ID --scope /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$VAULT_GROUP/providers/Microsoft.KeyVault/vaults/$VAULT_NAME
+
+az keyvault set-policy -n $VAULT_NAME --key-permissions get --spn $SERVICE_PRINCIPAL_ID
+az keyvault set-policy -n $VAULT_NAME --secret-permissions get --spn $SERVICE_PRINCIPAL_ID
+az keyvault set-policy -n $VAULT_NAME --certificate-permissions get --spn $SERVICE_PRINCIPAL_ID
+
+
+```
+
+
+```
+az identity create -n keyvaultidentity -g $VAULT_GROUP
+KUBE_PERMISSION="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$VAULT_GROUP/providers/Microsoft.ManagedIdentity/userAssignedIdentities/keyvaultidentity"
+az role assignment create --role "Managed Identity Operator" --assignee $SERVICE_PRINCIPAL_ID --scope $KUBE_PERMISSION
+
+MSI_ID=$(az identity show -n keyvaultidentity -g $VAULT_GROUP --query clientId --output tsv)
+
+az role assignment create --role Reader --assignee $MSI_ID --scope /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$VAULT_GROUP/providers/Microsoft.KeyVault/vaults/$VAULT_NAME
+
+# set policy to access keys in your keyvault
+az keyvault set-policy -n $VAULT_NAME --key-permissions get --spn $MSI_ID
+# set policy to access secrets in your keyvault
+az keyvault set-policy -n $VAULT_NAME --secret-permissions get --spn $MSI_ID
+# set policy to access certs in your keyvault
+az keyvault set-policy -n $VAULT_NAME --certificate-permissions get --spn $MSI_ID
+
+
+cat <<EOF | kubectl apply -f -
+apiVersion: "aadpodidentity.k8s.io/v1"
+kind: AzureIdentity
+metadata:
+  name: keyvaultidentity
+spec:
+  type: 0
+  ResourceID: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$VAULT_GROUP/providers/Microsoft.ManagedIdentity/userAssignedIdentities/keyvaultidentity
+  ClientID: $MSI_ID
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: "aadpodidentity.k8s.io/v1"
+kind: AzureIdentityBinding
+metadata:
+  name: keyvaultidentity-binding
+spec:
+  AzureIdentity: keyvaultidentity
+  Selector: keyvaultidentity
+EOF
+
+az keyvault secret set -n mysupersecret --vault-name $VAULT_NAME --value MySuperSecretThatIDontWantToShareWithYou!
+
+cat <<EOF | kubectl apply -f -
+kind: Pod
+apiVersion: v1
+metadata:
+  name: nginx-secrets-store-inline-pod-identity
+  labels:
+    aadpodidbinding: "keyvaultidentity"
+spec:
+  containers:
+  - image: nginx
+    name: nginx
+    volumeMounts:
+    - name: secrets-store-inline
+      mountPath: "/mnt/secrets-store"
+      readOnly: true
+  volumes:
+    - name: secrets-store-inline
+      csi:
+        driver: secrets-store.csi.k8s.com
+        readOnly: true
+        volumeAttributes:
+          providerName: "azure"
+          usePodIdentity: "true"          # [OPTIONAL] if not provided, will default to "false"
+          keyvaultName: "$VAULT_NAME"                # the name of the KeyVault
+          objects:  |
+            array:
+              - |
+                objectName: mysupersecret
+                objectType: secret        # object types: secret, key or cert
+                objectVersion: ""         # [OPTIONAL] object versions, default to latest if empty
+          resourceGroup: "$VAULT_GROUP"               # the resource group of the KeyVault
+          subscriptionId: "$SUBSCRIPTION_ID"              # the subscription ID of the KeyVault
+          tenantId: "$TENANT_ID"                    # the tenant ID of the KeyVault
+EOF
+
+kubectl exec -it nginx-secrets-store-inline-pod-identity cat /kvmnt/testsecret

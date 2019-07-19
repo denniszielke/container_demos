@@ -25,9 +25,10 @@ az feature register --name AKSLockingDownEgressPreview --namespace Microsoft.Con
 az feature register --name AKS-AzurePolicyAutoApprove --namespace Microsoft.ContainerService
 az feature register --namespace Microsoft.PolicyInsights --name AKS-DataplaneAutoApprove
 az feature register --namespace Microsoft.ContainerService/AROGA --name AKS-DataplaneAutoApprove
-az feature register --namespace "Microsoft.ContainerService" --name " AKSAzureStandardLoadBalancer"
+az feature register --namespace "Microsoft.ContainerService" --name "AKSAzureStandardLoadBalancer"
 az feature register --namespace "Microsoft.ContainerService" --name "MSIPreview"
-
+az feature register --namespace "Microsoft.ContainerService" --name "NodePublicIPPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "LowPriorityPoolPreview"
 
 NodePublicIPPreview
 

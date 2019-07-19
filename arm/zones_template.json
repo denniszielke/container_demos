@@ -141,10 +141,7 @@
                "networkPlugin": "[parameters('networkPlugin')]",
                "loadBalancerSku": "standard"
            }
-         },
-         "identity": {
-             "type": "SystemAssigned"
-         } 
+         }
       }
    ],
    "outputs":{  

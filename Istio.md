@@ -146,7 +146,9 @@ data:
   passphrase: $KIALI_PASSPHRASE
 EOF
 
-kubectl port-forward kiali-5df77dc9b6-kvnkp 20001:20001 -n istio-system
+kubectl port-forward kiali-68677d47d7-hdpfq 20001:20001 -n istio-system
+
+kubectl --namespace istio-system port-forward $(kubectl get pod --namespace istio-system -l app=kiali -o template --template "{{(index .items 0).metadata.name}}") 20001:20001
 
 kubectl apply -f https://raw.githubusercontent.com/CSA-OCP-GER/unicorn/master/hints/yaml/challenge-istio/request-routing/c2-ingress-rr.yaml
 

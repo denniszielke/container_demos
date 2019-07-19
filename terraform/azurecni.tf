@@ -16,6 +16,8 @@ resource "azurerm_resource_group" "aksrg" {
   tags = {
     Environment = "${var.environment}"
   }
+
+  depends_on = ["azuread_service_principal.aks_sp"]
 }
 
 # # https://www.terraform.io/docs/providers/azurerm/d/network_security_group.html
@@ -32,7 +34,7 @@ resource "azurerm_resource_group" "aksrg" {
 # https://www.terraform.io/docs/providers/azurerm/d/virtual_network.html
 resource "azurerm_virtual_network" "kubevnet" {
   name                = "${var.dns_prefix}-vnet"
-  address_space       = ["10.0.0.0/16"]
+  address_space       = ["10.0.0.0/20"]
   location            = "${azurerm_resource_group.aksrg.location}"
   resource_group_name = "${azurerm_resource_group.aksrg.name}"
 
@@ -102,7 +104,7 @@ resource "azurerm_role_assignment" "aksvnetrole" {
   role_definition_name = "Contributor" # "Virtual Machine Contributor"
   principal_id         = "${azuread_service_principal.aks_sp.id}"
   
-  depends_on = ["azurerm_subnet.aksnet"]
+  depends_on = ["azurerm_subnet.aksnet", "azuread_service_principal.aks_sp", "azuread_service_principal_password.aks_sp_set_pw"]
 }
 
 # https://www.terraform.io/docs/providers/azurerm/d/log_analytics_workspace.html
@@ -147,9 +149,10 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     count           =  "${var.agent_count}"
     vm_size         = "Standard_F4s" # Standard_DS2_v2
     os_type         = "Linux"
-    os_disk_size_gb = 30
-    max_pods = 30
-    vnet_subnet_id = "${azurerm_subnet.aksnet.id}"
+    os_disk_size_gb = 120
+    max_pods        = 30
+    type            = "VirtualMachineScaleSets"
+    vnet_subnet_id  = "${azurerm_subnet.aksnet.id}"
   }
 
   role_based_access_control {
@@ -172,12 +175,12 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     # client_secret = "${var.aks_client_secret}"
   }
 
-  addon_profile {
-    oms_agent {
-      enabled                    = true
-      log_analytics_workspace_id = "${azurerm_log_analytics_workspace.akslogs.id}"
-    }
-  }
+  # addon_profile {
+  #   oms_agent {
+  #     enabled                    = true
+  #     log_analytics_workspace_id = "${azurerm_log_analytics_workspace.akslogs.id}"
+  #   }
+  # }
 
   tags = {
     Environment = "${var.environment}"
@@ -186,7 +189,7 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     Policy = "calico"
   }
 
-  depends_on = ["azurerm_subnet.aksnet", "azuread_service_principal.aks_sp"]
+  depends_on = ["azurerm_subnet.aksnet", "azuread_service_principal.aks_sp", "azuread_service_principal_password.aks_sp_set_pw"]
 }
 
 # merge kubeconfig from the cluster
