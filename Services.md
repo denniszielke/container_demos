@@ -51,6 +51,25 @@ spec:
   clusterIP: None
 EOF
 
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: helloworld
+  name: helloworld
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: helloworld
+  type: LoadBalancer
+EOF
+
+
 cat <<EOF | kubectl create -f -
 kind: Pod
 apiVersion: v1

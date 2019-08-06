@@ -2,12 +2,37 @@
 https://www.getambassador.io/user-guide/helm/
 
 ```
+
+kubectl apply -f https://getambassador.io/yaml/ambassador/ambassador-rbac.yaml
+
+IP=
+
 helm upgrade --install --wait amb stable/ambassador
 export SERVICE_IP=$(kubectl get svc --namespace default ambassador -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
+helm upgrade --install --wait amb stable/ambassador --set service.loadBalancerIP=$IP --set prometheusExporter.enabled=true --namespace ambassador 
+
+
+
 ```
 
-kubectl apply -f https://getambassador.io/yaml/ambassador/ambassador-rbac.yaml
+admin
+```
+
+export POD_NAME=$(kubectl get pods --namespace ambassador -l "app.kubernetes.io/name=ambassador,app.kubernetes.io/instance=amb" -o jsonpath="{.items[0].metadata.name}")
+
+kubectl set env deploy -n kong konga NODE_TLS_REJECT_UNAUTHORIZED=0
+
+kubectl port-forward $POD_NAME --namespace ambassador 8080:8877
+
+http://localhost:8080/ambassador/v0/diag/
+
+kubectl apply -f https://getambassador.io/yaml/tour/tour.yaml
+
+```
+
+
+```
 
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -22,6 +47,7 @@ spec:
   selector:
     service: ambassador
 EOF
+```
 
 ```
 cat <<EOF | kubectl apply -f -

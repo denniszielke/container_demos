@@ -1,14 +1,20 @@
-# ACS Engine
+# AKS Engine
+https://github.com/Azure/aks-engine/blob/master/docs/topics/clusterdefinitions.md
 
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="dz-akse-13a"
-KUBE_NAME="dz-akse-13a"
+KUBE_GROUP="dz-akse"
+VNET_GROUP="aksengine"
+KUBE_NAME="dz-aks-subnet"
 LOCATION="westeurope"
-LOCATION="centralus"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
+KUBE_VNET_NAME=aksvnet
+VM_VNET_NAME=vmnet
+KUBE_MASTER_SUBNET_NAME="m-1-subnet"
+KUBE_WORKER_SUBNET_NAME="w-2-subnet"
+KUBE_POD_SUBNET_NAME="p-3-subnet"
 YOUR_SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
 ```
 
@@ -17,7 +23,7 @@ YOUR_SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
 Download latest release from https://github.com/Azure/acs-engine/releases/tag/v0.26.2
 
 ```
-wget https://github.com/Azure/aks-engine/releases/download/v0.28.1/aks-engine-v0.28.1-darwin-amd64.tar.gz
+wget https://github.com/Azure/aks-engine/releases/download/v0.38.2/aks-engine-v0.38.2-darwin-amd64.tar.gz
 tar -zxvf aks-engine-v0.28.1-darwin-amd64.tar.gz
 cd aks-engine-v0.28.1-darwin-amd64
 ```
@@ -33,6 +39,22 @@ sed -e "s/SERVICE_PRINCIPAL_ID/$SERVICE_PRINCIPAL_ID/ ; s/SERVICE_PRINCIPAL_SECR
 ```
 
 2. Replace YOUR_SSH_KEY with your ssh key
+
+# Create VNET
+
+```
+az group create -n $VNET_GROUP -l $LOCATION
+az network vnet create -g $VNET_GROUP -n $KUBE_VNET_NAME --address-prefixes 172.16.0.0/16 10.240.0.0/16
+az network vnet subnet create -g $VNET_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_MASTER_SUBNET_NAME --address-prefix 172.16.1.0/24
+az network vnet subnet create -g $VNET_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_WORKER_SUBNET_NAME --address-prefix 172.16.2.0/24 
+az network vnet subnet create -g $VNET_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_POD_SUBNET_NAME --address-prefix 10.240.0.0/16
+
+az network vnet create -g $VNET_GROUP -n $VM_VNET_NAME --address-prefixes 10.241.0.0/16 --subnet-name $VM_VNET_NAME --subnet-prefix 10.241.0.0/24
+
+az network vnet peering create -g $VNET_GROUP -n KubeToVMPeer --vnet-name $KUBE_VNET_NAME --remote-vnet $VM_VNET_NAME --allow-vnet-access
+
+az network vnet peering create -g $VNET_GROUP -n VMToKubePeer --vnet-name $VM_VNET_NAME --remote-vnet $KUBE_VNET_NAME --allow-vnet-access
+```
 
 # Generate aks-engine
 
@@ -55,7 +77,7 @@ az group deployment create \
     --name $KUBE_NAME \
     --resource-group $KUBE_GROUP \
     --template-file "_output/$KUBE_NAME/azuredeploy.json" \
-    --parameters "_output/$KUBE_NAME/azuredeploy.parameters.json"
+    --parameters "_output/$KUBE_NAME/azuredeploy.parameters.json" --no-wait
 ```
 
 # Create cluster role binding

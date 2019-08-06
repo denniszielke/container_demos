@@ -14,6 +14,8 @@ https://github.com/Azure/aks-engine/tree/master/releases/vhd-notes
 Packer script:
 https://github.com/Azure/aks-engine/blob/master/packer/install-dependencies.sh
 
+https://relnotes.k8s.io/
+
 See all aks vhd version
 ```
 az vm image list --publisher microsoft-aks --all -o table

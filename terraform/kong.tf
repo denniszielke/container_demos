@@ -23,6 +23,44 @@ resource "azurerm_public_ip" "kong_ingress" {
   depends_on = ["azurerm_kubernetes_cluster.akstf"]
 }
 
+resource "random_string" "kongpsql_password" {
+    length  = 16
+    special = false
+}
+
+# https://www.terraform.io/docs/providers/azurerm/r/postgresql_server.html
+resource "azurerm_postgresql_server" "kong_db" {
+  name                = "${var.dns_prefix}-kong-db"
+  location            = "${azurerm_resource_group.aksrg.location}"
+  resource_group_name = "${azurerm_resource_group.aksrg.name}"
+
+  sku {
+    name     = "B_Gen5_1"
+    capacity = 1
+    tier     = "Basic"
+    family   = "Gen5"
+  }
+
+  storage_profile {
+    storage_mb            = 5120
+    backup_retention_days = 7
+    geo_redundant_backup  = "Disabled"
+  }
+
+  administrator_login          = "kongadmin"
+  administrator_login_password = "${random_string.kongpsql_password.result}"
+  version                      = "9.5"
+  ssl_enforcement              = "Enabled"
+}
+
+resource "azurerm_postgresql_database" "kong_config_db" {
+  name                = "kong"
+  resource_group_name = "${azurerm_resource_group.aksrg.name}"
+  server_name         = "${azurerm_postgresql_server.kong_db.name}"
+  charset             = "UTF8"
+  collation           = "English_United States.1252"
+}
+
 # https://www.terraform.io/docs/providers/helm/repository.html
 data "helm_repository" "stable" {
     name = "stable"
@@ -46,14 +84,29 @@ resource "helm_release" "kong_ingress" {
 
   set {
     name  = "env.database"
-    value = "off"
+    value = "postgres"
   }
 
   set {
     name  = "postgresql.enabled"
     value = "false"
   }
-  
+
+  set {
+    name  = "env.pg_user"
+    value = "kongadmin"
+  }
+
+  set {
+    name  = "env.pg_password"
+    value = "${random_string.kongpsql_password.result}"
+  }
+
+  set {
+    name  = "env.pg_host"
+    value = "${azurerm_postgresql_server.kong_db.fqdn}"
+  }
+
   set {
     name  = "proxy.type"
     value = "LoadBalancer"
@@ -64,5 +117,5 @@ resource "helm_release" "kong_ingress" {
     value = "${azurerm_public_ip.kong_ingress.ip_address}"
   }
 
-  depends_on = ["azurerm_kubernetes_cluster.akstf", "azurerm_public_ip.kong_ingress"]
+  depends_on = ["azurerm_kubernetes_cluster.akstf", "azurerm_public_ip.kong_ingress", "azurerm_postgresql_server.kong_db"]
 }

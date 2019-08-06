@@ -6,6 +6,10 @@ resource "azuread_application" "aks_app" {
     name = "${var.cluster_name}-sp"
     identifier_uris = ["http://${var.cluster_name}-sp"]
     available_to_other_tenants = false
+    lifecycle {
+        prevent_destroy = true
+        ignore_changes = [ "identifier_uris" ]
+    }
 }
  
 # https://www.terraform.io/docs/providers/azuread/r/service_principal.html

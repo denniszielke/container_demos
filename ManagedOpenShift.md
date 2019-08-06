@@ -2,6 +2,7 @@
 https://github.com/Azure/OpenShift
 https://docs.microsoft.com/en-us/azure/aks/aad-integration
 
+
 create app id and create permissions the same as for aks
 ```
 az ad app create --display-name $OSA_CLUSTER_NAME --key-type Password --password $OSA_AAD_SECRET --identifier-uris $OSA_AAD_REPLY_URL --reply-urls $OSA_AAD_REPLY_URL

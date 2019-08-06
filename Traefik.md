@@ -21,9 +21,9 @@ az network public-ip create \
 DNS=$(az network public-ip show --resource-group $NODE_GROUP --name $IP_NAME --query dnsSettings.fqdn --output tsv)
 IP=$(az network public-ip show --resource-group $NODE_GROUP --name $IP_NAME --query ipAddress --output tsv)
 
-helm install stable/traefik --name mytraefik --namespace kube-system --set dashboard.enabled=true,dashboard.domain=dashboard.localhost,rbac.enabled=true,loadBalancerIP=$IP,externalTrafficPolicy=Local,replicas=2,ssl.enabled=true,ssl.permanentRedirect=true,ssl.insecureSkipVerify=true,acme.enabled=true,acme.challengeType=http-01,acme.email=dzielke@microsoft.com,acme.staging=false
+helm install stable/traefik --name mytraefik --namespace kube-system --set dashboard.enabled=true,dashboard.domain=dashboard.localhost,rbac.enabled=true,loadBalancerIP=$IP,externalTrafficPolicy=Local,replicas=2,ssl.enabled=true,ssl.permanentRedirect=true,ssl.insecureSkipVerify=true,acme.enabled=true,acme.challengeType=http-01,acme.email=$MY_ID,acme.staging=false
 
-helm upgrade mytraefik stable/traefik --namespace kube-system --set dashboard.enabled=true,dashboard.domain=dashboard.localhost,rbac.enabled=true,loadBalancerIP=$IP,externalTrafficPolicy=Local,replicas=1,ssl.enabled=true,ssl.permanentRedirect=true,ssl.insecureSkipVerify=true,acme.enabled=true,acme.challengeType=http-01,acme.email=dzielke@microsoft.com,acme.staging=false
+helm upgrade mytraefik stable/traefik --namespace kube-system --set dashboard.enabled=true,dashboard.domain=dashboard.localhost,rbac.enabled=true,loadBalancerIP=$IP,externalTrafficPolicy=Local,replicas=1,ssl.enabled=true,ssl.permanentRedirect=true,ssl.insecureSkipVerify=true,acme.enabled=true,acme.challengeType=http-01,acme.email=$MY_ID,acme.staging=false
 
 
 kubectl -n kube-system port-forward $(kubectl -nkube-system get pod -l app=traefik -o jsonpath='{.items[0].metadata.name}') 8080:8080
@@ -168,4 +168,4 @@ configure forward authentication
 https://docs.traefik.io/configuration/entrypoints/#forward-authentication
 https://raw.githubusercontent.com/helm/charts/master/stable/traefik/values.yaml
 
-helm upgrade mytraefik stable/traefik --values yaml/traefik.yaml --namespace kube-system --set dashboard.enabled=true,dashboard.domain=dashboard.localhost,rbac.enabled=true,loadBalancerIP=$IP,externalTrafficPolicy=Local,replicas=2,ssl.enabled=true,ssl.permanentRedirect=true,ssl.insecureSkipVerify=true,acme.enabled=true,acme.challengeType=http-01,acme.email=dzielke@microsoft.com,acme.staging=false,forwardAuth.address=http://authproxy-oauth2-proxy.kube-system.svc.cluster.local:80
+helm upgrade mytraefik stable/traefik --values yaml/traefik.yaml --namespace kube-system --set dashboard.enabled=true,dashboard.domain=dashboard.localhost,rbac.enabled=true,loadBalancerIP=$IP,externalTrafficPolicy=Local,replicas=2,ssl.enabled=true,ssl.permanentRedirect=true,ssl.insecureSkipVerify=true,acme.enabled=true,acme.challengeType=http-01,acme.email=$MY_ID,acme.staging=false,forwardAuth.address=http://authproxy-oauth2-proxy.kube-system.svc.cluster.local:80

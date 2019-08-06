@@ -128,7 +128,7 @@ resource "azurerm_log_analytics_solution" "akslogs" {
   }
 }
 
-# https://www.terraform.io/docs/providers/azurerm/d/kubernetes_cluster.html
+# https://www.terraform.io/docs/providers/azurerm/r/kubernetes_cluster.html
 resource "azurerm_kubernetes_cluster" "akstf" {
   name                = "${var.cluster_name}"
   location            = "${azurerm_resource_group.aksrg.location}"
@@ -151,7 +151,7 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     os_type         = "Linux"
     os_disk_size_gb = 120
     max_pods        = 30
-    type            = "VirtualMachineScaleSets"
+    type            = "AvailabilitySet" # "VirtualMachineScaleSets"
     vnet_subnet_id  = "${azurerm_subnet.aksnet.id}"
   }
 
@@ -175,12 +175,12 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     # client_secret = "${var.aks_client_secret}"
   }
 
-  # addon_profile {
-  #   oms_agent {
-  #     enabled                    = true
-  #     log_analytics_workspace_id = "${azurerm_log_analytics_workspace.akslogs.id}"
-  #   }
-  # }
+  addon_profile {
+    oms_agent {
+      enabled                    = true
+      log_analytics_workspace_id = "${azurerm_log_analytics_workspace.akslogs.id}"
+    }
+  }
 
   tags = {
     Environment = "${var.environment}"
