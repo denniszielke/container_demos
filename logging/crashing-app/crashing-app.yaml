@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: crashing-app
+  name: crashing-app1
 spec:
   replicas: 1
   minReadySeconds: 5
@@ -13,12 +13,12 @@ spec:
   template:
     metadata:
       labels:
-        name: crashing-app
+        name: crashing-app1
         demo: logging
-        app: crashing-app
+        app: crashing-app1
     spec:
       containers:
-      - name: crashing-app
+      - name: crashing-app1
         image: denniszielke/crashing-app:latest
         livenessProbe:
           httpGet:
@@ -43,12 +43,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: crashing-app
+  name: crashing-app1
   namespace: default
 spec:
   ports:
   - port: 80
     targetPort: 80
   selector:
-    app: crashing-app
+    app: crashing-app1
   type: LoadBalancer

@@ -1,7 +1,7 @@
 data "template_file" "traefik" {
   template = "${file("${path.module}/traefik.yaml.tmpl")}"
 
-  vars {
+  vars = {
     jaeger_agent_endpoint = "${var.jaeger_agent_endpoint}"
     prometheus_enabled    = "true"
     ssl_enabled           = "${var.ssl_enabled}"
@@ -22,7 +22,7 @@ resource "null_resource" "generate_traefik_config" {
 provider "helm" {
   install_tiller = "true"
   service_account = "${kubernetes_service_account.tiller_service_account.metadata.0.name}"
-  tiller_image    = "gcr.io/kubernetes-helm/tiller:v2.14.1"
+  # tiller_image    = "gcr.io/kubernetes-helm/tiller:v2.14.2"
 
   kubernetes {
     host                   = "${azurerm_kubernetes_cluster.akstf.kube_config.0.host}"

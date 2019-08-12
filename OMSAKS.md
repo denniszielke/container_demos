@@ -528,3 +528,25 @@ curl -X GET http://$CRASHER_IP/leak
 
 for i in `seq 1 20`; do time curl -s $LEAKER_IP/leak > /dev/null; done
 ```
+
+## Get prm metrics
+
+http://191.239.178.89.xip.io/dummy-logger/ping
+
+```
+InsightsMetrics 
+| where Namespace contains "prometheus"
+| where TimeGenerated > ago(1h)
+| where Name startswith "http_requests_"
+| summarize max(Val) by Name, bin(TimeGenerated, 1m)
+| render timechart
+```
+
+```
+SUBSCRIPTION_ID=
+KUBE_GROUP=
+KUBE_NAME=
+
+
+.\HealthAgentOnboarding.ps1 -aksResourceId /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$KUBE_GROUP/providers/Microsoft.ContainerService/managedClusters/$KUBE_NAME -aksResourceLocation westeurope -logAnalyticsWorkspaceResourceId /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.OperationalInsights/workspaces/$KUBE_NAME-lga
+```

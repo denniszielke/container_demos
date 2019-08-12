@@ -9,6 +9,9 @@ spec:
     - name: dummy-logger
       image: denniszielke/dummy-logger:latest
       imagePullPolicy: Always
+      env: 
+        - name: "METRICRESET"
+          value: "5"
       ports:
         - containerPort: 80
           name: http

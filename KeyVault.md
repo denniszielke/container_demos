@@ -278,6 +278,38 @@ az keyvault set-policy -n $VAULT_NAME --key-permissions get --spn $SERVICE_PRINC
 az keyvault set-policy -n $VAULT_NAME --secret-permissions get --spn $SERVICE_PRINCIPAL_ID
 az keyvault set-policy -n $VAULT_NAME --certificate-permissions get --spn $SERVICE_PRINCIPAL_ID
 
+cat <<EOF | kubectl apply -f -
+kind: Pod
+apiVersion: v1
+metadata:
+  name: nginx-secrets-store-inline
+spec:
+  containers:
+  - image: nginx
+    name: nginx
+    volumeMounts:
+    - name: secrets-store-inline
+      mountPath: "/mnt/secrets-store"
+      readOnly: true
+  volumes:
+    - name: secrets-store-inline
+      csi:
+        driver: secrets-store.csi.k8s.com
+        readOnly: true
+        volumeAttributes:
+          providerName: "azure"
+          usePodIdentity: "false"          # [OPTIONAL] if not provided, will default to "false"
+          keyvaultName: "$VAULT_NAME"                # the name of the KeyVault
+          objects:  |
+            array:
+              - |
+                objectName: mysupersecret
+                objectType: secret        # object types: secret, key or cert
+                objectVersion: ""         # [OPTIONAL] object versions, default to latest if empty
+          resourceGroup: "$VAULT_GROUP"               # the resource group of the KeyVault
+          subscriptionId: "$SUBSCRIPTION_ID"              # the subscription ID of the KeyVault
+          tenantId: "$TENANT_ID"                    # the tenant ID of the KeyVault
+EOF
 
 ```
 

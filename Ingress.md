@@ -57,9 +57,13 @@ helm install stable/nginx-ingress --name ingress-controller --namespace kube-sys
 helm install stable/nginx-ingress --name ingress-controller --namespace kube-system --set controller.service.externalTrafficPolicy=Local
 helm upgrade quiet-echidna stable/nginx-ingress  --set controller.service.externalTrafficPolicy=Local
 
+# dedicate dip
 helm upgrade nginx-ingress stable/nginx-ingress  --set controller.service.externalTrafficPolicy=Local --set controller.replicaCount=2 --set controller.service.loadBalancerIP=104.46.49.182 --set rbac.create=true --namespace kube-system
 
+# internal
 helm upgrade nginx-ingress stable/nginx-ingress  --set controller.service.externalTrafficPolicy=Local --set controller.replicaCount=2 --set rbac.create=true --set controller.service.annotations="{service.beta.kubernetes.io/azure-load-balancer-internal:\\"true"} --namespace kube-system
+
+helm upgrade --install nginx-ingress stable/nginx-ingress --set controller.service.externalTrafficPolicy=Local --set controller.replicaCount=2 --set controller.metrics.enabled=true --set controller.stats.enabled=true	--namespace ingress
 
 
 KUBE_EDITOR="nano" kubectl edit svc/nginx-ingress-controller -n kube-system
