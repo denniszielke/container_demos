@@ -135,7 +135,7 @@ resource "azurerm_kubernetes_cluster" "akstf" {
   resource_group_name = "${azurerm_resource_group.aksrg.name}"
   dns_prefix          = "${var.dns_prefix}"
   kubernetes_version  = "${var.kubernetes_version}"
-
+  node_resource_group = "${azurerm_resource_group.aksrg.name}_nodes_${azurerm_resource_group.aksrg.location}"
   linux_profile {
     admin_username = "dennis"
 
@@ -147,11 +147,11 @@ resource "azurerm_kubernetes_cluster" "akstf" {
   agent_pool_profile {
     name            = "default"
     count           =  "${var.agent_count}"
-    vm_size         = "Standard_F2s" # Standard_DS2_v2
+    vm_size         = "Standard_F4s" # Standard_DS2_v2
     os_type         = "Linux"
     os_disk_size_gb = 120
     max_pods        = 30
-    type            = "AvailabilitySet" # "VirtualMachineScaleSets"
+    type            = "VirtualMachineScaleSets" #"AvailabilitySet" #
     vnet_subnet_id  = "${azurerm_subnet.aksnet.id}"
   }
 
@@ -166,6 +166,7 @@ resource "azurerm_kubernetes_cluster" "akstf" {
       docker_bridge_cidr = "172.17.0.1/16"
       #pod_cidr = "" selected by subnet_id
       network_policy = "calico"
+      load_balancer_sku = "standard"
   }
 
   service_principal {
@@ -176,10 +177,10 @@ resource "azurerm_kubernetes_cluster" "akstf" {
   }
 
   addon_profile {
-    oms_agent {
-      enabled                    = true
-      log_analytics_workspace_id = "${azurerm_log_analytics_workspace.akslogs.id}"
-    }
+    # oms_agent {
+    #   enabled                    = true
+    #   log_analytics_workspace_id = "${azurerm_log_analytics_workspace.akslogs.id}"
+    # }
   }
 
   tags = {
@@ -189,7 +190,7 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     Policy = "calico"
   }
 
-  depends_on = ["azurerm_subnet.aksnet", "azuread_service_principal.aks_sp", "azuread_service_principal_password.aks_sp_set_pw"]
+  depends_on = ["azurerm_subnet.aksnet", "azuread_service_principal.aks_sp", "azuread_service_principal_password.aks_sp_set_pw", "null_resource.after"]
 }
 
 # merge kubeconfig from the cluster

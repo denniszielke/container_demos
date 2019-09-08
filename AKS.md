@@ -4,10 +4,10 @@ https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="security"
-KUBE_NAME="slbrouter"
+KUBE_GROUP="aksv2"
+KUBE_NAME="aksv2"
 LOCATION="westeurope"
-KUBE_VERSION="1.13.7"
+KUBE_VERSION="1.14.5"
 REGISTRY_NAME=""
 APPINSIGHTS_KEY=""
 

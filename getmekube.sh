@@ -20,6 +20,7 @@ VARIABLE_FILE=$CONFIG_PATH/variables_common.tf
 HELM_FILE=$PWD/terraform/helm.tf
 NGINX_FILE=$PWD/terraform/nginx.tf
 TRAEFIK_FILE=$PWD/terraform/traefik.tf
+TRAEFIK_YAML=$PWD/terraform/traefik.yaml
 KONG_FILE=$PWD/terraform/kong.tf
 ACR_FILE=$PWD/terraform/containerregistry.tf
 SP_FILE=$PWD/terraform/serviceprincipal.tf
@@ -168,6 +169,7 @@ if [ "$ingress" == "n" ]; then
 cp $NGINX_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 elif [ "$ingress" == "t" ]; then
 cp $TRAEFIK_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+cp $TRAEFIK_YAML $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 elif [ "$ingress" == "k" ]; then
 cp $KONG_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 fi

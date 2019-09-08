@@ -15,6 +15,9 @@ WORKSPACE_ID=
 WORKSPACE_KEY=
 ```
 
+az aks enable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME --addons monitoring
+az aks disable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME --addons monitoring
+
 1. Deploy the oms daemons
 
 get the latest yaml file from here
@@ -533,6 +536,8 @@ for i in `seq 1 20`; do time curl -s $LEAKER_IP/leak > /dev/null; done
 
 http://191.239.178.89.xip.io/dummy-logger/ping
 
+kubectl delete  pod -n kube-system --selector="dsName=omsagent-ds"
+
 ```
 InsightsMetrics 
 | where Namespace contains "prometheus"
@@ -550,3 +555,15 @@ KUBE_NAME=
 
 .\HealthAgentOnboarding.ps1 -aksResourceId /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$KUBE_GROUP/providers/Microsoft.ContainerService/managedClusters/$KUBE_NAME -aksResourceLocation westeurope -logAnalyticsWorkspaceResourceId /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.OperationalInsights/workspaces/$KUBE_NAME-lga
 ```
+
+.\HealthAgentOnboarding.ps1 -aksResourceId /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$KUBE_GROUP/providers/Microsoft.ContainerService/managedClusters/$KUBE_NAME -aksResourceLocation eastus -logAnalyticsWorkspaceResourceId /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.OperationalInsights/workspaces/$KUBE_NAME-lga
+
+az aks get-credentials --resource-group=kub_ter_a_m_metrics5 --name=metrics5   
+
+.\HealthAgentOnboarding.ps1 -aksResourceId /subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourcegroups/kub_ter_a_m_metrics5/providers/Microsoft.ContainerService/managedClusters/metrics5 -aksResourceLocation eastus -logAnalyticsWorkspaceResourceId /subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourcegroups/kub_ter_a_m_metrics5/providers/Microsoft.OperationalInsights/workspaces/metrics5-lga
+
+/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourcegroups/kub_ter_a_m_metrics5/providers/Microsoft.ContainerService/managedClusters/metrics5
+
+https://aka.ms/ci-privatepreview
+
+https://portal.azure.com/?feature.healthmodel=true&feature.customportal=false&feature.hybrid=true#@microsoft.onmicrosoft.com/resource/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourcegroups/kub_ter_a_m_metrics5/providers/Microsoft.ContainerService/managedClusters/metrics5/infrainsights

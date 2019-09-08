@@ -272,3 +272,97 @@ EOF
 ```
 
 ## flex volume blob fuse
+
+
+## ephemeral disk
+https://github.com/Azure/aks-engine/tree/master/examples/disks-ephemeral
+
+https://github.com/Azure/aks-engine/blob/master/docs/topics/features.md#ephemeral-os-disks
+
+echo "
+kind: Pod
+apiVersion: v1
+metadata:
+  name: mypodtempdisk
+spec:
+  containers:
+    - name: myfrontend
+      image: nginx
+      volumeMounts:
+      - mountPath: "/mnt/azure"
+        name: tempdisk
+  volumes:
+  - name: tempdisk
+    hostPath:
+      path: /mnt
+" | kubectl apply -f -
+
+
+https://medium.com/@dmitrio_/installing-rook-v1-0-on-aks-f8c22a75d93d
+https://rook.io/docs/rook/v0.9/ceph-storage.html
+
+kubectl apply -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
+
+helm install --name rook --namespace rook-ceph rook-release/rook-ceph --set agent.flexVolumeDirPath="/etc/kubernetes/volumeplugins"
+
+kubectl apply -f storage/rook-cluster.yaml
+
+helm install --name mysql stable/mysql --namespace databases --set persistence.storageClass=rook-ceph-block,persistence.size=4Gi
+
+
+kubectl describe pvc -n databases
+
+echo "
+apiVersion: v1
+kind: Service
+metadata:
+  name: rook-ceph-mgr-dashboard-external-https
+  namespace: rook-ceph
+  labels:
+    app: rook-ceph-mgr
+    rook_cluster: rook-ceph
+spec:
+  ports:
+  - name: dashboard
+    port: 8443
+    protocol: TCP
+    targetPort: 8443
+  selector:
+    app: rook-ceph-mgr
+    rook_cluster: rook-ceph
+  sessionAffinity: None
+  type: LoadBalancer
+" | kubectl apply -f -
+
+echo "
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: rook-ceph-mgr-dashboard
+  namespace: rook-ceph
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      proxy_ssl_verify off;
+spec:
+  tls:
+   - hosts:
+     - rook-ceph.example.com
+     secretName: rook-ceph.example.com
+  rules:
+  - host: rook-ceph.example.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: rook-ceph-mgr-dashboard
+          servicePort: https-dashboard
+" | kubectl apply -f -
+
+kubectl port-forward rook-ceph-mgr-a-5f7d94775d-9wksn --namespace rook-ceph 8443:8443
+
+https://github.com/rook/rook/blob/master/Documentation/ceph-dashboard.md
+
+kubectl -n rook-ceph port-forward $(kubectl -n rook-ceph get pod -l app=rook-ceph-mgr -o jsonpath='{.items[0].metadata.name}') 8443:8443

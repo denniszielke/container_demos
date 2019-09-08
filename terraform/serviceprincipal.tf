@@ -38,3 +38,16 @@ resource "azuread_service_principal_password" "aks_sp_set_pw" {
 #     prevent_destroy = true
 #   }
 }
+
+resource "null_resource" "delay" {
+  provisioner "local-exec" {
+    command = "sleep 100"
+  }
+  triggers = {
+    "before" = "${azuread_service_principal_password.aks_sp_set_pw.id}"
+  }
+}
+
+resource "null_resource" "after" {
+  depends_on = ["null_resource.delay"]
+}

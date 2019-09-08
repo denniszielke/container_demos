@@ -7,13 +7,18 @@ metadata:
     app: podinfo
   annotations:
     kubernetes.io/ingress.class: "nginx"
+    certmanager.k8s.io/cluster-issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/configuration-snippet: |
       proxy_set_header l5d-dst-override $service_name.$namespace.svc.cluster.local:9898;
       proxy_hide_header l5d-remote-ip;
       proxy_hide_header l5d-server-id;
 spec:
+  tls:
+    - hosts:
+      - linkderdsmi.westeurope.cloudapp.azure.com
+      secretName: hello-tls-secret
   rules:
-    - host: 52.236.174.71.xip.io
+    - host: linkderdsmi.westeurope.cloudapp.azure.com
       http:
         paths:
           - backend:

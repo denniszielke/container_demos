@@ -149,9 +149,9 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     count           =  "${var.agent_count}"
     vm_size         = "Standard_DS2_v2"
     os_type         = "Linux"
-    os_disk_size_gb = 30
+    os_disk_size_gb = 120
     vnet_subnet_id = "${azurerm_subnet.aksnet.id}"
-    type            = "AvailabilitySet" # "VirtualMachineScaleSets"
+    type            =  "VirtualMachineScaleSets" # "AvailabilitySet" # "VirtualMachineScaleSets"
   }
 
   role_based_access_control {
@@ -164,7 +164,8 @@ resource "azurerm_kubernetes_cluster" "akstf" {
       dns_service_ip = "10.2.0.10"
       docker_bridge_cidr = "172.17.0.1/16"
       # pod_cidr = "" selected by subnetid
-      load_balancer_sku = "standard "
+      load_balancer_sku = "standard"
+      network_policy = "calico"
   }
 
   service_principal {

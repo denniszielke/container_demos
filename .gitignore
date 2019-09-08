@@ -6,12 +6,10 @@
 
 Setup.md
 demo.md
-demos.md
 config.yaml
 demos
 twistlock.md
 Jenkins-ACI.md
-CommonIssues.md
 appgw.yaml
 Presentation.md
 games/whack.yaml
@@ -21,3 +19,6 @@ multi-calculator/.DS_Store
 multi-calculator/go-calc-backend/.DS_Store
 multi-calculator/js-calc-backend/.DS_Store
 .DS_Store
+Jaeger.md
+Postgres.md
+towatch.md

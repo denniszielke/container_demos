@@ -194,7 +194,7 @@ helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendR
 If you have a redis secret you can turn on the redis cache
 ```
 REDIS_HOST=myownredis.redis.cache.windows.net
-REDIS_AUTH=Idfsdfsd+Bs=
+REDIS_AUTH=
 kubectl create secret generic rediscachesecret --from-literal=redishostkey=$REDIS_HOST --from-literal=redisauthkey=$REDIS_AUTH --namespace $APP_NS
 
 helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useAzureRedis=false --set dependencies.usePodRedis=false --namespace $APP_NS
@@ -204,7 +204,9 @@ helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=1
 
 helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=false --set dependencies.useAzureRedis=false --set dependencies.usePodRedis=true  --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=0 --namespace $APP_NS
 
-helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useAzureRedis=false --set dependencies.usePodRedis=false  --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=3 --namespace $APP_NS
+helm upgrade $APP_IN ./multicalchart --install --recreate-pods --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useAzureRedis=false --set dependencies.usePodRedis=false  --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=3 --namespace $APP_NS
+
+helm upgrade $APP_IN ./multicalchart --install --recreate-pods --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=3 --namespace $APP_NS
 
 ```
 

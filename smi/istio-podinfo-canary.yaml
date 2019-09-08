@@ -25,7 +25,7 @@ spec:
     - public-gateway.istio-system.svc.cluster.local
     # Istio virtual service host names (optional)
     hosts:
-    - smi.eastus.cloudapp.azure.com
+    - smi.westeurope.cloudapp.azure.com
   canaryAnalysis:
     # schedule interval (default 60s)
     interval: 10s
