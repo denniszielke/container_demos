@@ -160,6 +160,8 @@ helm install --dry-run --debug ./multicalchart --name=calculator --set frontendR
 4. Make sure you have the app insights key secret provisioned
 ```
 kubectl create secret generic appinsightsecret --from-literal=appinsightskey=$APPINSIGHTS_KEY --namespace $APP_NS
+
+kubectl delete secret appinsightsecret --namespace $APP_NS
 ```
 
 5. Install
@@ -194,7 +196,9 @@ helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendR
 If you have a redis secret you can turn on the redis cache
 ```
 REDIS_HOST=myownredis.redis.cache.windows.net
-REDIS_AUTH=
+REDIS_AUTH=rGmdW1e0pcdDLxcBd5i9Unt7ZPuIpasJC5anWEv3IiY=
+APPINSIGHTS_KEY=833ca278-5a15-461c-a98c-158c6bd578d7
+
 kubectl create secret generic rediscachesecret --from-literal=redishostkey=$REDIS_HOST --from-literal=redisauthkey=$REDIS_AUTH --namespace $APP_NS
 
 helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useAzureRedis=false --set dependencies.usePodRedis=false --namespace $APP_NS
@@ -202,9 +206,9 @@ helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendR
 
 helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=false --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=0 --namespace $APP_NS
 
-helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=false --set dependencies.useAzureRedis=false --set dependencies.usePodRedis=true  --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=0 --namespace $APP_NS
+helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=false --set dependencies.useAzureRedis=false --set dependencies.usePodRedis=true --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=0 --namespace $APP_NS
 
-helm upgrade $APP_IN ./multicalchart --install --recreate-pods --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useAzureRedis=false --set dependencies.usePodRedis=false  --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=3 --namespace $APP_NS
+helm upgrade $APP_IN ./multicalchart --install --recreate-pods --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useAzureRedis=false --set dependencies.usePodRedis=true  --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=3 --namespace $APP_NS
 
 helm upgrade $APP_IN ./multicalchart --install --recreate-pods --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=3 --namespace $APP_NS
 

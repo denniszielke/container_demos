@@ -166,6 +166,16 @@ singleuser:
 rbac:
    enabled: true
 EOF
+
+cat  <<EOF >config.yaml
+proxy:
+  secretToken: "774629f880afc0302830c19a9f09be4f59e98b242b65983cea7560e828df2978"
+hub:
+  uid: 1000
+  cookieSecret: "774629f880afc0302830c19a9f09be4f59e98b242b65983cea7560e828df2978"
+rbac:
+   enabled: true
+EOF
 ```
 
 install jhub

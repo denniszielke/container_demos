@@ -26,3 +26,7 @@ kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/
 
 ## linkerd smi
 https://linkderdsmi.westeurope.cloudapp.azure.com/
+
+https://aka.ms/ci-privatepreview
+
+http://aka.ms/AMPMonitoring 

@@ -96,7 +96,7 @@ az group create -n $KUBE_GROUP -l $LOCATION
 az group deployment create \
     --name pspzones \
     --resource-group $KUBE_GROUP \
-    --template-file "arm/zones_template.json" \
+    --template-file "arm/zones_template_msi.json" \
     --parameters "arm/zones_parameters.json" \
     --parameters "resourceName=$KUBE_NAME" \
         "location=$LOCATION" \

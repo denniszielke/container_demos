@@ -177,10 +177,10 @@ resource "azurerm_kubernetes_cluster" "akstf" {
   }
 
   addon_profile {
-    # oms_agent {
-    #   enabled                    = true
-    #   log_analytics_workspace_id = "${azurerm_log_analytics_workspace.akslogs.id}"
-    # }
+    oms_agent {
+      enabled                    = true
+      log_analytics_workspace_id = "${azurerm_log_analytics_workspace.akslogs.id}"
+    }
   }
 
   tags = {

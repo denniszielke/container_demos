@@ -52,7 +52,9 @@ IP="1.1.1.1"
 Use the assigned ip address in the helm chart
 
 ```
-helm install stable/nginx-ingress --name ingress-controller --namespace kube-system --set rbac.create=true --set controller.service.loadBalancerIP="$IP" --set controller.stats.enabled=true --set controller.replicaCount=2 --set controller.service.externalTrafficPolicy=Local
+helm upgrade stable/nginx-ingress --install --name ingress-controller --namespace kube-system --set rbac.create=true --set controller.service.loadBalancerIP="$IP" --set controller.stats.enabled=true --set controller.replicaCount=2 --set controller.service.externalTrafficPolicy=Local
+
+helm upgrade ingress-controller stable/nginx-ingress --install --namespace kube-system --set controller.stats.enabled=true --set controller.replicaCount=2 --set controller.service.externalTrafficPolicy=Local
 
 helm install stable/nginx-ingress --name ingress-controller --namespace kube-system --set controller.service.externalTrafficPolicy=Local
 helm upgrade quiet-echidna stable/nginx-ingress  --set controller.service.externalTrafficPolicy=Local

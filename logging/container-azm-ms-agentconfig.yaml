@@ -48,7 +48,7 @@ data:
         # urls = ["http://myurl:9101/metrics"]
 
         # An array of Kubernetes services to scrape metrics from.
-        kubernetes_services = ["http://nginx-ingress-controller-metrics.ingress:9913/metrics","http://dummy-logger-metrics.default:80/metrics"]
+        kubernetes_services = ["http://dummy-logger-metrics.default:80/metrics"]
 
         # When monitor_kubernetes_pods = true, replicaset will scrape Kubernetes pods for the following prometheus annotations:
         # - prometheus.io/scrape: Enable scraping for this pod

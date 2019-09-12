@@ -33,3 +33,36 @@ kubectl -n test apply -f ${REPO}/artifacts/loadtester/service.yaml
 
 
 https://docs.flagger.app/usage/linkerd-progressive-delivery
+
+
+kubectl -n linkerd logs deployment/flagger -f | jq .msg
+
+kubectl -n linkerd port-forward svc/linkerd-grafana 3000:80
+
+
+kubectl -n test run tester --image=quay.io/stefanprodan/podinfo:1.2.1 -- ./podinfo --port=9898
+
+kubectl -n test exec -it $(kubectl -n test get pod -l run=tester -o jsonpath='{.items[0].metadata.name}') -- /bin/sh
+
+var=1;
+while true ; do
+  var=$((var+1))
+  curl http://podinfo-primary:9898/status/500
+  curl http://podinfo-primary:9898/delay/1
+    curl http://podinfo-canary:9898/status/500
+  curl http://podinfo-canary:9898/delay/1
+  now=$(date +"%T")
+  sleep 1
+done
+
+var=1;
+while true ; do
+  var=$((var+1))
+  curl http://podinfo-canary:9898/status/500
+  curl http://podinfo-canary:9898/delay/1
+  now=$(date +"%T")
+  sleep 1
+done
+
+## SMI Failure injection
+https://linkerd.io/2019/07/18/failure-injection-using-the-service-mesh-interface-and-linkerd/
