@@ -235,6 +235,7 @@ containers:
 
 ## Create SSH Box
 
+```
 kubectl run -it aks-ssh --image=debian
 
 apt-get update && apt-get install openssh-client -y
@@ -255,4 +256,4 @@ sudo dpkg-reconfigure wireshark-common
 sudo usermod -a -G wireshark dennis
 
 tshark -Q -i2 -O http -T json tcp port 7001 | grep http.file_data
-
+```

@@ -89,7 +89,7 @@ az aks enable-addons \
     --addons virtual-node \
     --subnet-name aci-2-subnet
 
-deploy zones
+# deploy zones, msi, slb via arm
 ```
 az group create -n $KUBE_GROUP -l $LOCATION
 
@@ -150,6 +150,7 @@ az aks upgrade --resource-group=$KUBE_GROUP --name=$KUBE_NAME --kubernetes-versi
 
 # Add agent pool
 
+```
 az aks enable-addons \
     --resource-group $KUBE_GROUP \
     --name $KUBE_NAME \
@@ -197,6 +198,34 @@ az aks nodepool list -g $KUBE_GROUP --cluster-name $KUBE_NAME -o table
 
 az aks nodepool scale -g $KUBE_GROUP --cluster-name $KUBE_NAME  -n cheap -c 1
 az aks nodepool scale -g $KUBE_GROUP --cluster-name $KUBE_NAME  -n agentpool -c 1
+```
+
+# Create SSH access
+https://docs.microsoft.com/en-us/azure/aks/ssh
+
+```
+CLUSTER_RESOURCE_GROUP=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query nodeResourceGroup -o tsv)
+SCALE_SET_NAME=$(az vmss list --resource-group $CLUSTER_RESOURCE_GROUP --query [0].name -o tsv)
+
+az vmss extension set  \
+    --resource-group $CLUSTER_RESOURCE_GROUP \
+    --vmss-name $SCALE_SET_NAME \
+    --name VMAccessForLinux \
+    --publisher Microsoft.OSTCExtensions \
+    --version 1.4 \
+    --protected-settings "{\"username\":\"dennis\", \"ssh_key\":\"$(cat ~/.ssh/id_rsa.pub)\"}"
+
+az vmss update-instances --instance-ids '*' \
+  --resource-group $CLUSTER_RESOURCE_GROUP \
+  --name $SCALE_SET_NAME
+
+kubectl run -it --rm aks-ssh --image=debian
+
+kubectl -n test exec -it $(kubectl -n test get pod -l run=aks-ssh -o jsonpath='{.items[0].metadata.name}') -- /bin/sh
+
+kubectl cp ~/.ssh/id_rsa $(kubectl get pod -l run=aks-ssh -o jsonpath='{.items[0].metadata.name}'):/id_rsa
+
+```
 
 # Delete everything
 ```
