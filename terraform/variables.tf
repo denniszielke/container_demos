@@ -22,7 +22,22 @@ variable "environment" {
 
 # number of aks worker nodes
 variable "agent_count" {
+    default = 2
+}
+
+variable "autoscaler" {
+    default = true
+}
+
+variable "min_agent_count" {
+    default = 2
+}
+variable "max_agent_count" {
     default = 3
+}
+
+variable "vm_size" {
+    default = "Standard_DS2_v2"
 }
 
 # kubernetes version

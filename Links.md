@@ -46,7 +46,7 @@ Preview cli:
 https://github.com/Azure/azure-cli-extensions/tree/master/src/
 
 Azure Load Balancer annotations:
-https://github.com/kubernetes/cloud-provider-azure/blob/master/docs/azure-loadbalancer.md#loadbalancer-annotations
+https://github.com/kubernetes/cloud-provider-azure/blob/master/docs/services/README.md
 
 - Azure Dev Spaces -> GA https://azure.microsoft.com/en-us/blog/introducing-dev-spaces-for-aks/ 
 - AKS Authenticated IP for AKS API Server -> Public Preview https://docs.microsoft.com/en-us/azure/aks/api-server-authorized-ip-ranges

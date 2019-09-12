@@ -146,12 +146,15 @@ resource "azurerm_kubernetes_cluster" "akstf" {
 
   agent_pool_profile {
     name            = "default"
-    count           =  "${var.agent_count}"
-    vm_size         = "Standard_DS2_v2"
+    count           = "${var.agent_count}"
+    vm_size         = "${var.vm_size}" # "Standard_DS2_v2"
     os_type         = "Linux"
     os_disk_size_gb = 120
     vnet_subnet_id = "${azurerm_subnet.aksnet.id}"
     type            =  "VirtualMachineScaleSets" # "AvailabilitySet" # "VirtualMachineScaleSets"
+    enable_auto_scaling = "${var.autoscaler}"
+    min_count       = "${var.min_agent_count}"
+    max_count       = "${var.max_agent_count}"
   }
 
   role_based_access_control {
@@ -222,7 +225,11 @@ output "KUBE_NAME" {
 output "KUBE_GROUP" {
     value = "${azurerm_resource_group.aksrg.name}"
 }
-output "id" {
+output "NODE_GROUP" {
+  value = "${azurerm_resource_group.aksrg.name}_nodes_${azurerm_resource_group.aksrg.location}"
+}
+
+output "ID" {
     value = "${azurerm_kubernetes_cluster.akstf.id}"
 }
 

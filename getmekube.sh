@@ -14,6 +14,8 @@ TERRA_PATH=$HOME/lib/terraform/terraform
 CONFIG_PATH=$HOME/config
 VM_SIZE="Standard_D2s_v3"
 VM_COUNT=3
+MIN_VM_COUNT=3
+MAX_VM_COUNT=4
 KUBE_TEMPLATE_FILE=$PWD/terraform/azurecni.tf
 SUBSCRIPTION_FILE=$CONFIG_PATH/variables_$subscription.tf
 VARIABLE_FILE=$CONFIG_PATH/variables_common.tf
@@ -70,15 +72,27 @@ read -n 1 cluster_size
 echo
 fi
 
+if [ "$autoscaler" == "" ]; then
+echo "turn on autoscaler? [y], [n]: "
+read -n 1 autoscaler
+echo
+fi
+
 if [ "$cluster_size" == "s" ]; then
 VM_SIZE="Standard_B2s"
-VM_COUNT=2
+VM_COUNT=1
+MIN_VM_COUNT=1
+MAX_VM_COUNT=2
 elif [ "$cluster_size" == "m" ]; then
 VM_SIZE="Standard_D2s_v3"
-VM_COUNT=3
+VM_COUNT=2
+MIN_VM_COUNT=2
+MAX_VM_COUNT=3
 else
-VM_SIZE="Standard_D3s_v3"
-VM_COUNT=4
+VM_SIZE="Standard_F4s"
+VM_COUNT=3
+MIN_VM_COUNT=3
+MAX_VM_COUNT=4
 fi
 
 if [ "$kube_version" == "" ]; then
@@ -178,7 +192,13 @@ if [ "$acr" == "y" ]; then
 cp $ACR_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 fi
 
-sed -e "s/VAR_AGENT_COUNT/$VM_COUNT/ ; s/VAR_KUBE_VERSION/$kube_version/ ; s/VAR_KUBE_NAME/$cluster_name/ ; s/VAR_KUBE_RG/$KUBE_RG/ ; s/VAR_KUBE_LOCATION/$LOCATION/" $VARIABLE_FILE >> $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
+if [ "$autoscaler" == "y" ]; then
+AUTOSCALER="true"
+elif [ "$autoscaler" == "n" ]; then
+AUTOSCALER="false"
+fi
+
+sed -e "s/VAR_AGENT_COUNT/$VM_COUNT/ ; s/VAR_VM_SIZE/$VM_SIZE/ ; s/VAR_AUTOSCALER/$AUTOSCALER/ ; s/VAR_MIN_VM_COUNT/$MIN_VM_COUNT/ ; s/VAR_MAX_VM_COUNT/$MAX_VM_COUNT/ ; s/VAR_KUBE_VERSION/$kube_version/ ; s/VAR_KUBE_NAME/$cluster_name/ ; s/VAR_KUBE_RG/$KUBE_RG/ ; s/VAR_KUBE_LOCATION/$LOCATION/" $VARIABLE_FILE >> $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
 
 less $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
 # (cd $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME && $TERRA_PATH init -backend-config="storage_account_name=$TERRAFORM_STORAGE_NAME" -backend-config="container_name=tfstate" -backend-config="access_key=$TERRAFORM_STORAGE_KEY" -backend-config="key=codelab.microsoft.tfstate" )

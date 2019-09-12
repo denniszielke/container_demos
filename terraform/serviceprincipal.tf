@@ -42,7 +42,7 @@ resource "azuread_service_principal_password" "aks_sp_set_pw" {
 # https://github.com/Azure/azure-cli/issues/9585
 resource "null_resource" "delay" {
   provisioner "local-exec" {
-    command = "sleep 200"
+    command = "sleep 300"
   }
   triggers = {
     "before" = "${azuread_service_principal_password.aks_sp_set_pw.id}"

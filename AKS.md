@@ -200,15 +200,28 @@ az aks nodepool scale -g $KUBE_GROUP --cluster-name $KUBE_NAME  -n cheap -c 1
 az aks nodepool scale -g $KUBE_GROUP --cluster-name $KUBE_NAME  -n agentpool -c 1
 ```
 
+# autoscaler
+https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/FAQ.md#im-running-cluster-with-nodes-in-multiple-zones-for-ha-purposes-is-that-supported-by-cluster-autoscaler
+
+```
+az aks nodepool scale -g $KUBE_GROUP --cluster-name $KUBE_NAME  -n agentpool1 -c 1
+az aks nodepool update --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --name agentpool1 --enable-cluster-autoscaler --min-count 1 --max-count 3
+
+```
+
+```
+kubectl -n kube-system describe configmap cluster-autoscaler-status
+```
+
 # Create SSH access
 https://docs.microsoft.com/en-us/azure/aks/ssh
 
 ```
-CLUSTER_RESOURCE_GROUP=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query nodeResourceGroup -o tsv)
-SCALE_SET_NAME=$(az vmss list --resource-group $CLUSTER_RESOURCE_GROUP --query [0].name -o tsv)
+NODE_GROUP=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query nodeResourceGroup -o tsv)
+SCALE_SET_NAME=$(az vmss list --resource-group $NODE_GROUP --query [0].name -o tsv)
 
 az vmss extension set  \
-    --resource-group $CLUSTER_RESOURCE_GROUP \
+    --resource-group $NODE_GROUP \
     --vmss-name $SCALE_SET_NAME \
     --name VMAccessForLinux \
     --publisher Microsoft.OSTCExtensions \
@@ -216,7 +229,7 @@ az vmss extension set  \
     --protected-settings "{\"username\":\"dennis\", \"ssh_key\":\"$(cat ~/.ssh/id_rsa.pub)\"}"
 
 az vmss update-instances --instance-ids '*' \
-  --resource-group $CLUSTER_RESOURCE_GROUP \
+  --resource-group $NODE_GROUP \
   --name $SCALE_SET_NAME
 
 kubectl run -it --rm aks-ssh --image=debian
