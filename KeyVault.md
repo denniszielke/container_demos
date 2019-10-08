@@ -21,8 +21,9 @@ MY_OBJECT_ID=
 KUBE_ADMIN_ID=
 READER_USER_ID=
 
-VAULT_GROUP="byokdemo"
+VAULT_GROUP="MC_aksv2_aksv2_westus2"
 VAULT_NAME="dzbyokdemo"
+MSA_NAME="mykvidentity"
 MSA_CLIENT_ID=""
 MSA_PRINCIPAL_ID=""
 SECRET_NAME="mySecret"
@@ -43,6 +44,10 @@ az keyvault list -g $VAULT_GROUP -o table --query [].{Name:name,ResourceGroup:re
 ```
 az keyvault secret set -n $SECRET_NAME --vault-name $VAULT_NAME --value MySuperSecretThatIDontWantToShareWithYou!
 ```
+list secrets
+```
+az keyvault secret list --vault-name $VAULT_NAME -o table
+```
 
 add a key
 ```
@@ -60,7 +65,7 @@ kubectl create -f https://raw.githubusercontent.com/Azure/aad-pod-identity/maste
 
 4. create managed identiy for pod
 ```
-az identity create -n keyvaultsampleidentity -g $VAULT_GROUP
+az identity create -n $MSA_NAME -g $VAULT_GROUP
 
 ```
 5. assign managed identity reader role in keyvault
@@ -74,8 +79,13 @@ do this if the identity is not in the same resource groups as the aks nodes
 ```
 az keyvault set-policy -n $VAULT_NAME --secret-permissions get list --spn $MSA_CLIENT_ID
 
-KUBE_PERMISSION="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$VAULT_GROUP/providers/Microsoft.ManagedIdentity/userAssignedIdentities/keyvaultsampleidentity"
+KUBE_PERMISSION="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$VAULT_GROUP/providers/Microsoft.ManagedIdentity/userAssignedIdentities/$MSA_NAME"
 az role assignment create --role "Managed Identity Operator" --assignee $SERVICE_PRINCIPAL_ID --scope $KUBE_PERMISSION
+```
+
+assign permissions on node groups for msi
+```
+az role assignment create --role "Contributor" --assignee $MSA_PRINCIPAL_ID -g $KUBE_GROUP
 ```
 
 6. bind to crds
@@ -85,10 +95,10 @@ cat <<EOF | kubectl create -f -
 apiVersion: "aadpodidentity.k8s.io/v1"
 kind: AzureIdentity
 metadata:
-  name: keyvaultsampleidentity
+  name: $MSA_NAME
 spec:
   type: 0
-  ResourceID: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$VAULT_GROUP/providers/Microsoft.ManagedIdentity/userAssignedIdentities/keyvaultsampleidentity
+  ResourceID: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$VAULT_GROUP/providers/Microsoft.ManagedIdentity/userAssignedIdentities/$MSA_NAME
   ClientID: $MSA_CLIENT_ID
 EOF
 ```
@@ -100,9 +110,9 @@ cat <<EOF | kubectl create -f -
 apiVersion: "aadpodidentity.k8s.io/v1"
 kind: AzureIdentityBinding
 metadata:
-  name: keyvaultsampleidentity-binding
+  name: sample-binding
 spec:
-  AzureIdentity: keyvaultsampleidentity
+  AzureIdentity: $MSA_NAME
   Selector: keyvaultsampleidentity
 EOF
 ```
@@ -154,12 +164,35 @@ spec:
 EOF
 ```
 
+key vault demo
+```
+
 VAULT_NAME=dzdevkeyvault
 AZURE_KEYVAULT_SECRET_NAME=mysupersecret
 SECRET_VERSION=
 
-key vault demo
-```
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: centos
+  labels:
+    app: keyvaultsample
+    aadpodidbinding: keyvaultsampleidentity
+spec:
+  containers:
+  - name: centoss
+    image: centos
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+
+curl http://127.0.0.1:2579/host/token/?resource=https://vault.azure.net -H "podname: centos" -H "podns: default"
+curl http://127.0.0.1:2579/host/token/?resource=https://vault.azure.net -H "podname: keyvaultsample-65b7d4d4f4-bspd7" -H "podns: default"
+
 cat <<EOF | kubectl apply -f -
 apiVersion: apps/v1
 kind: Deployment
@@ -214,6 +247,10 @@ kubectl delete pods --selector=component=mic
 PODNAME=`kubectl get pods --namespace=${NAMESPACE} --selector="app=tf-hub" --output=template --template="{{with index .items 0}}{{.metadata.name}}{{end}}"`
 ```
 
+https://github.com/Azure/azure-libraries-for-java/blob/master/AUTH.md
+
+https://github.com/Azure/azure-libraries-for-java/tree/master/azure-mgmt-msi/src
+
 ## create storage with byok key
 
 
@@ -251,11 +288,9 @@ az keyvault set-policy -n $VAULT_NAME --object-id cae12840-2557-4469-909e-c29283
 6. Create or Update your Azure Storage Account to use your new keys from your Key Vault:
 ```
 az storage account update -g $VAULT_GROUP -n $STORAGE_NAME --encryption-key-name $KEY_NAME --encryption-key-source Microsoft.KeyVault --encryption-key-vault https://$VAULT_NAME.vault.azure.net --encryption-key-version 2ce0b736baff47a4b5691edc2c53a597 --encryption-services blob file queue table
-```
-
-
 
 az acr create -n dzdemoky23 -g $VAULT_GROUP --sku Classic --location $LOCATION --storage-account-name $STORAGE_NAME
+```
 
 ## CSI 
 https://github.com/deislabs/secrets-store-csi-driver/tree/master/pkg/providers/azure
@@ -390,3 +425,4 @@ spec:
 EOF
 
 kubectl exec -it nginx-secrets-store-inline-pod-identity cat /kvmnt/testsecret
+```

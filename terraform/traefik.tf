@@ -75,19 +75,14 @@ resource "helm_release" "traefik_ingress" {
   }
 
   set {
-    name  = "controller.service.externalTrafficPolicy"
+    name  = "externalTrafficPolicy"
     value = "Local"
   }
 
   set {
-    name  = "controller.service.loadBalancerIP"
+    name  = "loadBalancerIP"
     value = "${azurerm_public_ip.traefik_ingress.ip_address}"
   }
   
-  set {
-    name  = "controller.replicaCount"
-    value = "2"
-  }
-
-  depends_on = ["azurerm_kubernetes_cluster.akstf", "azurerm_public_ip.traefik_ingress"]
+  depends_on = ["azurerm_kubernetes_cluster.akstf", "azurerm_public_ip.traefik_ingress", "null_resource.after_charts"]
 }

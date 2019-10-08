@@ -167,7 +167,10 @@ scp username@b:/path/to/file /path/to/destination
 
 scp dennis@40.114.247.218:/var/log/azure/cluster-provision.log cluster-provision.log
 scp dennis@40.114.247.218:/var/log/cloud-init-output.log cloud-init-output.log
+scp ~/.ssh/id_rsa dennis@dz-acs.westeurope.cloudapp.azure.com:/.ssh
 
+chmod 400 ~/.ssh/id_rsa
+ssh dennis@10.240.0.4 -i ~/.ssh/id_rsa
 
 CLUSTER_RESOURCE_GROUP=$(az aks show --resource-group security --name slbrouter --query nodeResourceGroup -o tsv)
 

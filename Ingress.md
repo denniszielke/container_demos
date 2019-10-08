@@ -67,6 +67,7 @@ helm upgrade nginx-ingress stable/nginx-ingress  --set controller.service.extern
 
 helm upgrade --install nginx-ingress stable/nginx-ingress --set controller.service.externalTrafficPolicy=Local --set controller.replicaCount=2 --set controller.metrics.enabled=true --set controller.stats.enabled=true	--namespace ingress
 
+helm upgrade --install nginx-ingress stable/nginx-ingress --set controller.service.externalTrafficPolicy=Local --set controller.replicaCount=2 --namespace ingress
 
 KUBE_EDITOR="nano" kubectl edit svc/nginx-ingress-controller -n kube-system
 

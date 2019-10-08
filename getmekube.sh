@@ -16,10 +16,13 @@ VM_SIZE="Standard_D2s_v3"
 VM_COUNT=3
 MIN_VM_COUNT=3
 MAX_VM_COUNT=4
+VNET_FILE=$PWD/terraform/vnet.tf
+LOGS_FILE=$PWD/terraform/logs.tf
 KUBE_TEMPLATE_FILE=$PWD/terraform/azurecni.tf
 SUBSCRIPTION_FILE=$CONFIG_PATH/variables_$subscription.tf
 VARIABLE_FILE=$CONFIG_PATH/variables_common.tf
 HELM_FILE=$PWD/terraform/helm.tf
+AMBASSADOR_FILE=$PWD/terraform/ambassador.tf
 NGINX_FILE=$PWD/terraform/nginx.tf
 TRAEFIK_FILE=$PWD/terraform/traefik.tf
 TRAEFIK_YAML=$PWD/terraform/traefik.yaml
@@ -109,7 +112,7 @@ echo
 fi
 
 if [ "$ingress" == "" ]; then
-echo "Install ingress [n]nginx, [t]raefik, [k]ong, [s]kip?: "
+echo "Install ingress [a]mbassador, [n]ginx, [t]raefik, [k]ong, [s]kip?: "
 read -n 1 ingress
 echo
 fi
@@ -172,8 +175,9 @@ mkdir $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 fi
 
 cp $SUBSCRIPTION_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
-cp $KUBE_TEMPLATE_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 cp $SP_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+cp $LOGS_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+cp $VNET_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 
 if [ "$helm" == "y" ]; then
 cp $HELM_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
@@ -181,6 +185,8 @@ fi
 
 if [ "$ingress" == "n" ]; then
 cp $NGINX_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+elif [ "$ingress" == "a" ]; then
+cp $AMBASSADOR_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 elif [ "$ingress" == "t" ]; then
 cp $TRAEFIK_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 cp $TRAEFIK_YAML $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
@@ -200,10 +206,16 @@ fi
 
 sed -e "s/VAR_AGENT_COUNT/$VM_COUNT/ ; s/VAR_VM_SIZE/$VM_SIZE/ ; s/VAR_AUTOSCALER/$AUTOSCALER/ ; s/VAR_MIN_VM_COUNT/$MIN_VM_COUNT/ ; s/VAR_MAX_VM_COUNT/$MAX_VM_COUNT/ ; s/VAR_KUBE_VERSION/$kube_version/ ; s/VAR_KUBE_NAME/$cluster_name/ ; s/VAR_KUBE_RG/$KUBE_RG/ ; s/VAR_KUBE_LOCATION/$LOCATION/" $VARIABLE_FILE >> $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
 
-less $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
-# (cd $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME && $TERRA_PATH init -backend-config="storage_account_name=$TERRAFORM_STORAGE_NAME" -backend-config="container_name=tfstate" -backend-config="access_key=$TERRAFORM_STORAGE_KEY" -backend-config="key=codelab.microsoft.tfstate" )
+if [ "$autoscaler" == "y" ]; then
+sed -e "s/#SCALER//" $KUBE_TEMPLATE_FILE  >> $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/kube.tf
+else
+cp $KUBE_TEMPLATE_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/kube.tf
+fi
 
-(cd $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME && $TERRA_PATH init )
+less $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
+(cd $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME && $TERRA_PATH init -backend-config="storage_account_name=$TERRAFORM_STORAGE_NAME" -backend-config="container_name=tfstate" -backend-config="access_key=$TERRAFORM_STORAGE_KEY" -backend-config="key=codelab.microsoft.tfstate" )
+
+# (cd $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME && $TERRA_PATH init )
 
 (cd $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME && $TERRA_PATH plan -out $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/out.plan)
 

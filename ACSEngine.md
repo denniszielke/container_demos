@@ -3,8 +3,8 @@
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="aksupgrade104a"
-KUBE_NAME="k8s-master-104a"
+KUBE_GROUP="acsaksupgrade"
+KUBE_NAME="dz-acs"
 LOCATION="westeurope"
 KUBE_VNET_NAME="KVNET"
 KUBE_AGENT_SUBNET_NAME="KVAGENTS"

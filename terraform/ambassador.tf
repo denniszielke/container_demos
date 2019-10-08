@@ -12,9 +12,9 @@ provider "helm" {
   }
 }
 
-# Create Static Public IP Address to be used by Nginx Ingress
-resource "azurerm_public_ip" "nginx_ingress" {
-  name                         = "nginx-ingress-pip"
+# Create Static Public IP Address to be used by Ingress
+resource "azurerm_public_ip" "ambassador_ingress" {
+  name                         = "ambassador-ingress-pip"
   location                     = "${azurerm_kubernetes_cluster.akstf.location}"
   resource_group_name          = "${azurerm_kubernetes_cluster.akstf.node_resource_group}"
   allocation_method            = "Static"
@@ -29,35 +29,26 @@ data "helm_repository" "stable" {
     url  = "https://kubernetes-charts.storage.googleapis.com"
 }
 
-# Install Nginx Ingress using Helm Chart
+# Install ambassador Ingress using Helm Chart
 # https://www.terraform.io/docs/providers/helm/release.html
-resource "helm_release" "nginx_ingress" {
-  name       = "nginx-ingress"
+# https://github.com/helm/charts/tree/master/stable/ambassador
+resource "helm_release" "ambassador_ingress" {
+  name       = "ambassador-ingress"
   repository = "${data.helm_repository.stable.metadata.0.name}"
-  chart      = "nginx-ingress"
+  chart      = "ambassador"
   namespace  = "kube-system"
   force_update = "true"
   timeout = "500"
 
   set {
-    name  = "rbac.create"
-    value = "true"
-  }
-
-  set {
-    name  = "controller.service.externalTrafficPolicy"
+    name  = "service.externalTrafficPolicy"
     value = "Local"
   }
 
   set {
-    name  = "controller.service.loadBalancerIP"
-    value = "${azurerm_public_ip.nginx_ingress.ip_address}"
-  }
-  
-  set {
-    name  = "controller.replicaCount"
-    value = "2"
+    name  = "service.loadBalancerIP"
+    value = "${azurerm_public_ip.ambassador_ingress.ip_address}"
   }
 
-  depends_on = ["azurerm_kubernetes_cluster.akstf", "azurerm_public_ip.nginx_ingress", "null_resource.after_charts"]
+  depends_on = ["azurerm_kubernetes_cluster.akstf", "azurerm_public_ip.ambassador_ingress", "null_resource.after_charts"]
 }

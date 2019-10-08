@@ -117,5 +117,5 @@ resource "helm_release" "kong_ingress" {
     value = "${azurerm_public_ip.kong_ingress.ip_address}"
   }
 
-  depends_on = ["azurerm_kubernetes_cluster.akstf", "azurerm_public_ip.kong_ingress", "azurerm_postgresql_server.kong_db"]
+  depends_on = ["azurerm_kubernetes_cluster.akstf", "azurerm_public_ip.kong_ingress", "azurerm_postgresql_server.kong_db", "null_resource.after_charts"]
 }

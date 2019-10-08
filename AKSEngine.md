@@ -90,19 +90,21 @@ export KUBECONFIG=`pwd`/_output/$KUBE_NAME/kubeconfig/kubeconfig.$LOCATION.json
 ```
 az group delete -n $KUBE_GROUP
 ```
-
+```
 ./aks-engine get-versions
-
+```
 # Upgrade
 The kubeadm configuration is also accessible by standard kubectl ConfigMap interrogation and is, by convention, named the cluster-info ConfigMap in the kube-public namespace.
 
-./aks-engine get-versions --version 1.11.9
-
-EXPECTED_ORCHESTRATOR_VERSION=1.11.9
 ```
+./aks-engine get-versions --version 1.11.5
+
+EXPECTED_ORCHESTRATOR_VERSION=1.11.10
+
 ./aks-engine upgrade --debug \
   --subscription-id $SUBSCRIPTION_ID \
-  --deployment-dir _output/$KUBE_NAME/ \
+  --deployment-dir ../_output/$KUBE_NAME \
+  --api-model ../_output/$KUBE_NAME/apimodel.json \
   --location $LOCATION \
   --resource-group $KUBE_GROUP \
   --upgrade-version $EXPECTED_ORCHESTRATOR_VERSION \
@@ -126,4 +128,46 @@ EXPECTED_ORCHESTRATOR_VERSION=1.11.9
   --auth-method client_secret \
   --client-id $SERVICE_PRINCIPAL_ID \
   --client-secret $SERVICE_PRINCIPAL_SECRET
-  ```
+```
+
+# Upgrade credentials
+https://github.com/Azure/aks-engine/issues/724#issuecomment-403183388
+
+```
+CLUSTER_RESOURCE_GROUP=acsaksupgrade
+SCALE_SET_NAME=aks-default-47461129-vmss
+
+
+az vmss extension list --resource-group $CLUSTER_RESOURCE_GROUP --vmss-name $SCALE_SET_NAME
+
+az vmss extension show --name vmssCSE --resource-group $CLUSTER_RESOURCE_GROUP --vmss-name $SCALE_SET_NAME --output json
+
+az vm get-instance-view \
+    --resource-group $CLUSTER_RESOURCE_GROUP \
+    --name k8s-agentpool1-86714434-vmss_0 \
+    --query "instanceView.extensions"
+
+  az vmss extension set --name customScript \
+    --resource-group $CLUSTER_RESOURCE_GROUP \
+    --vmss-name $SCALE_SET_NAME \
+    --provision-after-extensions "vmssCSE" \
+    --publisher Microsoft.Azure.Extensions --version 2.0 \
+    --protected-settings '{"fileUris": ["https://raw.githubusercontent.com/denniszielke/container_demos/master/arm/cse.sh"],"commandToExecute": "./cse.sh"}'
+
+az vmss extension set --vmss-name my-vmss --name customScript --resource-group my-group \
+    --version 2.0 --publisher Microsoft.AKS \
+    --settings '{"commandToExecute": "echo testing"}'
+
+  az vmss extension set --name customScript \
+    --resource-group $CLUSTER_RESOURCE_GROUP \
+    --vmss-name $SCALE_SET_NAME \
+    --publisher Microsoft.AKS --version 1.0 \
+    --protected-settings '{"fileUris": ["https://raw.githubusercontent.com/denniszielke/container_demos/master/arm/cse.sh"],"commandToExecute": "./cse.sh"}'
+
+ az vmss extension set --name CustomScriptForLinux \
+    --resource-group $CLUSTER_RESOURCE_GROUP \
+    --provisionAfterExtensions "vmssCSE" \
+    --vmss-name $SCALE_SET_NAME \
+    --publisher Microsoft.OSTCExtensions \
+    --settings '{"fileUris": ["https://raw.githubusercontent.com/denniszielke/container_demos/master/arm/cse.sh"],"commandToExecute": "./cse.sh"}'
+```

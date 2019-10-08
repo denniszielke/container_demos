@@ -5,16 +5,16 @@ https://docs.microsoft.com/en-us/azure/aks/networking-overview
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="kubenets"
-KUBE_NAME="dkubes"
-LOCATION="westeurope"
-KUBE_VNET_NAME="knets"
+KUBE_GROUP="privateclusters"
+KUBE_NAME="pk1"
+LOCATION="centralus"
+KUBE_VNET_NAME="privatelink2-vnet"
 KUBE_GW_SUBNET_NAME="gw-1-subnet"
 KUBE_ACI_SUBNET_NAME="aci-2-subnet"
 KUBE_FW_SUBNET_NAME="AzureFirewallSubnet"
 KUBE_ING_SUBNET_NAME="ing-4-subnet"
 KUBE_AGENT_SUBNET_NAME="aks-5-subnet"
-KUBE_VERSION="1.12.7"
+KUBE_VERSION="1.14.6"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
 AAD_APP_NAME=""
@@ -100,7 +100,7 @@ az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --s
 
 with kubenet
 ```
-az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --ssh-key-value ~/.ssh/id_rsa.pub --network-plugin kubenet --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --pod-cidr 10.244.0.0/16 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --enable-rbac --node-vm-size "Standard_D2s_v3"
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --ssh-key-value ~/.ssh/id_rsa.pub --network-plugin kubenet --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --pod-cidr 10.244.0.0/16 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --enable-rbac --node-vm-size "Standard_D2s_v3" --vm-set-type VirtualMachineScaleSets --load-balancer-sku standard --enable-private-cluster 
 
 ```
 
@@ -117,6 +117,25 @@ az group deployment create \
     --resource-group $KUBE_GROUP \
     --template-file "arm/azurecni_template.json" \
     --parameters "arm/azurecni_parameters.json"
+```
+
+create private cluster
+```
+az aks create \
+ --resource-group $KUBE_GROUP\
+ --name $KUBE_NAME\
+ --load-balancer-sku standard
+ --enable-private-cluster
+ --api-server-address-range 172.18.0.0/28 \
+ --network-plugin azure \
+ --vnet-subnet-id $KUBE_AGENT_SUBNET_ID \
+ --docker-bridge-address 172.17.0.1/16 \
+ --dns-service-ip 10.2.0.10 \
+ --service-cidr 10.2.0.0/24
+
+az aks create -n $KUBE_NAME -g $KUBE_GROUP --load-balancer-sku standard --enable-private-cluster --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --network-plugin kubenet
+
+az aks create -g $KUBE_GROUP -n $KUBE_NAME --enable-managed-identity --kubernetes-version $KUBE_VERSION
 ```
 
 5. Export the kubectrl credentials files

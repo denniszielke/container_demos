@@ -10,6 +10,14 @@ metadata:
   name: admin-user
   namespace: kube-system
 EOF
+
+cat <<EOF | kubectl create -f -
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dennis
+  namespace: kube-system
+EOF
 ```
 
 create cluster role binding
@@ -28,10 +36,27 @@ subjects:
   name: admin-user
   namespace: kube-system
 EOF
+
+
+cat <<EOF | kubectl create -f -
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: dennis
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+subjects:
+- kind: ServiceAccount
+  name: dennis
+  namespace: kube-system
+EOF
 ```
 
 after 1.8
 ```
+cat <<EOF | kubectl create -f -
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
@@ -44,24 +69,64 @@ subjects:
 - kind: ServiceAccount
   name: my-dashboard-sa
   namespace: kube-system
+EOF
+
+cat <<EOF | kubectl create -f -
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: dennis-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: dennis
+  namespace: kube-system
+EOF
 ```
 
 create bearer token
 ```
 kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep edit-user | awk '{print $1}')
 
+kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep dennis | awk '{print $1}')
+
 kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep my-dashboard-sa | awk '{print $1}')
 ```
 
 Set kubectl context
 ```
-kubectl config set-cluster low-cluster --server=$KUBE_MANAGEMENT_ENDPOINT --insecure-skip-tls-verify=true
 
-kubectl config set-credentials edit-user --token=$TOKEN
+KUBE_MANAGEMENT_ENDPOINT=https://**.azmk8s.io:443
+TOKEN=
+kubectl config set-cluster dennis-user --server=$KUBE_MANAGEMENT_ENDPOINT --insecure-skip-tls-verify=true
 
-kubectl config set-context low-context --cluster=low-cluster --user=edit-user
+kubectl config set-credentials dennis --token=$TOKEN
 
-kubectl config use-context low-context
+kubectl config set-context dennis-context --cluster=dennis-user --user=dennis
+
+kubectl config use-context dennis-context
+
+AzureDiagnostics
+| where Category == "kube-apiserver"
+| project log_s
+AzureDiagnostics
+| where Category == "kube-controller-manager"
+| project log_s
+AzureDiagnostics
+| where Category == "kube-scheduler"
+| project log_s
+AzureDiagnostics
+| where Category == "kube-audit"
+| project log_s
+AzureDiagnostics
+| where Category == "guard"
+| project log_s
+AzureDiagnostics
+| where Category == "cluster-autoscaler"
+| project log_s
 ```
 
 ## Lock down api server
@@ -197,8 +262,6 @@ For Kubenet + CNI, this permission is actually required to update the subnet
 in this step
 https://docs.microsoft.com/en-us/azure/aks/configure-kubenet#associate-network-resources-with-the-node-subnet
 
-
-
  
 // required if you use container insights.
 "Microsoft.OperationalInsights/workspaces/sharedkeys/read"
@@ -240,11 +303,9 @@ kubectl run -it aks-ssh --image=debian
 
 apt-get update && apt-get install openssh-client -y
 
-aks-ssh-6fd7758688-9crp5 
+kubectl cp ~/.ssh/id_rsa $(kubectl get pod -l run=aks-ssh -o jsonpath='{.items[0].metadata.name}'):/id_rsa
 
-kubectl cp ~/.ssh/id_rsa aks-ssh-6fd7758688-9crp5:/id_rsa
-
-chmod 0600 id_rsa
+chmod 400 ~/.ssh/id_rsa
 
 ssh -i id_rsa dennis@10.0.5.4
 
@@ -256,4 +317,111 @@ sudo dpkg-reconfigure wireshark-common
 sudo usermod -a -G wireshark dennis
 
 tshark -Q -i2 -O http -T json tcp port 7001 | grep http.file_data
+```
+
+## Auditing
+
+{"kind":"Event","apiVersion":"audit.k8s.io/v1","level":"Request","auditID":"130ba120-d9b1-4b35-9e91-3366568bfd8d","stage":"ResponseComplete","requestURI":"/api/v1/namespaces/default/pods/nginx","verb":"get","user":{"username":"masterclient","groups":["system:masters","system:authenticated"]},"sourceIPs":["52.191.253.156"],"userAgent":"kubectl/v1.14.0 (linux/amd64) kubernetes/641856d","objectRef":{"resource":"pods","namespace":"default","name":"nginx","apiVersion":"v1"},"responseStatus":{"metadata":{},"status":"Failure","reason":"NotFound","code":404},"requestReceivedTimestamp":"2019-09-20T11:52:19.062985Z","stageTimestamp":"2019-09-20T11:52:19.068391Z","annotations":{"authorization.k8s.io/decision":"allow","authorization.k8s.io/reason":""}}
+
+ 
+
+{"kind":"Event","apiVersion":"audit.k8s.io/v1","level":"Request","auditID":"e13ca54f-9b7a-4a47-abb4-930d0b518c49","stage":"ResponseComplete","requestURI":"/api/v1/namespaces/default/pods/nginx/status","verb":"patch","user":{"username":"nodeclient","groups":["system:nodes","system:authenticated"]},"sourceIPs":["13.88.18.92"],"userAgent":"kubelet/v1.14.5 (linux/amd64) kubernetes/0e9fcb4","objectRef":{"resource":"pods","namespace":"default","name":"nginx","apiVersion":"v1","subresource":"status"},"responseStatus":{"metadata":{},"code":200},"requestObject":{"status":{"$setElementOrder/conditions":[{"type":"Initialized"},{"type":"Ready"},{"type":"ContainersReady"},{"type":"PodScheduled"}],"conditions":[{"lastTransitionTime":"2019-09-20T12:56:55Z","message":null,"reason":null,"status":"True","type":"Ready"},{"lastTransitionTime":"2019-09-20T12:56:55Z","message":null,"reason":null,"status":"True","type":"ContainersReady"}],"containerStatuses":[{"containerID":"docker://e4d6babb34b671237490bbf384326c142281bcabe0c74416ea63088146ed1500","image":"nginx:1.15.5","imageID":"docker-pullable://nginx@sha256:b73f527d86e3461fd652f62cf47e7b375196063bbbd503e853af5be16597cb2e","lastState":{},"name":"mypod","ready":true,"restartCount":0,"state":{"running":{"startedAt":"2019-09-20T12:56:55Z"}}}],"phase":"Running","podIP":"10.244.4.11"}},"requestReceivedTimestamp":"2019-09-20T12:56:55.895345Z","stageTimestamp":"2019-09-20T12:56:55.910588Z","annotations":{"authorization.k8s.io/decision":"allow","authorization.k8s.io/reason":"RBAC: allowed by ClusterRoleBinding \"system:aks-client-nodes\" of ClusterRole \"system:node\" to Group \"system:nodes\""}}
+
+## Kubernetes API
+
+create service account
+```
+kubectl create serviceaccount centos
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: centos
+  namespace: demo
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: centos
+  namespace: demo
+spec:
+  serviceAccountName: centos
+  containers:
+  - name: centoss
+    image: centos
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+```
+
+
+```
+
+kubectl exec -ti centos -n demo -- /bin/bash
+
+cat /var/run/secrets/kubernetes.io/serviceaccount/token
+
+KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+
+echo $KUBERNETES_SERVICE_HOST
+10.96.0.1
+
+echo $KUBERNETES_PORT_443_TCP_PORT
+443
+
+echo $HOSTNAME
+centos
+
+curl -sSk -H "Authorization: Bearer $KUBE_TOKEN" https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_PORT_443_TCP_PORT/api/v1/namespaces/demo/pods
+
+curl -H "Authorization: Bearer $KUBE_TOKEN" https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_PORT_443_TCP_PORT/api/v1 --insecure
+
+```
+
+create service account role binding
+```
+
+cat <<EOF | kubectl apply -f -
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pods-list
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["list"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pods-list
+subjects:
+- kind: ServiceAccount
+  name: centos
+  namespace: demo
+roleRef:
+  kind: ClusterRole
+  name: pods-list
+  apiGroup: rbac.authorization.k8s.io
+EOF
+```
+
+
+cleanup 
+```
+
+kubectl delete ClusterRoleBinding pods-list
+kubectl delete ClusterRole pods-list
+kubectl delete pod centos -n demo
+kubectl delete serviceaccount centos -n demo
+kubectl delete ns demo
 ```

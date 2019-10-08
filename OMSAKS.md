@@ -200,6 +200,20 @@ Cleanup
 kubectl delete pod,svc dummy-logger
 ```
 
+## Install via helm
+https://github.com/Helm/charts/tree/master/incubator/azuremonitor-containers
+
+```
+
+WORKSPACE_ID=
+WORKSPACE_KEY=
+KUBE_NAME=logginghealth-apps
+
+
+helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com/
+helm install ./azuremonitor-containers --name oms-secondary --set omsagent.secret.wsid=$WORKSPACE_ID,omsagent.secret.key=$WORKSPACE_KEY,omsagent.env.clusterName=$KUBE_NAME 
+```
+
 ## Logging on pod crashes
 
 ```

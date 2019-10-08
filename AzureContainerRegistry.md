@@ -94,3 +94,20 @@ set default registry
 az configure --defaults acr=dzcorp
 az acr helm repo add
 ```
+
+## Security Scanning
+
+
+
+```
+ACR_NAME=
+
+
+docker pull docker.io/vulnerables/web-dvwa
+docker tag docker.io/vulnerables/web-dvwa $ACR_NAME.azurecr.io/vulnerables/web-dvwa
+docker push $ACR_NAME.azurecr.io/vulnerables/web-dvwa
+
+docker pull mcr.microsoft.com/dotnet/core/sdk:2.2.105
+docker tag mcr.microsoft.com/dotnet/core/sdk:2.2.105 $ACR_NAME.azurecr.io/vulnerables/core/sdk:2.2.105
+docker push $ACR_NAME.azurecr.io/vulnerables/core/sdk:2.2.105
+```

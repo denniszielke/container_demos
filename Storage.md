@@ -31,7 +31,7 @@ az storage account keys list --account-name $STORAGE_ACCOUNT --resource-group MC
 ```
 Assign to variable
 ```
-STORAGE_ACCOUNT_KEY=$(az storage account keys list --account-name $STORAGE_ACCOUNT --resource-group MC_$(echo $KUBE_GROUP)_$(echo $KUBE_NAME)_$(echo $LOCATION) --query [0].value)
+STORAGE_ACCOUNT_KEY=$(az storage account keys list --account-name $STORAGE_ACCOUNT --resource-group MC_$(echo $KUBE_GROUP)_$(echo $KUBE_NAME)_$(echo $LOCATION) --query "[0].value" | tr -d '"')
 ```
 
 3. Replace {ACCOUNT_NAME} and {STORAGE_ACCOUNT_KEY} in sc-azure.yaml
@@ -279,6 +279,7 @@ https://github.com/Azure/aks-engine/tree/master/examples/disks-ephemeral
 
 https://github.com/Azure/aks-engine/blob/master/docs/topics/features.md#ephemeral-os-disks
 
+```
 echo "
 kind: Pod
 apiVersion: v1
@@ -297,15 +298,19 @@ spec:
       path: /mnt
 " | kubectl apply -f -
 
+```
 
 https://medium.com/@dmitrio_/installing-rook-v1-0-on-aks-f8c22a75d93d
 https://rook.io/docs/rook/v0.9/ceph-storage.html
 
 kubectl apply -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 
+```
 helm install --name rook --namespace rook-ceph rook-release/rook-ceph --set agent.flexVolumeDirPath="/etc/kubernetes/volumeplugins"
 
 kubectl apply -f storage/rook-cluster.yaml
+
+kubectl apply -f storage/ceph-pool.yaml
 
 helm install --name mysql stable/mysql --namespace databases --set persistence.storageClass=rook-ceph-block,persistence.size=4Gi
 
@@ -365,4 +370,58 @@ kubectl port-forward rook-ceph-mgr-a-5f7d94775d-9wksn --namespace rook-ceph 8443
 
 https://github.com/rook/rook/blob/master/Documentation/ceph-dashboard.md
 
+kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}" | base64 --decode && echo
+
+POD_NAME=$(kubectl -n rook-ceph get pod -l app=rook-ceph-mgr -o jsonpath='{.items[0].metadata.name}')
+
+kubectl -n rook-ceph port-forward $POD_NAME 8443:8443
+kubectl -n rook-ceph logs $POD_NAME
+
 kubectl -n rook-ceph port-forward $(kubectl -n rook-ceph get pod -l app=rook-ceph-mgr -o jsonpath='{.items[0].metadata.name}') 8443:8443
+
+```
+
+## operator
+```
+kubectl apply -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
+
+kubectl apply -f https://raw.githubusercontent.com/shayshahak/Rook-for-AKS/master/operator.yaml
+
+kubectl -n rook-ceph-system get pod
+
+kubectl apply -f storage/rook-all-cluster.yaml
+
+kubectl -n rook-ceph get pod
+
+kubectl apply -f https://raw.githubusercontent.com/shayshahak/Rook-for-AKS/master/filesystem.yaml
+
+kubectl -n rook-ceph get pod -l app=rook-ceph-mds
+
+
+kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}" | base64 --decode && echo
+
+POD_NAME=
+kubectl -n rook-ceph get pod -l app=rook-ceph-mgr -o jsonpath='{.items[0].metadata.name}'
+
+kubectl -n rook-ceph port-forward $(kubectl -n rook-ceph get pod -l app=rook-ceph-mgr -o jsonpath='{.items[0].metadata.name}') 8443:8443
+```
+
+
+## toolbox
+
+https://github.com/rook/rook/blob/master/Documentation/ceph-toolbox.md
+
+```
+kubectl apply -f storage/rook-toolbox.yaml
+
+
+kubectl -n rook-ceph get pod -l "app=rook-ceph-tools"
+
+kubectl -n rook-ceph exec -it $(kubectl -n rook-ceph get pod -l "app=rook-ceph-tools" -o jsonpath='{.items[0].metadata.name}') bash
+
+
+ceph status
+ceph osd status
+ceph df
+rados df
+```

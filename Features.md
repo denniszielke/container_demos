@@ -5,6 +5,8 @@ Get AKS features
 az feature list --namespace Microsoft.ContainerService -o table
 az feature list --namespace  Microsoft.PolicyInsights -o table
 az feature list --namespace  Microsoft.DocumentDB -o table
+az feature list --namespace Microsoft.Network -o table
+
 ```
 
 Register a feature and reregister the provider
@@ -35,6 +37,7 @@ NodePublicIPPreview
 az feature register --name OSABypassMarketplace --namespace Microsoft.ContainerService
 az feature register --name AROGA --namespace Microsoft.ContainerService
 
+az feature register --namespace "Microsoft.Network" --name "AllowPrivateEndpoints"
 
 ```
 

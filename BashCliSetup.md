@@ -88,7 +88,6 @@ PROMPT=$PROMPT'$(kube_ps1) '
 source "/usr/local/opt/kube-ps1/share/kube-ps1.sh"
 
 
-
 https://github.com/zsh-users/zsh-syntax-highlighting/blob/master/INSTALL.md
 source /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 export ZSH_HIGHLIGHT_HIGHLIGHTERS_DIR=/usr/local/share/zsh-syntax-highlighting/highlighters

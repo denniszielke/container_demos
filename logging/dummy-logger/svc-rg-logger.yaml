@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dummy-logger-rg-lb
+  namespace: default
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: "kub_ter_a_m_dzmonitoring"
+spec:
+  loadBalancerIP: 52.142.80.245
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: dummy-logger
+  type: LoadBalancer
+  externalTrafficPolicy: Local
