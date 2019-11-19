@@ -89,8 +89,10 @@ az group deployment create \
 ```
 
 # Fix routetable
+```
 ROUTETABLE_ID=$(az resource list --resource-group $KUBE_GROUP --resource-type Microsoft.Network/routeTables --query '[].{ID:id}' -o tsv)
 az network vnet subnet update -n $KUBE_WORKER_SUBNET_NAME -g $VNET_GROUP --vnet-name $KUBE_VNET_NAME --route-table $ROUTETABLE_ID
+```
 
 # Create cluster role binding
 
