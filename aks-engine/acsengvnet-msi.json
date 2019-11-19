@@ -9,6 +9,8 @@
           "networkPolicy": "calico",
           "useManagedIdentity": true,
           "userAssignedID": "dzaksemsi",
+          "loadBalancerSku": "standard",
+          "networkPlugin": "kubenet",
           "addons": [
             {
               "name": "cluster-autoscaler",

@@ -4,9 +4,9 @@ https://github.com/Azure/aks-engine/blob/master/docs/topics/clusterdefinitions.m
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="dz-akse16Mmis"
+KUBE_GROUP="dz-akse16msi"
 VNET_GROUP="aksengine"
-KUBE_NAME="dz-aksemsi"
+KUBE_NAME="dz-akse16msi"
 LOCATION="westeurope"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
@@ -31,6 +31,9 @@ cd aks-engine-v0.43.2-darwin-amd64
 # Prepare variables
 
 1. Download config file from https://github.com/denniszielke/container_demos/blob/master/aks-engine/acseng.json
+
+Check config
+https://github.com/Azure/aks-engine/blob/master/docs/topics/clusterdefinitions.md
 
 Replace `SERVICE_PRINCIPAL_ID`, `SERVICE_PRINCIPAL_SECRET` and `YOUR_SSH_KEY` with your own values
 
@@ -73,7 +76,7 @@ az identity create -g $KUBE_GROUP -n dzaksemsi
 MSI_CLIENT_ID=$(az identity show -n dzaksemsi -g $KUBE_GROUP --query clientId -o tsv)
 
 az role assignment create --role "Network Contributor" --assignee $MSI_CLIENT_ID -g $VNET_GROUP
-az role assignment create --role "Contributor" --assignee $MSI_CLIENT_ID -g $KUBE_GROUP
+az role assignment create --role "Contributor" --assignee $MSI_CLIENT_ID -g $KUBE_GROUP # will be done by aks-engine
 ```
 
 2. Create cluster
@@ -84,6 +87,10 @@ az group deployment create \
     --template-file "_output/$KUBE_NAME/azuredeploy.json" \
     --parameters "_output/$KUBE_NAME/azuredeploy.parameters.json" --no-wait
 ```
+
+# Fix routetable
+ROUTETABLE_ID=$(az resource list --resource-group $KUBE_GROUP --resource-type Microsoft.Network/routeTables --query '[].{ID:id}' -o tsv)
+az network vnet subnet update -n $KUBE_WORKER_SUBNET_NAME -g $VNET_GROUP --vnet-name $KUBE_VNET_NAME --route-table $ROUTETABLE_ID
 
 # Create cluster role binding
 
