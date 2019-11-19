@@ -34,7 +34,7 @@ AKS-Engine Backlog:
 https://github.com/Azure/aks-engine/projects/2
 
 OMS Docker Images:
-https://github.com/Microsoft/OMS-docker/tree/aks-engine
+https://github.com/microsoft/OMS-docker/tree/master
 
 AKS ARM Template:
 https://docs.microsoft.com/en-us/azure/templates/microsoft.containerservice/2019-02-01/managedclusters
@@ -81,3 +81,6 @@ https://github.com/Azure/azure-managed-service-for-spring-cloud-docs
 Getting a public ip per node:
 Using a function : https://github.com/dgkanatsios/AksNodePublicIP
 Using a daemonset :https://github.com/dgkanatsios/AksNodePublicIPController
+
+# Best practices
+https://learnk8s.io/production-best-practices/

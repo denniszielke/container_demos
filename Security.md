@@ -425,3 +425,11 @@ kubectl delete pod centos -n demo
 kubectl delete serviceaccount centos -n demo
 kubectl delete ns demo
 ```
+
+
+# Security Center
+
+```
+SUBSCRIPTION_ID=
+open https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.Security/assessmentMetadata?api-version=2019-01-01-preview
+```

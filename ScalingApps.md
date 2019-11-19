@@ -116,7 +116,7 @@ helm install ./charts/online-store --name online-store --set counter.specialNode
 
 ```
 kubectl run nginx --image=nginx --requests=cpu=1000m,memory=1024Mi --expose --port=80 --replicas=5
-kubectl scale deployment busyboxer --replicas=5
+kubectl scale deployment nginx --replicas=10
 ```
 
 

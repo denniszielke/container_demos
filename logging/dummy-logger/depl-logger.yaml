@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: dummy-logger
 spec:
-  replicas: 1 
+  replicas: 5 
   minReadySeconds: 10
   strategy:
     type: RollingUpdate

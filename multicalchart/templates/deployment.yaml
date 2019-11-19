@@ -50,7 +50,7 @@ spec:
             - name: "REDIS_AUTH"
               value: "MySuperSecretRedis"
 {{- else }}
-{{- if .Values.dependencies.useRedis }}
+{{- if .Values.dependencies.useAzureRedis }}
             - name: "REDIS_HOST"
               valueFrom:
                 secretKeyRef:

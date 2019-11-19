@@ -220,6 +220,8 @@ https://docs.microsoft.com/en-us/azure/aks/ssh
 NODE_GROUP=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query nodeResourceGroup -o tsv)
 SCALE_SET_NAME=$(az vmss list --resource-group $NODE_GROUP --query [0].name -o tsv)
 
+az vmss list-instances --resource-group kub_ter_a_m_dapr5_nodes_northeurope --name aks-default-33188643-vmss --query '[].[name, storageProfile.dataDisks[]]' | less
+
 az vmss extension set  \
     --resource-group $NODE_GROUP \
     --vmss-name $SCALE_SET_NAME \

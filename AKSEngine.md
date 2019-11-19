@@ -4,9 +4,9 @@ https://github.com/Azure/aks-engine/blob/master/docs/topics/clusterdefinitions.m
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="dz-akse"
+KUBE_GROUP="dz-akse16Mmis"
 VNET_GROUP="aksengine"
-KUBE_NAME="dz-aks-subnet"
+KUBE_NAME="dz-aksemsi"
 LOCATION="westeurope"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
@@ -20,12 +20,12 @@ YOUR_SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
 
 # Get aks-engine tools
 
-Download latest release from https://github.com/Azure/acs-engine/releases/tag/v0.26.2
+Download latest release from https://github.com/Azure/aks-engine/releases
 
 ```
-wget https://github.com/Azure/aks-engine/releases/download/v0.38.2/aks-engine-v0.38.2-darwin-amd64.tar.gz
-tar -zxvf aks-engine-v0.28.1-darwin-amd64.tar.gz
-cd aks-engine-v0.28.1-darwin-amd64
+wget https://github.com/Azure/aks-engine/releases/download/v0.43.2/aks-engine-v0.43.2-darwin-amd64.tar.gz 
+tar -zxvf aks-engine-v0.43.2-darwin-amd64.tar.gz 
+cd aks-engine-v0.43.2-darwin-amd64
 ```
 
 # Prepare variables
@@ -68,7 +68,12 @@ az network vnet peering create -g $VNET_GROUP -n VMToKubePeer --vnet-name $VM_VN
 ```
 az group create -n $KUBE_GROUP -l $LOCATION
 
-az identity create -g $KUBE_GROUP -n dzaksmsi
+az identity create -g $KUBE_GROUP -n dzaksemsi
+
+MSI_CLIENT_ID=$(az identity show -n dzaksemsi -g $KUBE_GROUP --query clientId -o tsv)
+
+az role assignment create --role "Network Contributor" --assignee $MSI_CLIENT_ID -g $VNET_GROUP
+az role assignment create --role "Contributor" --assignee $MSI_CLIENT_ID -g $KUBE_GROUP
 ```
 
 2. Create cluster
@@ -171,3 +176,6 @@ az vmss extension set --vmss-name my-vmss --name customScript --resource-group m
     --publisher Microsoft.OSTCExtensions \
     --settings '{"fileUris": ["https://raw.githubusercontent.com/denniszielke/container_demos/master/arm/cse.sh"],"commandToExecute": "./cse.sh"}'
 ```
+
+# Troubleshooting
+https://github.com/Azure/aks-engine/blob/master/docs/howto/troubleshooting.md

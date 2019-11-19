@@ -3,65 +3,31 @@
     "properties": {
       "orchestratorProfile": {
         "orchestratorType": "Kubernetes",
-        "orchestratorRelease": "1.12",
+        "orchestratorRelease": "1.16",
         "kubernetesConfig": {
           "enableRbac": true,
-          "networkPolicy": "azure",
+          "networkPolicy": "calico",
           "useManagedIdentity": true,
-          "userAssignedID": "dzacsmsi",
+          "userAssignedID": "dzaksemsi",
           "addons": [
             {
-              "name": "tiller",
+              "name": "cluster-autoscaler",
               "enabled": true,
               "config": {
-                "max-history": "10"
-              },
-              "containers": [
-                {
-                  "name": "tiller",
-                  "cpuRequests": "1",
-                  "memoryRequests": "1Gi",
-                  "cpuLimits": "1",
-                  "memoryLimits": "1Gi"
-                }
-              ]
-            },
-            {
-              "name": "kubernetes-dashboard",
-              "enabled": true,
-              "containers": [
-                {
-                  "name": "kubernetes-dashboard",
-                  "cpuRequests": "50m",
-                  "memoryRequests": "512Mi",
-                  "cpuLimits": "50m",
-                  "memoryLimits": "512Mi"
-                }
-              ]
-            },
-            {
-              "name": "rescheduler",
-              "enabled": true,
-              "containers": [
-                {
-                  "name": "rescheduler",
-                  "cpuRequests": "20m",
-                  "memoryRequests": "200Mi",
-                  "cpuLimits": "20m",
-                  "memoryLimits": "200Mi"
-                }
-              ]
+                "minNodes": "1",
+                "maxNodes": "3"
+              }
             }
           ]
         }
       },
       "masterProfile": {
         "count": 1,
-        "dnsPrefix": "dz-vnet-acs",
+        "dnsPrefix": "dz-aksemsi",
         "vmSize": "Standard_DS1_v2",
-        "vnetSubnetId": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/KVNET/subnets/KVMASTERS",
-        "firstConsecutiveStaticIP": "172.16.0.4",
-        "vnetCIDR": "172.16.0.0/23"
+        "vnetSubnetId": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/VNET_GROUP/providers/Microsoft.Network/virtualNetworks/aksvnet/subnets/m-1-subnet",
+        "firstConsecutiveStaticIP": "172.16.1.4",
+        "vnetCIDR": "172.16.1.0/24"
       },
       "agentPoolProfiles": [
         {
@@ -70,7 +36,7 @@
           "vmSize": "Standard_D2_v2",
           "storageProfile": "ManagedDisks",
           "availabilityProfile": "VirtualMachineScaleSets",
-          "vnetSubnetId": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/KVNET/subnets/KVAGENTS"
+          "vnetSubnetId": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/VNET_GROUP/providers/Microsoft.Network/virtualNetworks/aksvnet/subnets/w-2-subnet"
         }
       ],
       "linuxProfile": {

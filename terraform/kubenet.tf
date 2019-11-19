@@ -22,7 +22,7 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     os_type         = "Linux"
     os_disk_size_gb = 120
     vnet_subnet_id = "${azurerm_subnet.aksnet.id}"
-    type            =  "VirtualMachineScaleSets" # "AvailabilitySet" # "VirtualMachineScaleSets"
+    type            =  "AvailabilitySet" # "VirtualMachineScaleSets"
 #SCALER    enable_auto_scaling = "${var.autoscaler}"
 #SCALER    min_count       = "${var.min_agent_count}"
 #SCALER    max_count       = "${var.max_agent_count}"
@@ -38,7 +38,7 @@ resource "azurerm_kubernetes_cluster" "akstf" {
       dns_service_ip = "10.2.0.10"
       docker_bridge_cidr = "172.17.0.1/16"
       # pod_cidr = "" selected by subnetid
-      load_balancer_sku = "standard"
+      load_balancer_sku = "basic"# "standard"
       network_policy = "calico"
   }
 

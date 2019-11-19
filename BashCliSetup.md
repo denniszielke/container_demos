@@ -88,13 +88,13 @@ PROMPT=$PROMPT'$(kube_ps1) '
 source "/usr/local/opt/kube-ps1/share/kube-ps1.sh"
 
 
-https://github.com/zsh-users/zsh-syntax-highlighting/blob/master/INSTALL.md
+#https://github.com/zsh-users/zsh-syntax-highlighting/blob/master/INSTALL.md
 source /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 export ZSH_HIGHLIGHT_HIGHLIGHTERS_DIR=/usr/local/share/zsh-syntax-highlighting/highlighters
 
-ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#999999,bg=cyan,bold,underline"
+#ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#999999,bg=cyan,bold,underline"
 
-https://github.com/zsh-users/zsh-autosuggestions
+#https://github.com/zsh-users/zsh-autosuggestions
 
-bindkey '^ ' forward-word
+#bindkey '^ ' forward-word
 bindkey '^ ' end-of-line

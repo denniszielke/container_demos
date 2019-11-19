@@ -14,6 +14,7 @@ appgw.yaml
 Presentation.md
 games/whack.yaml
 manifests/*
+logging/grafana-values.yaml
 deployment/acsengvnet_out.json
 multi-calculator/.DS_Store
 multi-calculator/go-calc-backend/.DS_Store
@@ -23,3 +24,6 @@ Jaeger.md
 Postgres.md
 towatch.md
 cloudprovider.md
+AzureARC.md
+todos.md
+

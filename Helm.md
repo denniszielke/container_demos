@@ -196,15 +196,15 @@ helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendR
 If you have a redis secret you can turn on the redis cache
 ```
 REDIS_HOST=myownredis.redis.cache.windows.net
-REDIS_AUTH=rGmdW1e0pcdDLxcBd5i9Unt7ZPuIpasJC5anWEv3IiY=
-APPINSIGHTS_KEY=833ca278-5a15-461c-a98c-158c6bd578d7
+REDIS_AUTH=
+APPINSIGHTS_KEY=
 
 kubectl create secret generic rediscachesecret --from-literal=redishostkey=$REDIS_HOST --from-literal=redisauthkey=$REDIS_AUTH --namespace $APP_NS
 
 helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useAzureRedis=false --set dependencies.usePodRedis=false --namespace $APP_NS
 
 
-helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=false --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=0 --namespace $APP_NS
+helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=4 --set frontendReplicaCount=5 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useRedis=true --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2 --namespace $APP_NS
 
 helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=false --set dependencies.useAzureRedis=false --set dependencies.usePodRedis=true --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=0 --namespace $APP_NS
 
@@ -247,4 +247,17 @@ open http://$SERVICE_IP:80
 
 ## Helm3
 
-alias helm3='/Users/dennis/lib/darwin-amd64/helm3 --home /Users/dennis/lib/darwin-amd64'
+```
+wget https://get.helm.sh/helm-v3.0.0-rc.3-darwin-amd64.tar.gz
+tar -zxvf helm-v3.0.0-rc.3-darwin-amd64.tar.gz
+alias helm3='/Users/dennis/lib/darwin-amd64/helm3'
+
+HELM_REPOSITORY_CACHE="/Users/dennis/Library/Caches/helm3/repository"
+HELM_REPOSITORY_CONFIG="/Users/dennis/Library/Preferences/helm3/repositories.yaml"
+HELM_NAMESPACE="default"
+HELM_KUBECONTEXT=""
+HELM_BIN="/Users/dennis/lib/darwin-amd64/helm3"
+HELM_DEBUG="false"
+HELM_PLUGINS="/Users/dennis/Library/helm3/plugins"
+HELM_REGISTRY_CONFIG="/Users/dennis/Library/Preferences/helm3/registry.json"
+```
