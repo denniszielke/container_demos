@@ -8,7 +8,6 @@
           "enableRbac": true,
           "networkPolicy": "calico",
           "useManagedIdentity": true,
-          "userAssignedID": "dzaksemsi",
           "loadBalancerSku": "standard",
           "networkPlugin": "kubenet",
           "addons": [
