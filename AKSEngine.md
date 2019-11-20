@@ -4,9 +4,9 @@ https://github.com/Azure/aks-engine/blob/master/docs/topics/clusterdefinitions.m
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="dz-akse16msi"
+KUBE_GROUP="dz-akse16smsi"
 VNET_GROUP="aksengine"
-KUBE_NAME="dz-akse16msi"
+KUBE_NAME="dz-akse16smsi"
 LOCATION="westeurope"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
@@ -86,6 +86,16 @@ az group deployment create \
     --resource-group $KUBE_GROUP \
     --template-file "_output/$KUBE_NAME/azuredeploy.json" \
     --parameters "_output/$KUBE_NAME/azuredeploy.parameters.json" --no-wait
+```
+
+# assign permissions for smsi
+
+```
+az identity list -g $KUBE_GROUP
+
+SCALE_SET_NAME=$(az vmss list --resource-group $KUBE_GROUP --query '[].{Name:name}' -o tsv)
+MSI_CLIENT_ID=$(az vmss identity show --name $SCALE_SET_NAME -g $KUBE_GROUP --query principalId -o tsv)
+az role assignment create --role "Network Contributor" --assignee $MSI_CLIENT_ID -g $VNET_GROUP
 ```
 
 # Fix routetable

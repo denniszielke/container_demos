@@ -1,10 +1,10 @@
 # https://www.terraform.io/docs/providers/kubernetes/index.html
 
 provider "kubernetes" {
-  host                   = "${azurerm_kubernetes_cluster.akstf.kube_config.0.host}"
-  client_certificate     = "${base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.client_certificate)}"
-  client_key             = "${base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.client_key)}"
-  cluster_ca_certificate = "${base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.cluster_ca_certificate)}"
+  host                   = azurerm_kubernetes_cluster.akstf.kube_config.0.host
+  client_certificate     = base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.client_certificate)
+  client_key             = base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.client_key)
+  cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.cluster_ca_certificate)
 }
 
 resource "kubernetes_namespace" "dummy-logger-ns" {
@@ -12,7 +12,7 @@ resource "kubernetes_namespace" "dummy-logger-ns" {
     name = "dummy-logger"
   }
 
-  depends_on = ["azurerm_kubernetes_cluster.akstf"]
+  depends_on = [azurerm_kubernetes_cluster.akstf]
 }
 
 resource "kubernetes_service" "dummy-logger-service" {
@@ -32,7 +32,7 @@ resource "kubernetes_service" "dummy-logger-service" {
     type = "LoadBalancer"
   }
 
-  depends_on = ["kubernetes_namespace.dummy-logger-ns"]
+  depends_on = [kubernetes_namespace.dummy-logger-ns]
 }
 
 resource "kubernetes_pod" "dummy-logger-pod" {
@@ -71,7 +71,7 @@ resource "kubernetes_pod" "dummy-logger-pod" {
     }
   }
     
-  depends_on = ["kubernetes_namespace.dummy-logger-ns"]
+  depends_on = [kubernetes_namespace.dummy-logger-ns]
 }
 
 resource "null_resource" "delay_charts" {
@@ -79,12 +79,12 @@ resource "null_resource" "delay_charts" {
     command = "sleep 100"
   }
   triggers = {
-    "before" = "${kubernetes_pod.dummy-logger-pod.id}"
+    "before" = kubernetes_pod.dummy-logger-pod.id
   }
 }
 
 resource "null_resource" "after_charts" {
-  depends_on = ["null_resource.delay_charts"]
+  depends_on = [null_resource.delay_charts]
 }
 
 resource "kubernetes_service_account" "tiller_service_account" {
@@ -93,7 +93,7 @@ resource "kubernetes_service_account" "tiller_service_account" {
     namespace = "kube-system"
   }
 
-  depends_on = ["azurerm_kubernetes_cluster.akstf"]
+  depends_on = [azurerm_kubernetes_cluster.akstf]
 }
 
 resource "kubernetes_cluster_role_binding" "tiller_cluster_role_binding" {
@@ -112,9 +112,9 @@ resource "kubernetes_cluster_role_binding" "tiller_cluster_role_binding" {
   }
   subject {
     kind      = "ServiceAccount"
-    name      = "${kubernetes_service_account.tiller_service_account.metadata.0.name}"
+    name      = kubernetes_service_account.tiller_service_account.metadata.0.name
     namespace = "kube-system"
   }
 
-  depends_on = ["azurerm_kubernetes_cluster.akstf", "kubernetes_service_account.tiller_service_account"]
+  depends_on = [azurerm_kubernetes_cluster.akstf, kubernetes_service_account.tiller_service_account]
 }

@@ -162,13 +162,17 @@ sleep 1
 echo "*"
 
 echo "initialzing terraform state storage..."
-az group create -n $KUBE_RG -l $LOCATION
+az group create -n $KUBE_RG -l $LOCATION --output none
 
-az storage account create --resource-group $KUBE_RG --name $TERRAFORM_STORAGE_NAME --location $LOCATION --sku Standard_LRS
+az storage account create --resource-group $KUBE_RG --name $TERRAFORM_STORAGE_NAME --location $LOCATION --sku Standard_LRS --output none
 
-TERRAFORM_STORAGE_KEY=$(az storage account keys list --account-name $TERRAFORM_STORAGE_NAME --resource-group $KUBE_RG --query "[0].value")
+TERRAFORM_STORAGE_KEY=$(az storage account keys list --account-name $TERRAFORM_STORAGE_NAME --resource-group $KUBE_RG --query "[0].value" -o tsv)
+export ARM_ACCESS_KEY=$TERRAFORM_STORAGE_KEY
 
-az storage container create -n tfstate --account-name $TERRAFORM_STORAGE_NAME --account-key $TERRAFORM_STORAGE_KEY
+az storage container create -n tfstate --account-name $TERRAFORM_STORAGE_NAME --account-key $TERRAFORM_STORAGE_KEY --output none
+
+echo $TERRAFORM_STORAGE_NAME
+echo $TERRAFORM_STORAGE_KEY
 
 mkdir $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 
@@ -204,13 +208,14 @@ elif [ "$autoscaler" == "n" ]; then
 AUTOSCALER="false"
 fi
 
-sed -e "s/VAR_AGENT_COUNT/$VM_COUNT/ ; s/VAR_VM_SIZE/$VM_SIZE/ ; s/VAR_AUTOSCALER/$AUTOSCALER/ ; s/VAR_MIN_VM_COUNT/$MIN_VM_COUNT/ ; s/VAR_MAX_VM_COUNT/$MAX_VM_COUNT/ ; s/VAR_KUBE_VERSION/$kube_version/ ; s/VAR_KUBE_NAME/$cluster_name/ ; s/VAR_KUBE_RG/$KUBE_RG/ ; s/VAR_KUBE_LOCATION/$LOCATION/" $VARIABLE_FILE >> $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
+sed -e "s/VAR_TERRAFORM_NAME/$TERRAFORM_STORAGE_NAME/ ; s/VAR_AGENT_COUNT/$VM_COUNT/ ; s/VAR_VM_SIZE/$VM_SIZE/ ; s/VAR_AUTOSCALER/$AUTOSCALER/ ; s/VAR_MIN_VM_COUNT/$MIN_VM_COUNT/ ; s/VAR_MAX_VM_COUNT/$MAX_VM_COUNT/ ; s/VAR_KUBE_VERSION/$kube_version/ ; s/VAR_KUBE_NAME/$cluster_name/ ; s/VAR_KUBE_RG/$KUBE_RG/ ; s/VAR_KUBE_LOCATION/$LOCATION/" $VARIABLE_FILE >> $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
 
 if [ "$autoscaler" == "y" ]; then
 sed -e "s/#SCALER//" $KUBE_TEMPLATE_FILE  >> $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/kube.tf
 else
 cp $KUBE_TEMPLATE_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/kube.tf
 fi
+#export ARM_ACCESS_KEY=$TERRAFORM_STORAGE_KEY
 
 less $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
 (cd $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME && $TERRA_PATH init -backend-config="storage_account_name=$TERRAFORM_STORAGE_NAME" -backend-config="container_name=tfstate" -backend-config="access_key=$TERRAFORM_STORAGE_KEY" -backend-config="key=codelab.microsoft.tfstate" )

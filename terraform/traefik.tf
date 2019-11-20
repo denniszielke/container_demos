@@ -21,26 +21,26 @@
 
 provider "helm" {
   install_tiller = "true"
-  service_account = "${kubernetes_service_account.tiller_service_account.metadata.0.name}"
+  service_account = kubernetes_service_account.tiller_service_account.metadata.0.name
   # tiller_image    = "gcr.io/kubernetes-helm/tiller:v2.14.2"
 
   kubernetes {
-    host                   = "${azurerm_kubernetes_cluster.akstf.kube_config.0.host}"
-    client_certificate     = "${base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.client_certificate)}"
-    client_key             = "${base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.client_key)}"
-    cluster_ca_certificate = "${base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.cluster_ca_certificate)}"
+    host                   = azurerm_kubernetes_cluster.akstf.kube_config.0.host
+    client_certificate     = base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.client_certificate)
+    client_key             = base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.client_key)
+    cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.cluster_ca_certificate)
   }
 }
 
 # Create Static Public IP Address to be used by Traefik Ingress
 resource "azurerm_public_ip" "traefik_ingress" {
   name                         = "traefik-ingress-pip"
-  location                     = "${azurerm_kubernetes_cluster.akstf.location}"
-  resource_group_name          = "${azurerm_kubernetes_cluster.akstf.node_resource_group}"
+  location                     = azurerm_kubernetes_cluster.akstf.location
+  resource_group_name          = azurerm_kubernetes_cluster.akstf.node_resource_group
   allocation_method            = "Static"
-  domain_name_label            = "${var.dns_prefix}"
+  domain_name_label            = var.dns_prefix
 
-  depends_on = ["azurerm_kubernetes_cluster.akstf"]
+  depends_on = [azurerm_kubernetes_cluster.akstf]
 }
 
 # https://www.terraform.io/docs/providers/helm/repository.html
@@ -54,14 +54,14 @@ data "helm_repository" "stable" {
 # https://www.terraform.io/docs/providers/helm/release.html
 resource "helm_release" "traefik_ingress" {
   name       = "traefikingress"
-  repository = "${data.helm_repository.stable.metadata.0.name}"
+  repository = data.helm_repository.stable.metadata.0.name
   chart      = "traefik"
   namespace  = "kube-system"
   force_update = "true"
   timeout = "500"
 
   values = [
-    "${file("${path.module}/traefik.yaml")}",
+    file("${path.module}/traefik.yaml"),
   ]
 
   set {
@@ -81,8 +81,8 @@ resource "helm_release" "traefik_ingress" {
 
   set {
     name  = "loadBalancerIP"
-    value = "${azurerm_public_ip.traefik_ingress.ip_address}"
+    value = azurerm_public_ip.traefik_ingress.ip_address
   }
   
-  depends_on = ["azurerm_kubernetes_cluster.akstf", "azurerm_public_ip.traefik_ingress", "null_resource.after_charts"]
+  depends_on = [azurerm_kubernetes_cluster.akstf, azurerm_public_ip.traefik_ingress, null_resource.after_charts]
 }

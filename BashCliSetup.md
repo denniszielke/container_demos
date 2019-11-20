@@ -70,6 +70,14 @@ Install autocompletion
 kubectl completion -h
 ```
 
+### install and configure helm
+https://get.helm.sh
+
+```
+brew install kubernetes-helm
+brew upgrade kubernetes-helm
+```
+
 ### install the preview cli
 ```
 az extension add --name aks-preview

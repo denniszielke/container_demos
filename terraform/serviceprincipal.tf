@@ -8,13 +8,13 @@ resource "azuread_application" "aks_app" {
     available_to_other_tenants = false
     lifecycle {
         prevent_destroy = true
-        ignore_changes = [ "identifier_uris" ]
+        ignore_changes = [ identifier_uris ]
     }
 }
  
 # https://www.terraform.io/docs/providers/azuread/r/service_principal.html
 resource "azuread_service_principal" "aks_sp" {
-    application_id = "${azuread_application.aks_app.application_id}"
+    application_id = azuread_application.aks_app.application_id
 
     tags = ["${var.environment}", "AKS"]
 }
@@ -24,14 +24,14 @@ resource "random_string" "aks_sp_password" {
     special = false
 
     keepers = {
-        service_principal = "${azuread_service_principal.aks_sp.id}"
+        service_principal = azuread_service_principal.aks_sp.id
     }
 }
  
 # https://www.terraform.io/docs/providers/azurerm/guides/migrating-to-azuread.html
 resource "azuread_service_principal_password" "aks_sp_set_pw" {
-  service_principal_id = "${azuread_service_principal.aks_sp.id}"
-  value                = "${random_string.aks_sp_password.result}"
+  service_principal_id = azuread_service_principal.aks_sp.id
+  value                = random_string.aks_sp_password.result
   end_date             = "2020-01-01T01:02:03Z" # "2299-12-30T23:00:00Z"  # "${timeadd(timestamp(), "8760h")}"
 
 #   lifecycle {
@@ -45,10 +45,10 @@ resource "null_resource" "delay" {
     command = "sleep 300"
   }
   triggers = {
-    "before" = "${azuread_service_principal_password.aks_sp_set_pw.id}"
+    "before" = azuread_service_principal_password.aks_sp_set_pw.id
   }
 }
 
 resource "null_resource" "after" {
-  depends_on = ["null_resource.delay"]
+  depends_on = [null_resource.delay]
 }

@@ -1,4 +1,16 @@
 # azure subscription id
+
+# Terraform backend
+
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "VAR_KUBE_RG"
+    storage_account_name = "VAR_TERRAFORM_NAME"
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
+  }
+}
+
 variable "subscription_id" {
     default = ""
 }
