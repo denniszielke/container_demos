@@ -49,10 +49,6 @@
             }
           ]
         }
-      },
-      "servicePrincipalProfile": {
-        "clientId": "SERVICE_PRINCIPAL_ID",
-        "secret": "SERVICE_PRINCIPAL_SECRET"
-        }
+      }
     }
   }
