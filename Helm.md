@@ -173,6 +173,10 @@ az acr helm repo add
 CHARTREPO=dzkubereg
 
 helm install ./multicalchart --name=$APP_IN --set frontendReplicaCount=3 --set backendReplicaCount=3 --set dependencies.usePodRedis=false --set dependencies.useAppInsights=false --set image.repository=denniszielke --namespace $APP_NS --dry-run --debug
+
+helm install $APP_IN ./multicalchart --set frontendReplicaCount=3 --set backendReplicaCount=3 --set dependencies.usePodRedis=false --set dependencies.useAppInsights=false --set image.repository=denniszielke  --set dependencies.useRedis=true --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2  --namespace $APP_NS
+
+helm upgrade $APP_IN ./multicalchart --set frontendReplicaCount=4 --set backendReplicaCount=4 --set dependencies.usePodRedis=false --set dependencies.useAppInsights=false --set image.repository=denniszielke  --set dependencies.useRedis=false --set dependencies.useAzureRedis=false --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2  --namespace $APP_NS
 ```
 
 verify
@@ -195,8 +199,8 @@ helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendR
 
 If you have a redis secret you can turn on the redis cache
 ```
-REDIS_HOST=myownredis.redis.cache.windows.net
-REDIS_AUTH=
+REDIS_HOST=redis-master
+REDIS_AUTH=secretpassword
 APPINSIGHTS_KEY=
 
 kubectl create secret generic rediscachesecret --from-literal=redishostkey=$REDIS_HOST --from-literal=redisauthkey=$REDIS_AUTH --namespace $APP_NS
@@ -261,3 +265,14 @@ HELM_DEBUG="false"
 HELM_PLUGINS="/Users/dennis/Library/helm3/plugins"
 HELM_REGISTRY_CONFIG="/Users/dennis/Library/Preferences/helm3/registry.json"
 ```
+
+## Helm2 downgrade
+
+https://medium.com/@yujunz/install-an-old-version-formula-from-homebrew-b2848f5ecc00
+
+
+63cef9dba3efc5e5cb03dddd9eeae5ea52dee066
+
+brew install https://github.com/Homebrew/homebrew-core/raw/63cef9dba3efc5e5cb03dddd9eeae5ea52dee066/Formula/kubernetes-helm.rb
+
+helm repo add stable https://kubernetes-charts.storage.googleapis.com

@@ -5,16 +5,17 @@ https://docs.microsoft.com/en-us/azure/aks/networking-overview
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="privateclusters"
-KUBE_NAME="pk1"
-LOCATION="centralus"
-KUBE_VNET_NAME="privatelink2-vnet"
+KUBE_GROUP="privateaks10"
+KUBE_NAME="dzpk10"
+LOCATION="westus"
+NODE_GROUP=$KUBE_GROUP"_nodes_"$LOCATION
+KUBE_VNET_NAME=$KUBE_NAME"-vnet"
 KUBE_GW_SUBNET_NAME="gw-1-subnet"
 KUBE_ACI_SUBNET_NAME="aci-2-subnet"
 KUBE_FW_SUBNET_NAME="AzureFirewallSubnet"
 KUBE_ING_SUBNET_NAME="ing-4-subnet"
 KUBE_AGENT_SUBNET_NAME="aks-5-subnet"
-KUBE_VERSION="1.14.6"
+KUBE_VERSION="1.14.8"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
 AAD_APP_NAME=""
@@ -54,12 +55,6 @@ az role assignment create --role "Contributor" --assignee $SERVICE_PRINCIPAL_ID 
 Create dns zone
 ```
 az network dns zone create -g $KUBE_GROUP  -n runningcode.local  --zone-type Private --registration-vnets $KUBE_VNET_NAME
-
-KUBE_GW_SUBNET_NAME="gw-1-subnet"
-KUBE_ACI_SUBNET_NAME="aci-2-subnet"
-KUBE_FW_SUBNET_NAME="AzureFirewallSubnet"
-KUBE_ING_SUBNET_NAME="ing-4-subnet"
-KUBE_AGENT_SUBNET_NAME="aks-5-subnet"
 ```
 
 3. Create Subnets
@@ -121,19 +116,24 @@ az group deployment create \
 
 create private cluster
 ```
+
+KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT_SUBNET_NAME"
+
 az aks create \
- --resource-group $KUBE_GROUP\
- --name $KUBE_NAME\
- --load-balancer-sku standard
- --enable-private-cluster
- --api-server-address-range 172.18.0.0/28 \
+ --resource-group $KUBE_GROUP \
+ --name $KUBE_NAME \
+ --node-resource-group $NODE_GROUP \
+ --load-balancer-sku standard \
+ --enable-private-cluster \
  --network-plugin azure \
  --vnet-subnet-id $KUBE_AGENT_SUBNET_ID \
  --docker-bridge-address 172.17.0.1/16 \
  --dns-service-ip 10.2.0.10 \
- --service-cidr 10.2.0.0/24
+ --service-cidr 10.2.0.0/24 \
+ --client-secret $SERVICE_PRINCIPAL_SECRET \
+ --service-principal $SERVICE_PRINCIPAL_ID
 
-az aks create -n $KUBE_NAME -g $KUBE_GROUP --load-balancer-sku standard --enable-private-cluster --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --network-plugin kubenet
+az aks create -n $KUBE_NAME -g $KUBE_GROUP --load-balancer-sku standard --enable-private-cluster --node-resource-group $NODE_GROUP --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --network-plugin kubenet --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24
 
 az aks create -g $KUBE_GROUP -n $KUBE_NAME --enable-managed-identity --kubernetes-version $KUBE_VERSION
 ```
@@ -159,7 +159,6 @@ az network dns record-set list -g $KUBE_GROUP -z runningcode.local
 
 az network dns zone show -g $KUBE_GROUP -n contoso.com -o json
 
-
 az network dns record-set a add-record \
   -g $KUBE_GROUP \
   -z runningcode.local \
@@ -168,12 +167,13 @@ az network dns record-set a add-record \
 
 curl 10.0.4.24
 curl nginx.runningcode.local
-````
+```
 
 create internal load balancer for nginx
-
+```
 kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/services/nginx-internal.yaml
 kubectl run nginx --image=nginx --port=80
+```
 
 ```
 cat <<EOF | kubectl apply -f -
@@ -208,4 +208,21 @@ spec:
     - sleep
     - "3600"
 EOF
+```
+
+
+# Peer
+
+```
+JUMPBOX_GROUP=jumpbox-we
+JUMPBOX_VNET=jumpbox-we-vnet
+```
+
+
+```
+
+az network vnet peering create -g $JUMPBOX_GROUP -n KubeToVMPeer --vnet-name $KUBE_VNET_NAME --remote-vnet $JUMPBOX_VNET --allow-vnet-access
+
+az network vnet peering create -g $JUMPBOX_GROUP -n VMToKubePeer --vnet-name $JUMPBOX_VNET --remote-vnet $KUBE_VNET_NAME --allow-vnet-access
+
 ```
