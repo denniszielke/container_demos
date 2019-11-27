@@ -4,7 +4,7 @@ resource "azurerm_role_assignment" "aksacrrole" {
   role_definition_name = "Reader"
   principal_id         = var.aks_client_id
   
-  depends_on = [azuread_service_principal.aks_sp, azurerm_container_registry.aksacr, azurerm_subnet.aksnet]
+  depends_on = [azurerm_container_registry.aksacr, azurerm_subnet.aksnet]
 }
 
 # https://www.terraform.io/docs/providers/azurerm/r/container_registry.html

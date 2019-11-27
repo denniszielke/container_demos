@@ -3,18 +3,22 @@ variable "subscription_id" {
     default = ""
 }
 
+
 # azure ad tenant id
 variable "tenant_id" {
     default = ""
 }
 
-# variable "terraform_client_id" {
-#     default = ""
-# }
+# aks service principal
+variable "aks_client_secret" {
+     default = ""
+}
 
-# variable "terraform_client_secret" {
-#     default = ""
-# }
+# aks service principal secret
+variable "aks_client_id" {
+     default = ""
+}
+
 # default tags applied to all resources
 variable "environment" {
     default = "stg"
@@ -50,15 +54,15 @@ variable "ssh_public_key" {
 }
 # dns prefix used for azure resources
 variable "dns_prefix" {
-    default = ""
+    default = "dzdemo3"
 }
 # cluster name
 variable "cluster_name" {
-    default = ""
+    default = "demo3"
 }
 # resource group for all resources
 variable "resource_group_name" {
-    default = ""
+    default = "demo3"
 }
 
 variable "location" {

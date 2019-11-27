@@ -1,10 +1,10 @@
+# https://www.terraform.io/docs/providers/azurerm/r/eventhub.html
 resource "azurerm_eventhub_namespace" "eventhubns" {
   name                = "${var.dns_prefix}ns"
   location            = azurerm_resource_group.aksrg.location
   resource_group_name = azurerm_resource_group.aksrg.name
   sku                 = "Standard"
   capacity            = 1
-  kafka_enabled       = true
 
   tags = {
     Environment = var.environment
