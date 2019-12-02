@@ -86,3 +86,14 @@ spec:
 EOF
 
 kubectl exec -ti runclient -- sh
+
+
+az network lb outbound-rule create \
+ --resource-group myresourcegroupoutbound \
+ --lb-name lb \
+ --name outboundrule 
+
+NODE_GROUP=kub_ter_a_m_dapr6_nodes_westeurope
+az network lb outbound-rule list --lb-name kubernetes -g $NODE_GROUP
+
+az network lb outbound-rule update -g $NODE_GROUP --lb-name kubernetes -n aksOutboundRule

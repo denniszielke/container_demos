@@ -200,3 +200,17 @@ az vmss extension set --vmss-name my-vmss --name customScript --resource-group m
 
 # Troubleshooting
 https://github.com/Azure/aks-engine/blob/master/docs/howto/troubleshooting.md
+
+
+# Restarting as part of extension
+
+mkdir ~/msifix
+echo $(date +"%T") >> ~/msifix/out.log
+sleep 100
+echo $(date +"%T") >> ~/msifix/out.log
+kubectl get pod -n kube-system >> ~/msifix/out.log
+echo $(date +"%T") >> ~/msifix/out.log
+PODNAME=$(kubectl -n kube-system get pod -l "component=kube-controller-manager" -o jsonpath='{.items[0].metadata.name}')
+kubectl -n kube-system delete pod $PODNAME >> ~/msifix/out.log
+kubectl get pod -n kube-system >> ~/msifix/out.log
+echo $(date +"%T") >> ~/msifix/out.log

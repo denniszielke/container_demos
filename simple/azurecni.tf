@@ -14,9 +14,9 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     }
   }
 
-  agent_pool_profile {
+  default_node_pool {
     name            = "default"
-    count           = var.agent_count
+    node_count      = var.agent_count
     vm_size         = var.vm_size # "Standard_DS2_v2" #"Standard_F4s" # Standard_DS2_v2
     os_type         = "Linux"
     os_disk_size_gb = 120

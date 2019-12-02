@@ -14,11 +14,10 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     }
   }
 
-  agent_pool_profile {
+  default_node_pool {
     name            = "default"
-    count           = var.agent_count
+    node_count      = var.agent_count
     vm_size         = var.vm_size # "Standard_DS2_v2" #"Standard_F4s" # Standard_DS2_v2
-    os_type         = "Linux"
     os_disk_size_gb = 120
     max_pods        = 30
     vnet_subnet_id  = azurerm_subnet.aksnet.id
@@ -53,6 +52,10 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     oms_agent {
       enabled                    = true
       log_analytics_workspace_id = azurerm_log_analytics_workspace.akslogs.id
+    }
+
+    kube_dashboard {
+      enabled = false
     }
   }
 

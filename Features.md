@@ -3,10 +3,10 @@
 Get AKS features
 ```
 az feature list --namespace Microsoft.ContainerService -o table
-az feature list --namespace  Microsoft.PolicyInsights -o table
-az feature list --namespace  Microsoft.DocumentDB -o table
+az feature list --namespace Microsoft.PolicyInsights -o table
+az feature list --namespace Microsoft.DocumentDB -o table
 az feature list --namespace Microsoft.Network -o table
-
+az feature list --namespace Microsoft.Storage -o table
 ```
 
 Register a feature and reregister the provider
@@ -32,12 +32,12 @@ az feature register --namespace "Microsoft.ContainerService" --name "MSIPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "NodePublicIPPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "LowPriorityPoolPreview"
 
-
 az feature register --name OSABypassMarketplace --namespace Microsoft.ContainerService
 az feature register --name AROGA --namespace Microsoft.ContainerService
 
 az feature register --namespace "Microsoft.Network" --name "AllowPrivateEndpoints"
 
+az feature register --namespace "microsoft.storage" --name "AllowNFSV3"
 ```
 
 Check if the feature is active
@@ -48,8 +48,14 @@ az feature list -o table --query "[?contains(name, 'Microsoft.Container‐Servic
 Re-register the provider
 ```
 az provider register --namespace Microsoft.ContainerService
+az provider register --namespace Microsoft.Network
+az provider register --namespace Microsoft.storage
 az provider register --namespace Microsoft.PolicyInsights
+
 az provider unregister --namespace Microsoft.ContainerService
+az provider unregister --namespace Microsoft.Network
+az provider unregister --namespace Microsoft.storage
+az provider unregister --namespace Microsoft.PolicyInsights
 ```
 
 Install the preview cli

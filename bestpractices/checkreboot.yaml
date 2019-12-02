@@ -4,7 +4,6 @@ metadata:
   name: check-reboot
   labels:
     app: check-reboot
-  namespace: kube-system
 spec:
   template:
     metadata:
