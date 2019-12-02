@@ -4,9 +4,9 @@ https://github.com/Azure/aks-engine/blob/master/docs/topics/clusterdefinitions.m
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="dz-akse161smsi"
+KUBE_GROUP="dz-akse163"
 VNET_GROUP="aksengine"
-KUBE_NAME="dz-akse161smsi"
+KUBE_NAME="dz-akse163"
 LOCATION="westeurope"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=

@@ -75,7 +75,7 @@ fi
 
 
 echo $(date +"%T") >> /opt/msifix/out.log
-sleep 30
+sleep 60
 echo $(date +"%T") >> /opt/msifix/out.log
 kubectl get pod -n kube-system >> /opt/msifix/out.log
 echo $(date +"%T") >> /opt/msifix/out.log
