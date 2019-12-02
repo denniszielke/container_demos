@@ -5,7 +5,7 @@ sudo chmod o+rw /opt/msifix
 
 set -x
 
-echo "starting..." >> /opt/msifix/out.log
+echo "starting... v1" >> /opt/msifix/out.log
 echo $(date +"%T") >> /opt/msifix/out.log
 
 echo $(date) " - Starting Script"
@@ -75,7 +75,7 @@ fi
 
 
 echo $(date +"%T") >> /opt/msifix/out.log
-sleep 20
+sleep 150
 echo $(date +"%T") >> /opt/msifix/out.log
 kubectl get pod -n kube-system >> /opt/msifix/out.log
 echo $(date +"%T") >> /opt/msifix/out.log
