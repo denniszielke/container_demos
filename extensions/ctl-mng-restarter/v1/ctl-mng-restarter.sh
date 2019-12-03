@@ -77,9 +77,8 @@ fi
 echo $(date +"%T") >> /opt/msifix/out.log
 sleep 60
 echo $(date +"%T") >> /opt/msifix/out.log
-kubectl get pod -n kube-system >> /opt/msifix/out.log
+docker restart $(docker ps  -q)
 echo $(date +"%T") >> /opt/msifix/out.log
 PODNAME=$(kubectl -n kube-system get pod -l "component=kube-controller-manager" -o jsonpath='{.items[0].metadata.name}')
-kubectl -n kube-system delete pod $PODNAME >> /opt/msifix/out.log
-kubectl get pod -n kube-system >> /opt/msifix/out.log
+kubectl -n kube-system logs $PODNAME >> /opt/msifix/out.log
 echo $(date +"%T") >> /opt/msifix/out.log

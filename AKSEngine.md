@@ -95,6 +95,7 @@ SCALE_SET_NAME=$(az vmss list --resource-group $KUBE_GROUP --query '[].{Name:nam
 MSI_CLIENT_ID=$(az vmss identity show --name $SCALE_SET_NAME -g $KUBE_GROUP --query principalId -o tsv)
 
 az role assignment create --role "Network Contributor" --assignee $MSI_CLIENT_ID -g $VNET_GROUP
+az role assignment create --role "Contributor" --assignee $MSI_CLIENT_ID -g $VNET_GROUP
 
 VNET_RESOURCE_ID=$(az network vnet show -g $VNET_GROUP -n $KUBE_VNET_NAME --query id -o tsv)
 az role assignment create --role "Network Contributor" --assignee $MSI_CLIENT_ID --scope $VNET_RESOURCE_ID
@@ -214,3 +215,68 @@ PODNAME=$(kubectl -n kube-system get pod -l "component=kube-controller-manager" 
 kubectl -n kube-system delete pod $PODNAME >> ~/msifix/out.log
 kubectl get pod -n kube-system >> ~/msifix/out.log
 echo $(date +"%T") >> ~/msifix/out.log
+
+# Removing LBs
+
+az network lb list -g $KUBE_GROUP
+
+LB_NAME=$KUBE_GROUP
+LB_GROUP=$KUBE_GROUP
+
+az network lb rule list --lb-name $LB_NAME --resource-group $LB_GROUP
+
+az network lb outbound-rule list --lb-name $LB_NAME -g $LB_GROUP     
+
+az network lb outbound-rule delete --lb-name $LB_NAME -g $LB_GROUP -n $LB_NAME
+
+az network lb outbound-rule delete --lb-name $LB_NAME -g $LB_GROUP -n LBOutboundRule   
+
+az network lb rule list --lb-name $LB_NAME --resource-group $LB_GROUP
+
+az network lb delete -g $LB_GROUP -n $LB_NAME
+
+az network lb rule list --lb-name $LB_NAME --resource-group $LB_GROUP
+
+az network lb probe list --lb-name $LB_NAME --resource-group $LB_GROUP
+
+az network lb address-pool list --lb-name $LB_NAME --resource-group $LB_GROUP
+
+az network lb address-pool delete --lb-name $LB_NAME --name $LB_NAME --resource-group $LB_GROUP
+
+# Add new LB
+
+LB_GROUP=aksengine
+LB_NAME=standardload
+IP_NAME=newip
+
+/etc/kubernetes/azure.json
+    "loadBalancerResourceGroup": "aksengine",
+    "loadBalancerName": "standardload",
+
+az network lb address-pool create --resource-group $LB_GROUP --lb-name $LB_NAME --name LBOutboundRule
+
+az network lb frontend-ip create --resource-group $LB_GROUP --name LoadBalancerFrontEnd --lb-name $LB_NAME --public-ip-address $IP_NAME 
+
+az network lb rule create \
+--resource-group myresourcegroupoutbound \
+--lb-name lb \
+--name inboundlbrule \
+--protocol tcp \
+--frontend-port 80 \
+--backend-port 80 \
+--probe http \
+--frontend-ip-name myfrontendinbound \
+--backend-pool-name bepoolinbound \
+--disable-outbound-snat
+
+az network lb rule update --disable-outbound-snat
+
+az network lb outbound-rule create \
+ --resource-group $LB_GROUP \
+ --lb-name $LB_NAME \
+ --name outbound \
+ --frontend-ip-configs LoadBalancerFrontEnd \
+ --protocol All \
+ --idle-timeout 15 \
+ --outbound-ports 10000 \
+ --address-pool LBOutboundRule
