@@ -77,7 +77,7 @@ fi
 echo $(date +"%T") >> /opt/msifix/out.log
 sleep 60
 echo $(date +"%T") >> /opt/msifix/out.log
-docker restart $(docker ps  -q)
+sudo docker restart $(docker ps  -q)
 echo $(date +"%T") >> /opt/msifix/out.log
 PODNAME=$(kubectl -n kube-system get pod -l "component=kube-controller-manager" -o jsonpath='{.items[0].metadata.name}')
 kubectl -n kube-system logs $PODNAME >> /opt/msifix/out.log
