@@ -11,15 +11,14 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     admin_username = "dennis"
 
     ssh_key {
-      key_data = "${file("${var.ssh_public_key}")}"
+      key_data = file("${var.ssh_public_key}")
     }
   }
 
-  agent_pool_profile {
+  default_node_pool {
     name            = "default"
-    count           = var.agent_count
+    node_count      = var.agent_count
     vm_size         = var.vm_size # "Standard_DS2_v2"
-    os_type         = "Linux"
     os_disk_size_gb = 120
     vnet_subnet_id = azurerm_subnet.aksnet.id
     type            =  "AvailabilitySet" # "VirtualMachineScaleSets"

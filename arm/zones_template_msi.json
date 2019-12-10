@@ -45,18 +45,6 @@
               "description": "The size of the Virtual Machine."
           }
       },
-      "servicePrincipalClientId": {
-          "metadata": {
-              "description": "Client ID (used by cloudprovider)."
-          },
-          "type": "securestring"
-      },
-      "servicePrincipalClientSecret": {
-          "metadata": {
-              "description": "The Service Principal Client Secret."
-          },
-          "type": "securestring"
-      },
       "osType": {
           "type": "string",
           "defaultValue": "Linux",
@@ -108,7 +96,7 @@
   },
    "resources":[  
       {  
-         "apiVersion":"2019-06-01",
+         "apiVersion":"2019-08-01",
          "type":"Microsoft.ContainerService/managedClusters",
          "location":"[parameters('location')]",
          "name":"[parameters('resourceName')]",
@@ -125,18 +113,9 @@
                   "storageProfile":"ManagedDisks",
                   "osType":"Linux",
                   "maxPods":30,
-                  "type":"VirtualMachineScaleSets",
-                  "availabilityZones":[  
-                     "1",
-                     "2",
-                     "3"
-                  ]
+                  "type":"VirtualMachineScaleSets"
                }
             ],
-            "servicePrincipalProfile":{  
-               "ClientId": "[parameters('servicePrincipalClientId')]",
-               "Secret": "[parameters('servicePrincipalClientSecret')]"
-            },
             "networkProfile": {
                "networkPlugin": "[parameters('networkPlugin')]",
                "loadBalancerSku": "standard"

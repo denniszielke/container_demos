@@ -56,6 +56,39 @@ roleRef:
 EOF
 ```
 
+Deploy bindings for deployments
+```
+cat <<EOF | kubectl apply -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+    name: containerHealth-log-reader
+rules:
+    - apiGroups: ["", "metrics.k8s.io", "extensions", "apps"]
+      resources:
+         - "pods/log"
+         - "events"
+         - "nodes"
+         - "pods"
+         - "deployments"
+         - "replicasets"
+      verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+    name: containerHealth-read-logs-global
+roleRef:
+    kind: ClusterRole
+    name: containerHealth-log-reader
+    apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: User
+  name: clusterUser
+  apiGroup: rbac.authorization.k8s.io
+EOF
+```
+
 get oms agent version
 ```
 kubectl get pods -l component=oms-agent -o yaml -n kube-system | grep image:

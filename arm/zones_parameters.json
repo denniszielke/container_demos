@@ -17,12 +17,6 @@
         "agentVMSize": {
             "value": "Standard_DS2_v2"
         },
-        "servicePrincipalClientId": {
-            "value": "dummy"
-        },
-        "servicePrincipalClientSecret": {
-            "value": "dummy"
-        },
         "kubernetesVersion": {
             "value": "1.12.6"
         },

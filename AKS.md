@@ -7,7 +7,7 @@ SUBSCRIPTION_ID=""
 KUBE_GROUP="aksv2"
 KUBE_NAME="aksv2"
 LOCATION="westeurope"
-KUBE_VERSION="1.14.5"
+KUBE_VERSION="1.14.8"
 REGISTRY_NAME=""
 APPINSIGHTS_KEY=""
 
@@ -101,8 +101,6 @@ az group deployment create \
     --parameters "resourceName=$KUBE_NAME" \
         "location=$LOCATION" \
         "dnsPrefix=$KUBE_NAME" \
-        "servicePrincipalClientId=$SERVICE_PRINCIPAL_ID" \
-        "servicePrincipalClientSecret=$SERVICE_PRINCIPAL_SECRET" \
         "kubernetesVersion=$KUBE_VERSION"
 ```
 
