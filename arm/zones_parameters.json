@@ -3,22 +3,22 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "resourceName": {
-            "value": "pspaks101"
+            "value": "aksmsi"
         },
         "location": {
-            "value": "eastus"
+            "value": "westeurope"
         },
         "dnsPrefix": {
-            "value": "pspaks101"
+            "value": "aksmsi"
         },
         "agentCount": {
-            "value": 5
+            "value": 3
         },
         "agentVMSize": {
             "value": "Standard_DS2_v2"
         },
         "kubernetesVersion": {
-            "value": "1.12.6"
+            "value": "1.14.8"
         },
         "networkPlugin": {
             "value": "azure"
