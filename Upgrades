@@ -1,4 +1,5 @@
 Upgrades
+https://help.ubuntu.com/community/AutomaticSecurityUpdates
 
 less /etc/apt/apt.conf.d/50unattended-upgrades
 
@@ -32,3 +33,10 @@ Unattended-Upgrade::Package-Blacklist {
 /etc/apt/apt.conf.d/20auto-upgrades
 APT::Periodic::Update-Package-Lists "1";
 APT::Periodic::Unattended-Upgrade "1";
+
+
+ls /var/log/unattended-upgrades
+ 
+unattended-upgrades-dpkg.log
+unattended-upgrades.log
+unattended-upgrades-shutdown.log

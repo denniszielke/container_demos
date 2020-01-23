@@ -15,13 +15,14 @@ resource "azurerm_kubernetes_cluster" "akstf" {
   }
 
   default_node_pool {
-    name            = "default"
-    node_count      = var.agent_count
-    vm_size         = var.vm_size # "Standard_DS2_v2" #"Standard_F4s" # Standard_DS2_v2
-    os_disk_size_gb = 120
-    max_pods        = 30
-    vnet_subnet_id  = azurerm_subnet.aksnet.id
-    type            = "VirtualMachineScaleSets" #"AvailabilitySet" #
+    name               = "default"
+    node_count         = var.agent_count
+    vm_size            = var.vm_size # "Standard_DS2_v2" #"Standard_F4s" # Standard_DS2_v2
+    os_disk_size_gb    = 120
+    max_pods           = 30
+    vnet_subnet_id     = azurerm_subnet.aksnet.id
+    type               = "VirtualMachineScaleSets" #"AvailabilitySet" #
+    availability_zones = ["1", "2"]
 #SCALER    enable_auto_scaling = var.autoscaler
 #SCALER    min_count       = var.min_agent_count
 #SCALER    max_count       = var.max_agent_count
@@ -37,7 +38,7 @@ resource "azurerm_kubernetes_cluster" "akstf" {
       dns_service_ip = "10.2.0.10"
       docker_bridge_cidr = "172.17.0.1/16"
       #pod_cidr = "" selected by subnet_id
-      network_policy = "calico"
+      #network_policy = "calico"
       load_balancer_sku = "standard" # "basic"
   }
 

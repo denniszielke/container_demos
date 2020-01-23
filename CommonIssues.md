@@ -14,6 +14,9 @@ sudo apt-get install azure-cli=$WORKING_VERSION
 ## Edit using NANO
 ```
 KUBE_EDITOR="nano" kubectl edit svc/nginxpod-service
+
+KUBE_EDITOR="nano" kubectl -n kube-system edit cm kube-proxy
+
 ```
 
 ## NIC in failed state
@@ -85,6 +88,10 @@ find out what the allocated public IP address is
 then finally connect with SSH
 
     ssh azureuser@<public ip address>
+
+delete containers
+
+kubectl delete pod -n kube-system --selector "component=kube-proxy"
 
 ```
 cat <<EOF | kubectl apply -f -

@@ -32,7 +32,7 @@ resource "random_string" "aks_sp_password" {
 resource "azuread_service_principal_password" "aks_sp_set_pw" {
   service_principal_id = azuread_service_principal.aks_sp.id
   value                = random_string.aks_sp_password.result
-  end_date             = "2020-01-01T01:02:03Z" # "2299-12-30T23:00:00Z"  # "${timeadd(timestamp(), "8760h")}"
+  end_date             = "2022-01-01T01:02:03Z" # "2299-12-30T23:00:00Z"  # "${timeadd(timestamp(), "8760h")}"
 
 #   lifecycle {
 #     prevent_destroy = true

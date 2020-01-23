@@ -56,6 +56,14 @@ brew update && brew install azure-cli
 brew upgrade azure-cli
 ```
 
+### arm client for mac
+https://github.com/yangl900/armclient-go#how-to-use-it
+
+```
+curl -sL https://github.com/yangl900/armclient-go/releases/download/v0.2.3/armclient-go_macOS_64-bit.tar.gz | tar xz
+
+```
+
 ### install and configure kubectl
 https://kubernetes.io/docs/tasks/tools/install-kubectl/
 

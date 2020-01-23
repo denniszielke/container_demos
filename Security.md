@@ -428,6 +428,8 @@ kubectl delete ns demo
 
 
 # Security Center
+List of AKS features for Security Center:
+https://docs.microsoft.com/en-gb/azure/security-center/security-center-alerts-compute#aks-cluster-level-alerts
 
 ```
 SUBSCRIPTION_ID=

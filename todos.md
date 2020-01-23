@@ -10,6 +10,7 @@ Ingress
 - https://github.com/microsoft/IgniteTheTour/tree/master/MIG%20-%20Migrating%20Applications%20to%20the%20Cloud/MIG50
 - https://github.com/lucky-sideburn/KubeInvaders
 - https://github.com/karydia/karydia
+- https://github.com/nirmata/kube-static-egress-ip
 
 
 https://myignite.techcommunity.microsoft.com/sessions/82059?source=sessions

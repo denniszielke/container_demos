@@ -82,14 +82,22 @@ Basic networking requires to modify the routetable that will be created by the a
 ```
 KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT_SUBNET_NAME"
 
-az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --ssh-key-value ~/.ssh/id_rsa.pub --network-plugin kubenet --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --enable-rbac --node-vm-size "Standard_D2s_v3"
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --ssh-key-value ~/.ssh/id_rsa.pub --network-plugin kubenet --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --enable-rbac --node-vm-size "Standard_D2s_v3" --vm-set-type VirtualMachineScaleSets --load-balancer-sku standard
 ```
 
 5. Create azure firewall
 * this is currently not possible via cli - the creation of the azure firewall in that vnet is only possible with the azure portal *
 ```
+
+az network public-ip create -g $KUBE_GROUP -n $FW_IP_NAME --sku Standard
+FW_PRIVATE_IP="10.0.3.4"
 az extension add --name azure-firewall
+
 az network firewall create --name $FW_NAME --resource-group $KUBE_GROUP --location $LOCATION
+
+az network firewall ip-config create --firewall-name $FW_NAME --name $FW_NAME --public-ip-address $FW_IP_NAME --resource-group $KUBE_GROUP --private-ip-address $FW_PRIVATE_IP --vnet-name $KUBE_VNET_NAME
+
+az network firewall create --name $FW_NAME --resource-group $KUBE_GROUP
 ```
 
 6. Create UDR
@@ -98,7 +106,7 @@ After the deployment we create another route in the routetable and associate the
 FW_ROUTE_NAME="${FW_NAME}_fw_r"
 
 FW_PUBLIC_IP=$(az network public-ip show -g $KUBE_GROUP -n $FW_IP_NAME --query ipAddress)
-FW_PRIVATE_IP="10.0.6.4"
+FW_PRIVATE_IP="10.0.3.4"
 
 AKS_MC_RG=$(az group list --query "[?starts_with(name, 'MC_${KUBE_GROUP}')].name | [0]" --output tsv)
 ROUTE_TABLE_ID=$(az network route-table list -g ${AKS_MC_RG} --query "[].id | [0]" -o tsv)
@@ -135,6 +143,8 @@ az network firewall create --name $FW_NAME --resource-group $KUBE_GROUP --locati
 FW_ROUTE_NAME="${FW_NAME}_fw_r"
 FW_ROUTE_TABLE_NAME="${FW_NAME}_fw_rt"
 
+KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT_SUBNET_NAME"
+
 FW_PUBLIC_IP=$(az network public-ip show -g $KUBE_GROUP -n $FW_IP_NAME --query ipAddress)
 FW_PRIVATE_IP="10.0.3.4"
 
@@ -166,10 +176,15 @@ az network firewall network-rule create --firewall-name $FW_NAME --collection-na
 
 az network firewall network-rule create --firewall-name $FW_NAME --collection-name "time" --destination-addresses "*"  --destination-ports 123 --name "allow network" --protocols "UDP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks node time sync rule" --priority 101
 
-az network firewall network-rule create --firewall-name $FW_NAME --collection-name "dns" --destination-addresses "*"  --destination-ports 53 --name "allow network" --protocols "UDP" --resource-group $KUBE_GROUP --source-addresses "*" --actfion "Allow" --description "aks node dns rule" --priority 102
+az network firewall network-rule create --firewall-name $FW_NAME --collection-name "dns" --destination-addresses "*"  --destination-ports 53 --name "allow network" --protocols "UDP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks node dns rule" --priority 102
 
-az network firewall network-rule create --firewall-name $FW_NAME --collection-name "kubesvc" --destination-addresses 10.2.0.0/24  --destination-ports 443 --name "allow network" --protocols "TCP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks kube svc rule" --priority 103
+az network firewall network-rule create --firewall-name $FW_NAME --collection-name "kubesvc" --destination-addresses "*"  --destination-ports 443 --name "allow network" --protocols "TCP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks kube svc rule" --priority 103
+
+az network firewall network-rule create --firewall-name $FW_NAME --collection-name "ssh" --destination-addresses "*"  --destination-ports 22 --name "allow network" --protocols "TCP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks ssh access rule" --priority 104
 ```
+
+See complete list of external dependencies:
+https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic
 
 Required application rule for:
 - `*<region>.azmk8s.io` (eg. `*westeurope.azmk8s.io`) – this is the dns that is running your masters
@@ -195,11 +210,11 @@ Optional:
 ![](/img/hcp-new.png)
 
 ```
-az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "aksbasics" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "*.azmk8s.io" "aksrepos.azurecr.io" "*.blob.core.windows.net" "mcr.microsoft.com" "*.cdn.mscr.io" "management.azure.com" "login.microsoftonline.com" "api.snapcraft.io" "*auth.docker.io" "*cloudflare.docker.io" "*cloudflare.docker.com" "*registry-1.docker.io" --priority 100
+az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "aksbasics" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "*.azmk8s.io" "aksrepos.azurecr.io" "*.blob.core.windows.net" "mcr.microsoft.com" "*.cdn.mscr.io" "management.azure.com" "login.microsoftonline.com" "packages.microsoft.com" "acs-mirror.azureedge.net" "security.ubuntu.com" "api.snapcraft.io" "*auth.docker.io" "*cloudflare.docker.io" "*cloudflare.docker.com" "*registry-1.docker.io" --priority 100
 
-az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "akstools" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "download.opensuse.org" "packages.microsoft.com" "dc.services.visualstudio.com" "*.opinsights.azure.com" "*.monitoring.azure.com" "gov-prod-policy-data.trafficmanager.net" "apt.dockerproject.org" "nvidia.github.io" --priority 101
+az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "monitoring" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "dc.services.visualstudio.com" "*.ods.opinsights.azure.com	" "*.oms.opinsights.azure.com" "*.microsoftonline.com" "*.monitoring.azure.com" --priority 101
 
-az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "osupdates" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "download.opensuse.org" "*.ubuntu.com" "packages.microsoft.com" "snapcraft.io" "api.snapcraft.io"  --priority 102
+az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "osupdates" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "security.ubuntu.com" "azure.archive.ubuntu.com" "changelogs.ubuntu.com"  --priority 102
 ```
 
 test the outgoing traffic

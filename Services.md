@@ -69,6 +69,21 @@ spec:
   type: LoadBalancer
 EOF
 
+cat <<EOF | kubectl create -f -
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: kub_ter_a_m_gitops2
+  name: dummy-logger
+spec:
+  loadBalancerIP: 104.45.72.161
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: dummy-logger
+EOF
 
 cat <<EOF | kubectl create -f -
 kind: Pod

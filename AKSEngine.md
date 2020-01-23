@@ -4,12 +4,12 @@ https://github.com/Azure/aks-engine/blob/master/docs/topics/clusterdefinitions.m
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="dz-akse163"
+KUBE_GROUP="dzaksipvslc"
 VNET_GROUP="aksengine"
-KUBE_NAME="dz-akse163"
+KUBE_NAME="dzaksipvslc"
 LOCATION="westeurope"
-SERVICE_PRINCIPAL_ID=
-SERVICE_PRINCIPAL_SECRET=
+SERVICE_PRINCIPAL_ID=""
+SERVICE_PRINCIPAL_SECRET=""
 KUBE_VNET_NAME=aksvnet
 VM_VNET_NAME=vmnet
 KUBE_MASTER_SUBNET_NAME="m-1-subnet"
@@ -67,14 +67,15 @@ az network vnet peering create -g $VNET_GROUP -n VMToKubePeer --vnet-name $VM_VN
 
 # Deploy cluster
 
-1. Create the resource group
+1. Create the resource group and role assignment
 ```
 az group create -n $KUBE_GROUP -l $LOCATION
+
+az role assignment create --role "Contributor" --assignee $SERVICE_PRINCIPAL_ID -g $KUBE_GROUP
 
 az identity create -g $KUBE_GROUP -n dzaksemsi
 
 MSI_CLIENT_ID=$(az identity show -n dzaksemsi -g $KUBE_GROUP --query clientId -o tsv)
-
 az role assignment create --role "Network Contributor" --assignee $MSI_CLIENT_ID -g $VNET_GROUP
 az role assignment create --role "Contributor" --assignee $MSI_CLIENT_ID -g $KUBE_GROUP # will be done by aks-engine
 ```
@@ -107,8 +108,7 @@ ROUTETABLE_ID=$(az resource list --resource-group $KUBE_GROUP --resource-type Mi
 az network vnet subnet update -n $KUBE_WORKER_SUBNET_NAME -g $VNET_GROUP --vnet-name $KUBE_VNET_NAME --route-table $ROUTETABLE_ID
 ```
 
-# Create cluster role binding
-
+# Load kube config
 ```
 export KUBECONFIG=`pwd`/_output/$KUBE_NAME/kubeconfig/kubeconfig.$LOCATION.json
 ```

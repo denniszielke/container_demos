@@ -5,17 +5,18 @@ https://docs.microsoft.com/en-us/azure/aks/networking-overview
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="privateaks10"
-KUBE_NAME="dzpk10"
-LOCATION="westus"
-NODE_GROUP=$KUBE_GROUP"_nodes_"$LOCATION
+KUBE_GROUP="privateaks"
+KUBE_NAME="dzpaks"
+LOCATION="westeurope"
+NODE_GROUP=$KUBE_GROUP"_"$KUBE_NAME"_nodes_"$LOCATION
 KUBE_VNET_NAME=$KUBE_NAME"-vnet"
 KUBE_GW_SUBNET_NAME="gw-1-subnet"
 KUBE_ACI_SUBNET_NAME="aci-2-subnet"
 KUBE_FW_SUBNET_NAME="AzureFirewallSubnet"
 KUBE_ING_SUBNET_NAME="ing-4-subnet"
 KUBE_AGENT_SUBNET_NAME="aks-5-subnet"
-KUBE_VERSION="1.14.8"
+KUBE_AGENT2_SUBNET_NAME="aks-6-subnet"
+KUBE_VERSION="1.15.7"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
 AAD_APP_NAME=""
@@ -66,6 +67,7 @@ az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUB
 az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_FW_SUBNET_NAME --address-prefix 10.0.3.0/24
 az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_ING_SUBNET_NAME --address-prefix 10.0.4.0/24
 az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --address-prefix 10.0.5.0/24 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault Microsoft.Storage
+az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT2_SUBNET_NAME --address-prefix 10.0.6.0/24 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault Microsoft.Storage
 ```
 
 4. Create the aks cluster
@@ -80,13 +82,13 @@ create cluster without rbac
 
 KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT_SUBNET_NAME"
 
+KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT2_SUBNET_NAME"
+
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 1 --ssh-key-value ~/.ssh/id_rsa.pub  --enable-vmss --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --network-policy calico --enable-rbac --enable-addons monitoring
 ```
 
 for additional rbac
 ```
-KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT_SUBNET_NAME"
-
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --ssh-key-value ~/.ssh/id_rsa.pub --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --enable-rbac --aad-server-app-id $AAD_APP_ID --aad-server-app-secret $AAD_APP_SECRET --aad-client-app-id $AAD_CLIENT_ID --aad-tenant-id $TENANT_ID --node-vm-size "Standard_B2s"
 
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --ssh-key-value ~/.ssh/id_rsa.pub --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --enable-rbac --node-vm-size "Standard_D2s_v3"
@@ -130,6 +132,22 @@ az aks create \
  --docker-bridge-address 172.17.0.1/16 \
  --dns-service-ip 10.2.0.10 \
  --service-cidr 10.2.0.0/24 \
+ --client-secret $SERVICE_PRINCIPAL_SECRET \
+ --service-principal $SERVICE_PRINCIPAL_ID
+
+KUBE_AGENT2_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT2_SUBNET_NAME"
+
+az aks create \
+ --resource-group $KUBE_GROUP \
+ --name $KUBE_NAME \
+ --node-resource-group $NODE_GROUP \
+ --load-balancer-sku standard \
+ --enable-private-cluster \
+ --network-plugin azure \
+ --vnet-subnet-id $KUBE_AGENT2_SUBNET_ID \
+ --docker-bridge-address 172.17.0.1/16 \
+ --dns-service-ip 10.3.0.10 \
+ --service-cidr 10.3.0.0/24 \
  --client-secret $SERVICE_PRINCIPAL_SECRET \
  --service-principal $SERVICE_PRINCIPAL_ID
 

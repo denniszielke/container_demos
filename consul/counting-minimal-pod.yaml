@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: counting-minimal-pod
+  labels:
+    app: counting-service
+spec:
+  containers:
+    - name: counting-service
+      image: topfunky/counting-service:0.0.1
+      ports:
+      - containerPort: 9001

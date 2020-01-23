@@ -31,6 +31,7 @@ az feature register --namespace "Microsoft.ContainerService" --name "AKSAzureSta
 az feature register --namespace "Microsoft.ContainerService" --name "MSIPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "NodePublicIPPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "LowPriorityPoolPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "OpenVPN"
 
 az feature register --name OSABypassMarketplace --namespace Microsoft.ContainerService
 az feature register --name AROGA --namespace Microsoft.ContainerService
