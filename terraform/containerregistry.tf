@@ -14,6 +14,10 @@ resource "azurerm_container_registry" "aksacr" {
   name                     = "${var.dns_prefix}acr"
   resource_group_name      = azurerm_resource_group.aksrg.name
   location                 = azurerm_resource_group.aksrg.location
-  sku                      = "Standard"
+  sku                      = "Premium"
   admin_enabled            = true
+  network_rule_set = {
+    default_action          = Deny
+    subnet_id               = azurerm_subnet.aksnet.id
+  }
 }

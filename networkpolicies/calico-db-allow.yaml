@@ -1,0 +1,20 @@
+apiVersion: projectcalico.org/v3
+kind: NetworkPolicy
+metadata:
+  name: allow-tcp-6379
+  namespace: production
+spec:
+  selector: role == 'database'
+  types:
+  - Ingress
+  - Egress
+  ingress:
+  - action: Allow
+    protocol: TCP
+    source:
+      selector: role == 'frontend'
+    destination:
+      ports:
+      - 6379
+  egress:
+  - action: Allow

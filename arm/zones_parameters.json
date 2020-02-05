@@ -22,6 +22,9 @@
         },
         "networkPlugin": {
             "value": "azure"
+        },
+        "vnetSubnetID": {
+            "value": ""
         }
     }
 }

@@ -106,7 +106,7 @@ kubectl run nginx --image nginx --port=80
 
 kubectl expose deployment nginx --type=ClusterIP
 
-cat <<EOF | kubectl create -f -
+cat <<EOF | kubectl apply -f -
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:

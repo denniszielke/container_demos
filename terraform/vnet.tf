@@ -78,6 +78,8 @@ resource "azurerm_subnet" "aksnet" {
   #network_security_group_id = "${azurerm_network_security_group.aksnsg.id}"
   address_prefix            = "10.0.5.0/24"
   virtual_network_name      = azurerm_virtual_network.kubevnet.name
+
+  service_endpoints         = ["Microsoft.AzureCosmosDB", "Microsoft.ContainerRegistry", "Microsoft.EventHub", "Microsoft.KeyVault", "Microsoft.ServiceBus", "Microsoft.Sql", "Microsoft.Storage"]
 }
 
 resource "azurerm_subnet" "basnet" {

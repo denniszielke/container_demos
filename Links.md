@@ -10,7 +10,7 @@ https://github.com/Azure/AKS/releases
 https://github.com/Azure/AKS/blob/master/CHANGELOG.md
 
 AKS VHD Release Page:
-https://github.com/Azure/aks-engine/tree/master/releases/vhd-notes
+https://github.com/Azure/aks-engine/tree/master/vhd/release-notes/aks-ubuntu-1604
 Packer script:
 https://github.com/Azure/aks-engine/blob/master/packer/install-dependencies.sh
 
