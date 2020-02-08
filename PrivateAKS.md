@@ -122,8 +122,6 @@ Create Log Analytics workspace
 az monitor log-analytics workspace create --resource-group $VNET_GROUP --workspace-name privateaksfwlogs --location $LOCATION
 ```
 
-
-
 Add network rule for 123 (time sync) and 53 (dns) for the worker nodes - this is optional for ubuntu patches
 ```
 az network firewall network-rule create --firewall-name $FW_NAME --collection-name "aksnetwork" --destination-addresses "*"  --destination-ports 9000 --name "allow network" --protocols "TCP" --resource-group $VNET_GROUP --source-addresses "*" --action "Allow" --description "aks network rule" --priority 100

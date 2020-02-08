@@ -1,14 +1,12 @@
-
+# https://www.terraform.io/docs/providers/helm/index.html
 provider "helm" {
-  install_tiller = "true"
-  service_account = "${kubernetes_service_account.tiller_service_account.metadata.0.name}"
-  #tiller_image    = "gcr.io/kubernetes-helm/tiller:v2.14.2"
-
   kubernetes {
-    host                   = "${azurerm_kubernetes_cluster.akstf.kube_config.0.host}"
-    client_certificate     = "${base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.client_certificate)}"
-    client_key             = "${base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.client_key)}"
-    cluster_ca_certificate = "${base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.cluster_ca_certificate)}"
+    load_config_file = false
+    host                   = azurerm_kubernetes_cluster.akstf.kube_config.0.host
+    client_certificate     = base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.client_certificate)
+    client_key             = base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.client_key)
+    cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.cluster_ca_certificate)
+    config_path = "ensure-that-we-never-read-kube-config-from-home-dir"
   }
 }
 
@@ -18,6 +16,7 @@ resource "azurerm_public_ip" "ambassador_ingress" {
   location                     = "${azurerm_kubernetes_cluster.akstf.location}"
   resource_group_name          = "${azurerm_kubernetes_cluster.akstf.node_resource_group}"
   allocation_method            = "Static"
+  sku                          = "Standard"
   domain_name_label            = var.dns_prefix
 
   depends_on = ["azurerm_kubernetes_cluster.akstf"]
