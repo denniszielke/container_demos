@@ -2,8 +2,8 @@
 
 install
 ```
-GRAFANA_IN=mygrafana
-GRAFANA_NS=grafana
+GRAFANA_IN=my-grafana
+GRAFANA_NS=monitoring
 kubectl create ns $GRAFANA_NS
 helm upgrade --install $GRAFANA_IN stable/grafana --set plugins={grafana-azure-monitor-datasource} --namespace $GRAFANA_NS
 ```
@@ -39,11 +39,18 @@ DashboardId
 
 install
 ```
-LOKI_IN=myloki
+LOKI_IN=my-loki
 LOKI_NS=loki
 helm repo add loki https://grafana.github.io/loki/charts
 helm repo update
 kubectl create ns $LOKI_NS
 helm upgrade --install $LOKI_IN -n=$LOKI_NS loki/loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false
 helm -n loki-stack ls
+```
+
+connect
+```
+kubectl get secret --namespace $LOKI_NS $LOKI_IN-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+kubectl port-forward --namespace $LOKI_NS service/$LOKI_IN-grafana 3000:80
+
 ```

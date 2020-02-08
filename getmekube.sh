@@ -22,12 +22,14 @@ KUBE_TEMPLATE_FILE=$PWD/terraform/azurecni.tf
 SUBSCRIPTION_FILE=$CONFIG_PATH/variables_$subscription.tf
 VARIABLE_FILE=$CONFIG_PATH/variables_common.tf
 HELM_FILE=$PWD/terraform/helm.tf
-AMBASSADOR_FILE=$PWD/terraform/ambassador.tf
-NGINX_FILE=$PWD/terraform/nginx.tf
-TRAEFIK_FILE=$PWD/terraform/traefik.tf
+AMBASSADOR_FILE=$PWD/terraform/ingress_ambassador.tf
+NGINX_FILE=$PWD/terraform/ingress_nginx.tf
+TRAEFIK_FILE=$PWD/terraform/ingress_traefik.tf
 TRAEFIK_YAML=$PWD/terraform/traefik.yaml
-KONG_FILE=$PWD/terraform/kong.tf
+KONG_FILE=$PWD/terraform/ingress_kong.tf
 ACR_FILE=$PWD/terraform/containerregistry.tf
+LOKI_FILE=$PWD/terraform/monitoring_loki.tf
+GRAFANA_FILE=$PWD/terraform/monitoring_grafana.tf
 SP_FILE=$PWD/terraform/serviceprincipal.tf
 
 if [ "$subscription" == "" ]; then
@@ -105,15 +107,21 @@ read kube_version
 echo
 fi
 
-if [ "$helm" == "" ]; then
-echo "Install helm [y/n]?: "
-read -n 1 helm
-echo
-fi
-
 if [ "$ingress" == "" ]; then
 echo "Install ingress [a]mbassador, [n]ginx, [t]raefik, [k]ong, [s]kip?: "
 read -n 1 ingress
+echo
+fi
+
+if [ "$monitoring" == "" ]; then
+echo "Install [g]rafana, [l]oki: "
+read -n 1 monitoring
+echo
+fi
+
+if [ "$flux" == "" ]; then
+echo "Install [f]lux: "
+read -n 1 flux
 echo
 fi
 
@@ -147,7 +155,7 @@ echo "*"
 sleep 1
 echo "*"
 
-TERRAFORM_STORAGE_KEY=$(az storage account keys list --account-name $TERRAFORM_STORAGE_NAME --resource-group $KUBE_RG --query "[0].value")
+TERRAFORM_STORAGE_KEY=$(az storage account keys list --account-name $TERRAFORM_STORAGE_NAME --resource-group $KUBE_RG --query "[0].value" -o tsv)
 echo "terraform state $TERRAFORM_STORAGE_KEY"
 
 else
@@ -183,23 +191,32 @@ cp $SP_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 cp $LOGS_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 cp $VNET_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 
-if [ "$helm" == "y" ]; then
-cp $HELM_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
-fi
 
 if [ "$ingress" == "n" ]; then
+cp $HELM_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 cp $NGINX_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 elif [ "$ingress" == "a" ]; then
+cp $HELM_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 cp $AMBASSADOR_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 elif [ "$ingress" == "t" ]; then
+cp $HELM_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 cp $TRAEFIK_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 cp $TRAEFIK_YAML $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 elif [ "$ingress" == "k" ]; then
+cp $HELM_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 cp $KONG_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 fi
 
 if [ "$acr" == "y" ]; then
 cp $ACR_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+fi
+
+if [ "$monitoring" == "l" ]; then
+cp $HELM_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+cp $LOKI_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+elif [ "$monitoring" == "g" ]; then
+cp $HELM_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+cp $GRAFANA_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 fi
 
 if [ "$autoscaler" == "y" ]; then
@@ -211,7 +228,7 @@ fi
 sed -e "s/VAR_TERRAFORM_NAME/$TERRAFORM_STORAGE_NAME/ ; s/VAR_AGENT_COUNT/$VM_COUNT/ ; s/VAR_VM_SIZE/$VM_SIZE/ ; s/VAR_AUTOSCALER/$AUTOSCALER/ ; s/VAR_MIN_VM_COUNT/$MIN_VM_COUNT/ ; s/VAR_MAX_VM_COUNT/$MAX_VM_COUNT/ ; s/VAR_KUBE_VERSION/$kube_version/ ; s/VAR_KUBE_NAME/$cluster_name/ ; s/VAR_KUBE_RG/$KUBE_RG/ ; s/VAR_KUBE_LOCATION/$LOCATION/" $VARIABLE_FILE >> $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
 
 if [ "$autoscaler" == "y" ]; then
-sed -e "s/#SCALER//" $KUBE_TEMPLATE_FILE  >> $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/kube.tf
+sed -e "s/#SCALER//" $KUBE_TEMPLATE_FILE  > $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/kube.tf
 else
 cp $KUBE_TEMPLATE_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/kube.tf
 fi

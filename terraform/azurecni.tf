@@ -61,10 +61,10 @@ resource "azurerm_kubernetes_cluster" "akstf" {
   }
 
   tags = {
-    Environment = var.environment
-    Network = "azurecni"
-    RBAC = "true"
-    Policy = "calico"
+    environment = var.environment
+    network = "azurecni"
+    rbac = "true"
+    policy = "calico"
   }
 
   depends_on = [azurerm_subnet.aksnet, azuread_service_principal.aks_sp, azuread_service_principal_password.aks_sp_set_pw, null_resource.after]
@@ -101,22 +101,6 @@ output "NODE_GROUP" {
 output "ID" {
     value = azurerm_kubernetes_cluster.akstf.id
 }
-
-# output "kube_config" {
-#   value = azurerm_kubernetes_cluster.akstf.kube_config_raw
-# }
-
-# output "client_key" {
-#   value = azurerm_kubernetes_cluster.akstf.kube_config.0.client_key
-# }
-
-# output "client_certificate" {
-#   value = azurerm_kubernetes_cluster.akstf.kube_config.0.client_certificate
-# }
-
-# output "cluster_ca_certificate" {
-#   value = azurerm_kubernetes_cluster.akstf.kube_config.0.cluster_ca_certificate
-# }
 
 output "host" {
   value = azurerm_kubernetes_cluster.akstf.kube_config.0.host

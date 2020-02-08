@@ -102,7 +102,7 @@ resource "azurerm_public_ip" "bastion_ip" {
 
 # assign virtual machine contributor on subnet to aks sp
 resource "azurerm_role_assignment" "aksvnetrole" {
-  scope                = azurerm_virtual_network.kubevnet.id
+  scope                = azurerm_resource_group.aksrg.id # azurerm_virtual_network.kubevnet.id
   role_definition_name = "Contributor" # "Virtual Machine Contributor"
   principal_id         = azuread_service_principal.aks_sp.id
   

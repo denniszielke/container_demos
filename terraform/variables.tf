@@ -76,3 +76,11 @@ variable "resource_group_name" {
 variable "location" {
     default = "WestEurope"
 }
+
+variable "git_user" {
+    default = "user"
+}
+
+variable "git_key" {
+    default = "user"
+}

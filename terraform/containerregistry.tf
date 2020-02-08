@@ -20,4 +20,8 @@ resource "azurerm_container_registry" "aksacr" {
     default_action          = Deny
     subnet_id               = azurerm_subnet.aksnet.id
   }
+
+  tags = {
+    environment = var.environment
+  }
 }

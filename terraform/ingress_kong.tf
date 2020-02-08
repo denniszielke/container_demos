@@ -1,15 +1,3 @@
-# https://www.terraform.io/docs/providers/helm/index.html
-provider "helm" {
-  kubernetes {
-    load_config_file = false
-    host                   = azurerm_kubernetes_cluster.akstf.kube_config.0.host
-    client_certificate     = base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.client_certificate)
-    client_key             = base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.client_key)
-    cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.akstf.kube_config.0.cluster_ca_certificate)
-    config_path = "ensure-that-we-never-read-kube-config-from-home-dir"
-  }
-}
-
 # Create Static Public IP Address to be used by Nginx Ingress
 resource "azurerm_public_ip" "kong_ingress" {
   name                         = "kong-ingress-pip"
@@ -58,12 +46,6 @@ resource "azurerm_postgresql_database" "kong_config_db" {
   server_name         = azurerm_postgresql_server.kong_db.name
   charset             = "UTF8"
   collation           = "English_United States.1252"
-}
-
-# https://www.terraform.io/docs/providers/helm/repository.html
-data "helm_repository" "stable" {
-    name = "stable"
-    url  = "https://kubernetes-charts.storage.googleapis.com"
 }
 
 # Install Nginx Ingress using Helm Chart
