@@ -47,6 +47,11 @@ Get available service endpoints
 az network vnet list-endpoint-services -l $LOCATION
 ```
 
+create ip prefix
+```
+az network public-ip prefix create --length 31 --location $LOCATION --name aksprefix --resource-group $KUBE_GROUP
+```
+
 Assign permissions on vnet
 ```
 az role assignment create --role "Virtual Machine Contributor" --assignee $SERVICE_PRINCIPAL_ID -g $KUBE_GROUP

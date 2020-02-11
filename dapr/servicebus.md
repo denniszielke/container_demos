@@ -5,8 +5,9 @@ SB_NAMESPACE=dzdapr$RANDOM
 LOCATION=westeurope
 
 az servicebus namespace create --resource-group $KUBE_GROUP --name $SB_NAMESPACE --location $LOCATION
+az servicebus namespace authorization-rule keys list --name RootManageSharedAccessKey --namespace-name $SB_NAMESPACE --resource-group $KUBE_GROUP --query "primaryConnectionString" | tr -d '"'
+SB_CONNECTIONSTRING=$(az servicebus namespace authorization-rule keys list --name RootManageSharedAccessKey --namespace-name $SB_NAMESPACE --resource-group $KUBE_GROUP --query "primaryConnectionString" | tr -d '"')
 
-SB_CONNECTIONSTRING=
 
 kubectl delete component messagebus
 
@@ -35,3 +36,10 @@ kubectl delete component pubsub-azure-service-bus
 
 
 kubectl logs -l demo=pubsub
+
+
+curl -X POST http://localhost:3500/v1.0/publish/deathStarStatus \
+	-H "Content-Type: application/json" \
+	-d '{
+       	     "status": "completed"
+      	}'
