@@ -1,10 +1,14 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: crashing-app1
+  name: crashing-app
 spec:
   replicas: 1
   minReadySeconds: 5
+  selector:
+    matchLabels:
+      demo: logging
+      app: crashing-app
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -13,12 +17,11 @@ spec:
   template:
     metadata:
       labels:
-        name: crashing-app1
         demo: logging
-        app: crashing-app1
+        app: crashing-app
     spec:
       containers:
-      - name: crashing-app1
+      - name: crashing-app
         image: denniszielke/crashing-app:latest
         livenessProbe:
           httpGet:
@@ -43,12 +46,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: crashing-app1
-  namespace: default
+  name: crashing-app
 spec:
   ports:
   - port: 80
     targetPort: 80
   selector:
-    app: crashing-app1
+    app: crashing-app
   type: LoadBalancer

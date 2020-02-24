@@ -542,10 +542,16 @@ metadata:
   name: hello-world-ingress
   annotations:
     kubernetes.io/ingress.class: nginx
+    cert-manager.io/issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
+  tls:
+  - hosts:
+    - 40.74.0.250.xip.io
+    secretName: dummy-tls
   rules:
-  - host: 23.97.165.51.xip.io
+  - host: 40.74.0.250.xip.io
     http:
       paths:
       - path: /

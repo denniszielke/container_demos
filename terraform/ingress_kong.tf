@@ -10,6 +10,14 @@ resource "azurerm_public_ip" "kong_ingress" {
   depends_on = [azurerm_kubernetes_cluster.akstf]
 }
 
+resource "kubernetes_namespace" "kong-ns" {
+  metadata {
+    name = "kong"
+  }
+
+  depends_on = [azurerm_kubernetes_cluster.akstf]
+}
+
 resource "random_string" "kongpsql_password" {
     length  = 16
     special = false

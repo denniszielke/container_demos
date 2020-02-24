@@ -67,3 +67,7 @@ az openshift delete --resource-group $OSA_RG_NAME --name $OSA_CLUSTER_NAME
 ## delete via arm
 
 https://docs.microsoft.com/en-us/rest/api/resources/resourcegroups/delete
+
+
+## ARO 4.3
+https://github.com/Azure/ARO-RP/blob/master/docs/using-az-aro.md

@@ -43,16 +43,17 @@ https://docs.microsoft.com/en-us/azure/aks/ingress#install-an-ingress-controller
 Create a public ip adress
 ```
 
-az network public-ip create --resource-group MC_kub_ter_a_m_mesh11_mesh11_westeurope --name myAKSPublicIP --allocation-method static
+IP_NAME=myAKSPublicIP
 
-az network public-ip list --resource-group MC_kubeaksvmss_dzkubes_westeurope* --query [0].ipAddress --output tsv
+az network public-ip create --resource-group $NODE_GROUP --name $IP_NAME --allocation-method static
 
-IP="1.1.1.1"
+IP=$(az network public-ip show --resource-group $NODE_GROUP --name $IP_NAME --query ipAddress --output tsv)
+
 ```
 Use the assigned ip address in the helm chart
 
 ```
-helm upgrade stable/nginx-ingress --install --name ingress-controller --namespace kube-system --set rbac.create=true --set controller.service.loadBalancerIP="$IP" --set controller.stats.enabled=true --set controller.replicaCount=2 --set controller.service.externalTrafficPolicy=Local
+helm upgrade stable/nginx-ingress --install ingress-controller --namespace kube-system --set rbac.create=true --set controller.service.loadBalancerIP="$IP" --set controller.stats.enabled=true --set controller.replicaCount=2 --set controller.service.externalTrafficPolicy=Local
 
 helm upgrade ingress-controller stable/nginx-ingress --install --namespace kube-system --set controller.stats.enabled=true --set controller.replicaCount=2 --set controller.service.externalTrafficPolicy=Local
 

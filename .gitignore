@@ -4,6 +4,8 @@
 
 
 rudr.md
+ingress/*
+Ingress_EasyAuth.md
 table.csv
 Setup.md
 CustomAKS.md

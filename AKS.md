@@ -4,15 +4,24 @@ https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="aksv2"
-KUBE_NAME="aksv2"
+KUBE_GROUP="akspot"
+KUBE_NAME="akspot"
 LOCATION="westeurope"
-KUBE_VERSION="1.14.8"
+KUBE_VERSION="1.15.7"
 REGISTRY_NAME=""
 APPINSIGHTS_KEY=""
 
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
+
+SP_NAME="spot_aks_sp"
+
+SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $SP_NAME -o json | jq -r '.appId')
+echo $SERVICE_PRINCIPAL_ID
+
+SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
+echo $SERVICE_PRINCIPAL_SECRET
+
 ```
 
 Select subscription
@@ -94,14 +103,16 @@ az aks enable-addons \
 az group create -n $KUBE_GROUP -l $LOCATION
 
 az group deployment create \
-    --name pspzones \
+    --name spot \
     --resource-group $KUBE_GROUP \
-    --template-file "arm/zones_template_msi.json" \
-    --parameters "arm/zones_parameters.json" \
+    --template-file "arm/spot_template.json" \
+    --parameters "arm/spot_parameters.json" \
     --parameters "resourceName=$KUBE_NAME" \
         "location=$LOCATION" \
         "dnsPrefix=$KUBE_NAME" \
-        "kubernetesVersion=$KUBE_VERSION"
+        "kubernetesVersion=$KUBE_VERSION" \
+        "servicePrincipalClientId=$SERVICE_PRINCIPAL_ID" \
+        "servicePrincipalClientSecret=$SERVICE_PRINCIPAL_SECRET"
 ```
 
 3. Export the kubectrl credentials files

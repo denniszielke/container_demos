@@ -6,7 +6,7 @@ LOCATION=westeurope
 
 az servicebus namespace create --resource-group $KUBE_GROUP --name $SB_NAMESPACE --location $LOCATION
 az servicebus namespace authorization-rule keys list --name RootManageSharedAccessKey --namespace-name $SB_NAMESPACE --resource-group $KUBE_GROUP --query "primaryConnectionString" | tr -d '"'
-SB_CONNECTIONSTRING=$(az servicebus namespace authorization-rule keys list --name RootManageSharedAccessKey --namespace-name $SB_NAMESPACE --resource-group $KUBE_GROUP --query "primaryConnectionString" | tr -d '"')
+SB_CONNECTIONSTRING=$(az storage account keys list --account-name "dzt$KUBE_NAME" --resource-group $KUBE_GROUP --query "[0].value" | tr -d '"')
 
 
 kubectl delete component messagebus

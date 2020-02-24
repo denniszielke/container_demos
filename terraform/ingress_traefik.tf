@@ -10,6 +10,14 @@ resource "azurerm_public_ip" "traefik_ingress" {
   depends_on = [azurerm_kubernetes_cluster.akstf]
 }
 
+resource "kubernetes_namespace" "traefik-ns" {
+  metadata {
+    name = "traefik"
+  }
+
+  depends_on = [azurerm_kubernetes_cluster.akstf]
+}
+
 # Install traefik Ingress using Helm Chart
 # https://github.com/helm/charts/tree/master/stable/traefik
 # https://www.terraform.io/docs/providers/helm/release.html
@@ -17,7 +25,7 @@ resource "helm_release" "traefik_ingress" {
   name       = "traefikingress"
   repository = data.helm_repository.stable.metadata.0.name
   chart      = "traefik"
-  namespace  = "kube-system"
+  namespace  = "traefik"
   force_update = "true"
   timeout = "500"
 
@@ -31,11 +39,6 @@ resource "helm_release" "traefik_ingress" {
   }
 
   set {
-    name  = "rbac.create"
-    value = "true"
-  }
-
-  set {
     name  = "externalTrafficPolicy"
     value = "Local"
   }
@@ -45,5 +48,5 @@ resource "helm_release" "traefik_ingress" {
     value = azurerm_public_ip.traefik_ingress.ip_address
   }
   
-  depends_on = [azurerm_kubernetes_cluster.akstf, azurerm_public_ip.traefik_ingress, null_resource.after_charts]
+  depends_on = [azurerm_kubernetes_cluster.akstf, kubernetes_namespace.traefik-ns, azurerm_public_ip.traefik_ingress, null_resource.after_charts]
 }

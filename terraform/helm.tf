@@ -27,7 +27,7 @@ data "helm_repository" "stable" {
 
 resource "kubernetes_namespace" "dummy-logger-ns" {
   metadata {
-    name = "dummy-logger"
+    name = "demo"
   }
 
   depends_on = [azurerm_kubernetes_cluster.akstf]
@@ -36,7 +36,7 @@ resource "kubernetes_namespace" "dummy-logger-ns" {
 resource "kubernetes_service" "dummy-logger-service" {
   metadata {
     name = "dummy-logger-svc-lb"
-    namespace = "dummy-logger"
+    namespace = "demo"
   }
   spec {
     selector = {
@@ -56,7 +56,7 @@ resource "kubernetes_service" "dummy-logger-service" {
 resource "kubernetes_pod" "dummy-logger-pod" {
   metadata {
     name = "dummy-logger"
-    namespace = "dummy-logger"
+    namespace = "demo"
     labels = {
       app = "dummy-logger"
     }

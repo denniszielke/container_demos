@@ -11,6 +11,8 @@ Ingress
 - https://github.com/lucky-sideburn/KubeInvaders
 - https://github.com/karydia/karydia
 - https://github.com/nirmata/kube-static-egress-ip
+- https://stian.tech/disk-performance-on-aks-part-1/
+- https://github.com/microsoft/Application-Insights-K8s-Codeless-Attach
 
 
 https://myignite.techcommunity.microsoft.com/sessions/82059?source=sessions

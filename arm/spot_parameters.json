@@ -18,13 +18,16 @@
             "value": "Standard_DS2_v2"
         },
         "kubernetesVersion": {
-            "value": "1.15."
+            "value": "1.15.7"
         },
         "networkPlugin": {
             "value": "azure"
         },
-        "vnetSubnetID": {
-            "value": ""
-        }
+        "servicePrincipalClientId": {
+            "value": "dummy"
+        },
+        "servicePrincipalClientSecret": {
+            "value": "dummy"
+        },
     }
 }

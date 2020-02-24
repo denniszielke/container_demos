@@ -16,10 +16,10 @@ resource "azurerm_container_registry" "aksacr" {
   location                 = azurerm_resource_group.aksrg.location
   sku                      = "Premium"
   admin_enabled            = true
-  network_rule_set = {
-    default_action          = Deny
-    subnet_id               = azurerm_subnet.aksnet.id
-  }
+  # network_rule_set = {
+  #   default_action          = Deny
+  #   subnet_id               = azurerm_subnet.aksnet.id
+  # }
 
   tags = {
     environment = var.environment

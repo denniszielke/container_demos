@@ -30,7 +30,7 @@ helm install stable/traefik --name traefikingress --namespace kube-system --set 
 
 helm upgrade traefikingress stable/traefik --install --namespace kube-system --set dashboard.enabled=true,dashboard.domain=dashboard.localhost,rbac.enabled=true,loadBalancerIP=$IP,externalIP=$IP,externalTrafficPolicy=Local,replicas=2,ssl.enabled=true,ssl.permanentRedirect=true,ssl.insecureSkipVerify=true,acme.enabled=true,acme.challengeType=http-01,acme.email=$MY_ID,acme.staging=false
 
-kubectl -n kube-system port-forward $(kubectl -nkube-system get pod -l app=traefik -o jsonpath='{.items[0].metadata.name}') 8080:8080
+kubectl -n kube-system port-forward $(kubectl -n kube-system get pod -l app=traefik -o jsonpath='{.items[0].metadata.name}') 8080:8080
 
 annotations:
 https://docs.traefik.io/configuration/backends/kubernetes/#general-annotations

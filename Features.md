@@ -7,6 +7,7 @@ az feature list --namespace Microsoft.PolicyInsights -o table
 az feature list --namespace Microsoft.DocumentDB -o table
 az feature list --namespace Microsoft.Network -o table
 az feature list --namespace Microsoft.Storage -o table
+az feature list --namespace Microsoft.RedHatOpenShift -o table
 ```
 
 Register a feature and reregister the provider
@@ -32,6 +33,9 @@ az feature register --namespace "Microsoft.ContainerService" --name "MSIPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "NodePublicIPPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "LowPriorityPoolPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "OpenVPN"
+az feature register --namespace "Microsoft.ContainerService" --name "SpotPoolPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "AKS-AzurePolicyV2"
+ 
 
 az feature register --name OSABypassMarketplace --namespace Microsoft.ContainerService
 az feature register --name AROGA --namespace Microsoft.ContainerService
@@ -39,11 +43,17 @@ az feature register --name AROGA --namespace Microsoft.ContainerService
 az feature register --namespace "Microsoft.Network" --name "AllowPrivateEndpoints"
 
 az feature register --namespace "microsoft.storage" --name "AllowNFSV3"
+az feature register --namespace "Microsoft.RedHatOpenShift" --name "preview"
+az feature register --namespace "Microsoft.RedHatOpenShift" --name "PrivateClusters"
+az feature register --namespace "Microsoft.RedHatOpenShift" --name "INT-APROVED"
+az feature register --namespace "Microsoft.RedHatOpenShift" --name "INT-APPROVED"
+az provider register -n "Microsoft.RedHatOpenShift" --wait
+
 ```
 
 Check if the feature is active
 ```
-az feature list -o table --query "[?contains(name, 'Microsoft.Container‐Service/AKS-AzurePolicyAutoApprove')].{Name:name,State:properties.state}"
+az feature list -o table --query "[?contains(name, 'Microsoft.RedHatOpenShift')].{Name:name,State:properties.state}"
 ```
 
 Re-register the provider

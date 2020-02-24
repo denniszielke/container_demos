@@ -35,6 +35,12 @@ spec:
           env: 
             - name: "ENDPOINT"
               value: "{{ .Release.Name }}-calc-backend-svc"
+{{- if .Values.introduceRandomResponseLag }}
+            - name: "LAGGY"
+              value: "{{ .Values.introduceRandomResponseLagValue }}"
+            - name: "BUGGY"
+              value: "true"
+{{- end }}
 {{- if .Values.dependencies.useAppInsights }}
             - name: "INSTRUMENTATIONKEY"
               valueFrom:

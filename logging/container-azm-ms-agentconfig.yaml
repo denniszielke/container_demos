@@ -48,7 +48,7 @@ data:
         # urls = ["http://myurl:9101/metrics"]
 
         # An array of Kubernetes services to scrape metrics from.
-        kubernetes_services = ["http://dummy-logger-metrics.default:80/metrics"]
+        kubernetes_services = ["http://coredns.kube-system:9153/metrics", "http://dummy-logger-svc-lb.dummy-logger:80/metrics"]
 
         # When monitor_kubernetes_pods = true, replicaset will scrape Kubernetes pods for the following prometheus annotations:
         # - prometheus.io/scrape: Enable scraping for this pod
@@ -56,7 +56,7 @@ data:
         #     set this to `https` & most likely set the tls config.
         # - prometheus.io/path: If the metrics path is not /metrics, define it with this annotation.
         # - prometheus.io/port: If port is not 9102 use this annotation
-        monitor_kubernetes_pods = false
+        monitor_kubernetes_pods = true
     
     [prometheus_data_collection_settings.node]
         # Node level scrape endpoint(s). These metrics will be scraped from agent's DaemonSet running in every node in the cluster

@@ -5,7 +5,8 @@ https://github.com/dapr/samples/tree/master/2.hello-kubernetes
 https://github.com/dapr/docs/blob/master/concepts/components/redis.md#creating-a-redis-store
 https://github.com/dapr/docs/blob/master/concepts/components/redis.md#creating-a-redis-cache-in-your-kubernetes-cluster-using-helm
 
-helm upgrade redis stable/redis --install --set password=secretpassword 
+kubectl create namespace redis
+helm upgrade redis stable/redis --install --set password=secretpassword --namespace redis
 helm delete redis
 
 kubectl get secret --namespace default redis -o jsonpath="{.data.redis-password}" | base64 --decode 

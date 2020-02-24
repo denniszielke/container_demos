@@ -146,6 +146,8 @@ draft create
 helm create multicalc
 APP_NS=calculator
 APP_IN=calc1
+
+kubectl create namespace $APP_NS
 ```
 Validate template
 ```
@@ -199,16 +201,17 @@ helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendR
 
 If you have a redis secret you can turn on the redis cache
 ```
-REDIS_HOST=redis-master
-REDIS_AUTH=secretpassword
+REDIS_HOST=.redis.cache.windows.net
+REDIS_AUTH=
 APPINSIGHTS_KEY=
 
 kubectl create secret generic rediscachesecret --from-literal=redishostkey=$REDIS_HOST --from-literal=redisauthkey=$REDIS_AUTH --namespace $APP_NS
 
-helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useAzureRedis=false --set dependencies.usePodRedis=false --namespace $APP_NS
+helm upgrade $APP_IN ./multicalchart --install --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useAzureRedis=false --set dependencies.usePodRedis=false --set dependencies.useIngress=true --set service.dnsName=$DNS --namespace $APP_NS
 
+helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=4 --set frontendReplicaCount=5 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.usePodRedis=false --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=2 --namespace $APP_NS
 
-helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=4 --set frontendReplicaCount=5 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useRedis=true --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2 --namespace $APP_NS
+helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=4 --set frontendReplicaCount=5 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.usePodRedis=false --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2 --namespace $APP_NS
 
 helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=false --set dependencies.useAzureRedis=false --set dependencies.usePodRedis=true --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=0 --namespace $APP_NS
 
@@ -218,6 +221,16 @@ helm upgrade $APP_IN ./multicalchart --install --recreate-pods --set backendRepl
 
 ```
 
+Configure scaler
+```
+kubectl autoscale deployment calc2-multicalculatorv3-backend -n calculator --cpu-percent=20 --min=1 --max=5
+
+kubectl get hpa -n calculator
+
+kubectl delete hpa calc1-multicalculatorv3-backend -n calculator
+
+kubectl scale deployment calc1-multicalculatorv3-backend --replicas=1 -n calculator
+```
 7. See rollout history
 ```
 helm history $APP_IN
@@ -270,8 +283,6 @@ HELM_REGISTRY_CONFIG="/Users/dennis/Library/Preferences/helm3/registry.json"
 
 https://medium.com/@yujunz/install-an-old-version-formula-from-homebrew-b2848f5ecc00
 
-
-63cef9dba3efc5e5cb03dddd9eeae5ea52dee066
 
 brew install https://github.com/Homebrew/homebrew-core/raw/63cef9dba3efc5e5cb03dddd9eeae5ea52dee066/Formula/kubernetes-helm.rb
 

@@ -3,6 +3,7 @@ https://github.com/dapr/samples/tree/master/5.bindings
 
 helm repo add incubator http://storage.googleapis.com/kubernetes-charts-incubator
 helm repo update
+kubectl create namespace kafka
 helm install dapr-kafka --namespace kafka incubator/kafka --set replicas=1
 
 cat <<EOF | kubectl apply -f -
