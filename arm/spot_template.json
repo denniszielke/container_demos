@@ -112,7 +112,7 @@
             "nodeResourceGroup": "[concat(parameters('dnsPrefix'),'_nodes_', parameters('location'))]",
             "agentPoolProfiles": [
                 {
-                    "name": "erster",
+                    "name": "expensive",
                     "count": "[parameters('agentCount')]",
                     "vmSize": "Standard_D2_v2",
                     "storageProfile": "ManagedDisks",
@@ -121,7 +121,7 @@
                     "type": "VirtualMachineScaleSets"
                 },
                 {
-                    "name": "zweiter",
+                    "name": "cheap",
                     "count": 1,
                     "vmSize": "Standard_DS2_v2",
                     "osDiskSizeGB": 30,

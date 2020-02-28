@@ -191,6 +191,7 @@ cp $SP_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 cp $LOGS_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 cp $VNET_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 
+RG_ID=$(az group show -n $KUBE_RG --query id -o tsv)
 
 if [ "$ingress" == "n" ]; then
 cp $HELM_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
@@ -238,6 +239,7 @@ less $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
 (cd $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME && $TERRA_PATH init -backend-config="storage_account_name=$TERRAFORM_STORAGE_NAME" -backend-config="container_name=tfstate" -backend-config="access_key=$TERRAFORM_STORAGE_KEY" -backend-config="key=codelab.microsoft.tfstate" )
 
 # (cd $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME && $TERRA_PATH init )
+(cd $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME && $TERRA_PATH import azurerm_resource_group.aksrg $RG_ID)
 
 (cd $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME && $TERRA_PATH plan -out $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/out.plan)
 

@@ -156,7 +156,7 @@ helm lint ./multicalchart
 
 3. Dry run the chart and override parameters
 ```
-helm install --dry-run --debug ./multicalchart --name=calculator --set frontendReplicaCount=3
+helm install --dry-run --debug ./multicalculatorv3 --name=calculator --set frontendReplicaCount=3
 ```
 
 4. Make sure you have the app insights key secret provisioned
@@ -174,29 +174,23 @@ az acr helm repo add
 
 CHARTREPO=dzkubereg
 
-helm install ./multicalchart --name=$APP_IN --set frontendReplicaCount=3 --set backendReplicaCount=3 --set dependencies.usePodRedis=false --set dependencies.useAppInsights=false --set image.repository=denniszielke --namespace $APP_NS --dry-run --debug
+helm upgrade $APP_IN ./multicalculatorv3 --namespace $APP_NS --install
 
-helm install $APP_IN ./multicalchart --set frontendReplicaCount=3 --set backendReplicaCount=3 --set dependencies.usePodRedis=false --set dependencies.useAppInsights=false --set image.repository=denniszielke  --set dependencies.useRedis=true --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2  --namespace $APP_NS
+helm upgrade $APP_IN ./multicalculatorv3 --namespace $APP_NS --install  --set replicaCount=1
 
-helm upgrade $APP_IN ./multicalchart --set frontendReplicaCount=4 --set backendReplicaCount=4 --set dependencies.usePodRedis=false --set dependencies.useAppInsights=false --set image.repository=denniszielke  --set dependencies.useRedis=false --set dependencies.useAzureRedis=false --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2  --namespace $APP_NS
+helm upgrade $APP_IN ./multicalculatorv3 --namespace $APP_NS --install  --set replicaCount=4  --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.usePodRedis=true
 ```
 
 verify
 ```
-helm get values calculator
+helm list -n $APP_NS
+helm get values $APP_IN $APP_IN
 ```
 
 6. Change config and perform an upgrade
 ```
-helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=1 --set frontendReplicaCount=1 --namespace $APP_NS
-
-helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=3 --set frontendReplicaCount=4 --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=5 --namespace $APP_NS
-
-helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set image.backendImage=go-calc-backend --set dependencies.usePodRedis=true  --namespace $APP_NS 
-
-helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.repository=denniszielke --set image.backendImage=js-calc-backend --set dependencies.usePodRedis=false  --namespace $APP_NS 
-
-helm upgrade $APP_IN ./multicalchart --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.usePodRedis=true  --namespace $APP_NS 
+APPINSIGHTS_KEY=
+helm upgrade $APP_IN ./multicalculatorv3 --namespace $APP_NS --install  --set replicaCount=4  --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.usePodRedis=true
 ```
 
 If you have a redis secret you can turn on the redis cache
@@ -207,18 +201,12 @@ APPINSIGHTS_KEY=
 
 kubectl create secret generic rediscachesecret --from-literal=redishostkey=$REDIS_HOST --from-literal=redisauthkey=$REDIS_AUTH --namespace $APP_NS
 
-helm upgrade $APP_IN ./multicalchart --install --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useAzureRedis=false --set dependencies.usePodRedis=false --set dependencies.useIngress=true --set service.dnsName=$DNS --namespace $APP_NS
+helm upgrade $APP_IN ./multicalculatorv3 --namespace $APP_NS --install  --set replicaCount=4  --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.usePodRedis=true
+--set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH
 
-helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=4 --set frontendReplicaCount=5 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.usePodRedis=false --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=2 --namespace $APP_NS
+helm upgrade $APP_IN multicalculatorv3 --install --set backendReplicaCount=3 --set frontendReplicaCount=3 --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=0 --namespace $APP_NS
 
-helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=4 --set frontendReplicaCount=5 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.usePodRedis=false --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2 --namespace $APP_NS
-
-helm upgrade $APP_IN ./multicalchart --recreate-pods --set backendReplicaCount=1 --set frontendReplicaCount=1 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=false --set dependencies.useAzureRedis=false --set dependencies.usePodRedis=true --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=0 --namespace $APP_NS
-
-helm upgrade $APP_IN ./multicalchart --install --recreate-pods --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useAzureRedis=false --set dependencies.usePodRedis=true  --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=3 --namespace $APP_NS
-
-helm upgrade $APP_IN ./multicalchart --install --recreate-pods --set backendReplicaCount=3 --set frontendReplicaCount=3 --set image.repository=denniszielke --set image.frontendTag=latest --set image.backendTag=latest --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=3 --namespace $APP_NS
-
+helm upgrade $APP_IN multicalculatorv3 --install --set backendReplicaCount=3 --set frontendReplicaCount=3 --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$REDIS_HOST --set dependencies.redisKeyValue=$REDIS_AUTH --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=3 --namespace $APP_NS --dry-run --debug
 ```
 
 Configure scaler

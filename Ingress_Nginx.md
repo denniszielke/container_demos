@@ -83,6 +83,30 @@ spec:
           class: nginx
 EOF
 
+cat <<EOF | kubectl apply -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: calculator-ingress
+  namespace: calculator
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  tls:
+  - hosts:
+    - dtdevtool.westeurope.cloudapp.azure.com
+    secretName: tls-secret
+  rules:
+  - host: dtdevtool.westeurope.cloudapp.azure.com
+    http:
+      paths:
+      - backend:
+          serviceName: calc1-multicalculatorv3-frontend-svc
+          servicePort: 80
+        path: /
+EOF
+
 
 cat <<EOF | kubectl apply -f -
 apiVersion: extensions/v1beta1
