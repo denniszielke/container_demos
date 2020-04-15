@@ -2,8 +2,11 @@
 
 0. Variables
 ```
+AZURE_TENANT_ID=$(az account show --query tenantId -o tsv)
+AZURE_SUBSCRIPTION_NAME=$(az account show --query name -o tsv)
+AZURE_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+AZURE_MYOWN_OBJECT_ID=$(az ad signed-in-user show --query objectId --output tsv)
 TERRAFORM_STORAGE_NAME=
-SUBSCRIPTION_ID=
 TERRAFORM_RG_NAME=terraform
 LOCATION=westeurope
 ```

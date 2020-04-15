@@ -13,8 +13,7 @@ Ingress
 - https://github.com/nirmata/kube-static-egress-ip
 - https://stian.tech/disk-performance-on-aks-part-1/
 - https://github.com/microsoft/Application-Insights-K8s-Codeless-Attach
-
-
-https://myignite.techcommunity.microsoft.com/sessions/82059?source=sessions
-https://myignite.techcommunity.microsoft.com/sessions/81598?source=sessions
-https://myignite.techcommunity.microsoft.com/sessions/84314?source=sessions
+- https://github.com/weinong/kubectl-aad-login and https://github.com/weinong/kubelogin-azure 
+- https://github.com/cncf/financial-user-group/tree/master/projects/k8s-threat-model 
+- https://github.com/kubernetes-simulator/simulator
+- https://medium.com/hashicorp-engineering/hashicorp-vault-delivering-secrets-with-kubernetes-1b358c03b2a3

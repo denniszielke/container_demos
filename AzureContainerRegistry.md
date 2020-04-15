@@ -91,8 +91,27 @@ az acr task run --registry $ACR_NAME --name js-calc-frontend-acr
 https://docs.microsoft.com/en-gb/azure/container-registry/container-registry-helm-repos
 set default registry
 ```
-az configure --defaults acr=dzcorp
-az acr helm repo add
+ACR_NAME=
+az configure --defaults acr=$ACR_NAME
+az acr helm repo add $ACR_NAME
+```
+
+List helm charts
+```
+az acr helm list --name $ACR_NAME
+
+az acr repository show --name $ACR_NAME --repository multicalculatorv3
+
+
+az acr helm search -l $ACR_NAME/multicalculatorv3
+helm search repo -l $ACR_NAME/multicalculatorv3
+
+```
+
+Delete charts
+```
+az acr helm delete $ACR_NAME/multicalculator
+az acr helm delete -n $ACR_NAME multicalculatorv3 --version 0.1.0
 ```
 
 ## Security Scanning

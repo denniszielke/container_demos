@@ -3,7 +3,7 @@
 #################
 
 
-rudr.md
+todos.md
 ingress/*
 Ingress_EasyAuth.md
 table.csv
@@ -31,4 +31,6 @@ towatch.md
 cloudprovider.md
 AzureARC.md
 todos.md
-
+Security_AppGW.md
+table.json
+Security_Private_Env.md

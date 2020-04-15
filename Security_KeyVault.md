@@ -295,23 +295,83 @@ az acr create -n dzdemoky23 -g $VAULT_GROUP --sku Classic --location $LOCATION -
 ## CSI 
 https://github.com/deislabs/secrets-store-csi-driver/tree/master/pkg/providers/azure
 ```
-SERVICE_PRINCIPAL_ID=
-SERVICE_PRINCIPAL_SECRET=
-VAULT_GROUP=security
-VAULT_NAME=dzk8s
+SERVICE_PRINCIPAL_ID=$AZDO_SERVICE_PRINCIPAL_ID
+SERVICE_PRINCIPAL_SECRET=$AKS_SERVICE_PRINCIPAL_SECRET
+VAULT_GROUP=dztenix-888
+AZURE_KEYVAULT_NAME=dztenix-888-vault
 LOCATION=westeurope
-SUBSCRIPTION_ID=
+TENANT_ID=$(az account show --query tenantId -o tsv)
+SUBSCRIPTION_NAME=$(az account show --query name -o tsv)
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 
-```
-
-```
 kubectl create secret generic secrets-store-creds --from-literal clientid=$SERVICE_PRINCIPAL_ID --from-literal clientsecret=$SERVICE_PRINCIPAL_SECRET
 
-az role assignment create --role Reader --assignee $SERVICE_PRINCIPAL_ID --scope /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$VAULT_GROUP/providers/Microsoft.KeyVault/vaults/$VAULT_NAME
+az role assignment create --role Reader --assignee $SERVICE_PRINCIPAL_ID --scope /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$VAULT_GROUP/providers/Microsoft.KeyVault/vaults/$AZURE_KEYVAULT_NAME
 
-az keyvault set-policy -n $VAULT_NAME --key-permissions get --spn $SERVICE_PRINCIPAL_ID
-az keyvault set-policy -n $VAULT_NAME --secret-permissions get --spn $SERVICE_PRINCIPAL_ID
-az keyvault set-policy -n $VAULT_NAME --certificate-permissions get --spn $SERVICE_PRINCIPAL_ID
+az keyvault set-policy -n $AZURE_KEYVAULT_NAME --key-permissions get --spn $SERVICE_PRINCIPAL_ID
+az keyvault set-policy -n $AZURE_KEYVAULT_NAME --secret-permissions get --spn $SERVICE_PRINCIPAL_ID
+az keyvault set-policy -n $AZURE_KEYVAULT_NAME --certificate-permissions get --spn $SERVICE_PRINCIPAL_ID
+
+cd /Users/$USER/hack/secrets-store-csi-driver
+
+kubectl create ns csi-secrets-store
+
+helm upgrade csi-drver charts/secrets-store-csi-driver --namespace csi-secrets-store --install
+
+kubectl create ns dummy
+
+cat <<EOF | kubectl apply -f -
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+  name: azure-kvname1
+spec:
+  provider: azure                   # accepted provider options: azure or vault
+  parameters:
+    usePodIdentity: "false"         # [OPTIONAL for Azure] if not provided, will default to "false"
+    keyvaultName: "$AZURE_KEYVAULT_NAME"          # the name of the KeyVault
+    objects:  |
+      array:
+        - |
+          objectName: acr-name
+          objectType: secret        # object types: secret, key or cert
+        - |
+          objectName: aks-group
+          objectType: secret
+    resourceGroup: "$VAULT_GROUP"            # [REQUIRED for version < 0.0.4] the resource group of the KeyVault
+    subscriptionId: "$SUBSCRIPTION_ID"         # [REQUIRED for version < 0.0.4] the subscription ID of the KeyVault
+    tenantId: "$TENANT_ID"                 # the tenant ID of the KeyVault
+EOF
+
+cat <<EOF | kubectl apply -f -
+kind: Pod
+apiVersion: v1
+metadata:
+  name: nginx-default
+spec:
+  containers:
+    - image: nginx
+      name: nginx
+      volumeMounts:
+      - name: secrets-store-inline
+        mountPath: "/mnt/secrets-store"
+        readOnly: true
+  volumes:
+    - name: secrets-store-inline
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: "azure-kvname1"
+        nodePublishSecretRef:
+          name: secrets-store-creds
+EOF
+
+kubectl exec -it nginx-secrets-store-inline -n dummy -- /bin/sh
+
+```
+
+## df
 
 cat <<EOF | kubectl apply -f -
 kind: Pod

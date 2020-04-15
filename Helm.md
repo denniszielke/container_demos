@@ -189,6 +189,9 @@ helm get values $APP_IN $APP_IN
 
 6. Change config and perform an upgrade
 ```
+az monitor app-insights component create --app calc$KUBE_NAME --location $LOCATION --kind web -g $KUBE_GROUP --application-type web
+
+
 APPINSIGHTS_KEY=
 helm upgrade $APP_IN ./multicalculatorv3 --namespace $APP_NS --install  --set replicaCount=4  --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTS_KEY --set dependencies.usePodRedis=true
 ```

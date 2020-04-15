@@ -31,6 +31,7 @@ ACR_FILE=$PWD/terraform/containerregistry.tf
 LOKI_FILE=$PWD/terraform/monitoring_loki.tf
 GRAFANA_FILE=$PWD/terraform/monitoring_grafana.tf
 SP_FILE=$PWD/terraform/serviceprincipal.tf
+KV_FILE=$PWD/terraform/keyvault.tf
 
 if [ "$subscription" == "" ]; then
 echo "Subscription [int], [dev], [nin]?: "
@@ -187,9 +188,10 @@ mkdir $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 fi
 
 cp $SUBSCRIPTION_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
-cp $SP_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+#cp $SP_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 cp $LOGS_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 cp $VNET_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+cp $KV_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 
 RG_ID=$(az group show -n $KUBE_RG --query id -o tsv)
 

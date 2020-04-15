@@ -13,8 +13,8 @@ spec:
       app: win-webserver
   type: LoadBalancer
  ---
- apiVersion: extensions/v1beta1
- kind: Deployment
+apiVersion: apps/v1
+kind: Deployment
  metadata:
      labels:
          app: win-webserver

@@ -15,10 +15,8 @@ resource "azurerm_resource_group" "aksrg" {
   location = var.location
     
   tags = {
-    Environment = var.environment
+    environment = var.environment
   }
-
-  depends_on = [azuread_service_principal.aks_sp]
 }
 
 # # https://www.terraform.io/docs/providers/azurerm/d/network_security_group.html
@@ -28,7 +26,7 @@ resource "azurerm_resource_group" "aksrg" {
 #   resource_group_name = azurerm_resource_group.aksrg.name
 
 #   tags {
-#     Environment = var.environment
+#     environment = var.environment
 #   }
 # }
 
@@ -40,7 +38,7 @@ resource "azurerm_virtual_network" "kubevnet" {
   resource_group_name = azurerm_resource_group.aksrg.name
 
   tags = {
-    Environment = var.environment
+    environment = var.environment
   }
 }
 
@@ -102,10 +100,10 @@ resource "azurerm_public_ip" "bastion_ip" {
 }
 
 # assign virtual machine contributor on subnet to aks sp
-resource "azurerm_role_assignment" "aksvnetrole" {
-  scope                = azurerm_resource_group.aksrg.id # azurerm_virtual_network.kubevnet.id
-  role_definition_name = "Contributor" # "Virtual Machine Contributor"
-  principal_id         = azuread_service_principal.aks_sp.id
+# resource "azurerm_role_assignment" "aksvnetrole" {
+#   scope                = azurerm_resource_group.aksrg.id # azurerm_virtual_network.kubevnet.id
+#   role_definition_name = "Contributor" # "Virtual Machine Contributor"
+#   principal_id         = azuread_service_principal.aks_sp.id
   
-  depends_on = [azurerm_subnet.aksnet, azuread_service_principal.aks_sp, azuread_service_principal_password.aks_sp_set_pw]
-}
+#   depends_on = [azurerm_subnet.aksnet]
+# }

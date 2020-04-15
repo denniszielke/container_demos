@@ -2,18 +2,26 @@
 
 ## Install nginx
 ```
+IP_NAME=nginx-ingress-pip
+
+az network public-ip create --resource-group $NODE_GROUP --name $IP_NAME --sku Standard --allocation-method static
+
+IP=$(az network public-ip show --resource-group $NODE_GROUP --name $IP_NAME --query ipAddress --output tsv)
+
 helm repo add nginx https://helm.nginx.com/stable
 helm search repo nginx-ingress
 
-helm upgrade my-ingress-controller stable/nginx-ingress --install --set controller.service.loadBalancerIP="$IP" --set controller.stats.enabled=true --set controller.replicaCount=2 --set controller.service.externalTrafficPolicy=Local --namespace=kube-system
+
+kubectl create ns nginx
+helm upgrade my-ingress-controller stable/nginx-ingress --install --set controller.service.loadBalancerIP="$IP" --set controller.stats.enabled=true --set controller.replicaCount=2 --set controller.service.externalTrafficPolicy=Local --namespace=nginx
 
 helm install nginx stable/nginx-ingress \
-    --namespace ingress-basic --set controller.service.loadBalancerIP="$IP" --set controller.service.externalTrafficPolicy=Local \
+    --namespace nginx --set controller.service.loadBalancerIP="$IP" --set controller.service.externalTrafficPolicy=Local \
     --set controller.replicaCount=2 \
     --set controller.nodeSelector."beta\.kubernetes\.io/os"=linux \
     --set defaultBackend.nodeSelector."beta\.kubernetes\.io/os"=linux
 
-helm upgrade my-ingress-controller stable/nginx-ingress --install --set controller.stats.enabled=true --set controller.replicaCount=2 --set controller.service.externalTrafficPolicy=Local --namespace=kube-system
+helm upgrade my-ingress-controller stable/nginx-ingress --install --set controller.stats.enabled=true --set controller.replicaCount=2 --set controller.service.externalTrafficPolicy=Local --namespace=nginx
 
 ```
 

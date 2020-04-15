@@ -23,6 +23,14 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     vnet_subnet_id     = azurerm_subnet.aksnet.id
     type               = "VirtualMachineScaleSets" #"AvailabilitySet" #
     availability_zones = ["1", "2"]
+    node_labels = {
+      pool = "default"
+      environment = var.environment
+    }
+    tags = {
+      pool = "default"
+      environment = var.environment
+    }
 #SCALER    enable_auto_scaling = var.autoscaler
 #SCALER    min_count       = var.min_agent_count
 #SCALER    max_count       = var.max_agent_count
@@ -42,12 +50,16 @@ resource "azurerm_kubernetes_cluster" "akstf" {
       load_balancer_sku = "standard" # "basic"
   }
 
-  service_principal {
-    client_id     = azuread_application.aks_app.application_id
-    client_secret = random_string.aks_sp_password.result
-    # client_id     = var.aks_client_id
-    # client_secret = var.aks_client_secret
+  identity {
+    type = "SystemAssigned"
   }
+
+  # service_principal {
+  #   client_id     = azuread_application.aks_app.application_id
+  #   client_secret = random_string.aks_sp_password.result
+  #   # client_id     = var.aks_client_id
+  #   # client_secret = var.aks_client_secret
+  # }
 
   addon_profile {
     oms_agent {
@@ -67,7 +79,8 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     policy = "calico"
   }
 
-  depends_on = [azurerm_subnet.aksnet, azuread_service_principal.aks_sp, azuread_service_principal_password.aks_sp_set_pw, null_resource.after]
+  #depends_on = [azurerm_subnet.aksnet, azuread_service_principal.aks_sp, azuread_service_principal_password.aks_sp_set_pw, null_resource.after]
+  depends_on = [azurerm_subnet.aksnet]
 }
 
 # merge kubeconfig from the cluster
@@ -81,7 +94,7 @@ resource "null_resource" "get-credentials" {
 # set env variables for scripts
 resource "null_resource" "set-env-vars" {
   provisioner "local-exec" {
-    command = "export KUBE_GROUP=${azurerm_resource_group.aksrg.name}; export KUBE_NAME=${azurerm_kubernetes_cluster.akstf.name}; export LOCATION=${var.location}"
+    command = "export KUBE_GROUP=${azurerm_resource_group.aksrg.name}; export KUBE_NAME=${azurerm_kubernetes_cluster.akstf.name}; export LOCATION=${var.location}; export NODE_GROUP=${azurerm_kubernetes_cluster.akstf.node_resource_group}"
   }
   depends_on = [azurerm_kubernetes_cluster.akstf]
 }
@@ -95,13 +108,17 @@ output "KUBE_GROUP" {
 }
 
 output "NODE_GROUP" {
-  value = "${azurerm_resource_group.aksrg.name}_nodes_${azurerm_resource_group.aksrg.location}"
+  value = azurerm_kubernetes_cluster.akstf.node_resource_group
 }
 
 output "ID" {
     value = azurerm_kubernetes_cluster.akstf.id
 }
 
-output "host" {
+output "HOST" {
   value = azurerm_kubernetes_cluster.akstf.kube_config.0.host
+}
+
+output "SERVICE_PRINCIPAL_ID" {
+  value = azurerm_kubernetes_cluster.akstf.identity.0.principal_id
 }

@@ -4,7 +4,7 @@ https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="akspot"
+KUBE_GROUP="dzielkeakspot"
 KUBE_NAME="akspot"
 LOCATION="westeurope"
 KUBE_VERSION="1.15.7"
@@ -14,7 +14,7 @@ APPINSIGHTS_KEY=""
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
 
-SP_NAME="spot_aks_sp"
+SP_NAME="aksgame"
 
 SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $SP_NAME -o json | jq -r '.appId')
 echo $SERVICE_PRINCIPAL_ID

@@ -11,12 +11,20 @@ https://github.com/helm/charts/tree/master/incubator/azuremonitor-containers
 0. Define variables
 
 ```
+WORKSPACE_NAME=
 WORKSPACE_ID=
 WORKSPACE_KEY=
-```
 
-az aks enable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME --addons monitoring
+az monitor log-analytics workspace create --resource-group $KUBE_GROUP --workspace-name $WORKSPACE_NAME --location $LOCATION
+
+az monitor log-analytics workspace show --resource-group $KUBE_GROUP --workspace-name $WORKSPACE_NAME
+
+WORKSPACE_ID=$(az monitor log-analytics workspace show --resource-group $KUBE_GROUP --workspace-name dz-logs-aksmsi -o json | jq '.id' -r)
+
+az aks enable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME --addons monitoring --workspace-resource-id $WORKSPACE_ID
+
 az aks disable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME --addons monitoring
+```
 
 1. Deploy the oms daemons
 
@@ -601,22 +609,3 @@ InsightsMetrics
 ```
 
 ```
-SUBSCRIPTION_ID=
-KUBE_GROUP=
-KUBE_NAME=
-
-
-.\HealthAgentOnboarding.ps1 -aksResourceId /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$KUBE_GROUP/providers/Microsoft.ContainerService/managedClusters/$KUBE_NAME -aksResourceLocation westeurope -logAnalyticsWorkspaceResourceId /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.OperationalInsights/workspaces/$KUBE_NAME-lga
-```
-
-.\HealthAgentOnboarding.ps1 -aksResourceId /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$KUBE_GROUP/providers/Microsoft.ContainerService/managedClusters/$KUBE_NAME -aksResourceLocation eastus -logAnalyticsWorkspaceResourceId /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.OperationalInsights/workspaces/$KUBE_NAME-lga
-
-az aks get-credentials --resource-group=kub_ter_a_m_metrics5 --name=metrics5   
-
-.\HealthAgentOnboarding.ps1 -aksResourceId /subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourcegroups/kub_ter_a_m_metrics5/providers/Microsoft.ContainerService/managedClusters/metrics5 -aksResourceLocation eastus -logAnalyticsWorkspaceResourceId /subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourcegroups/kub_ter_a_m_metrics5/providers/Microsoft.OperationalInsights/workspaces/metrics5-lga
-
-/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourcegroups/kub_ter_a_m_metrics5/providers/Microsoft.ContainerService/managedClusters/metrics5
-
-https://aka.ms/ci-privatepreview
-
-https://portal.azure.com/?feature.healthmodel=true&feature.customportal=false&feature.hybrid=true#@microsoft.onmicrosoft.com/resource/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourcegroups/kub_ter_a_m_metrics5/providers/Microsoft.ContainerService/managedClusters/metrics5/infrainsights

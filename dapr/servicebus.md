@@ -1,12 +1,12 @@
 # Dapr using ServiceBus
 
-KUBE_GROUP=
+KUBE_GROUP=appconfig
 SB_NAMESPACE=dzdapr$RANDOM
 LOCATION=westeurope
 
 az servicebus namespace create --resource-group $KUBE_GROUP --name $SB_NAMESPACE --location $LOCATION
 az servicebus namespace authorization-rule keys list --name RootManageSharedAccessKey --namespace-name $SB_NAMESPACE --resource-group $KUBE_GROUP --query "primaryConnectionString" | tr -d '"'
-SB_CONNECTIONSTRING=$(az storage account keys list --account-name "dzt$KUBE_NAME" --resource-group $KUBE_GROUP --query "[0].value" | tr -d '"')
+SB_CONNECTIONSTRING=$(az servicebus namespace authorization-rule keys list --name RootManageSharedAccessKey --namespace-name $SB_NAMESPACE --resource-group $KUBE_GROUP --query "primaryConnectionString" | tr -d '"')
 
 
 kubectl delete component messagebus
@@ -20,21 +20,22 @@ spec:
   type: pubsub.azure.servicebus
   metadata:
   - name: connectionString
-    value: $SB_CONNECTIONSTRING
+    value: '$SB_CONNECTIONSTRING'
   - name: timeoutInSec
-    value: 60
+    value: 80
   - name: maxDeliveryCount
-    value: 10
+    value: 15
   - name: lockDurationInSec
-    value: 3
+    value: 5
   - name: defaultMessageTimeToLiveInSec
     value: 2
 EOF
 
 kubectl delete component messagebus
 kubectl delete component pubsub-azure-service-bus
+kubectl delete pod -l app=dapr-operator -n dapr-system
 
-
+kubectl logs -l app=dapr-operator
 kubectl logs -l demo=pubsub
 
 

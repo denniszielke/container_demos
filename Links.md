@@ -47,6 +47,12 @@ https://review.docs.microsoft.com/en-us/azure/templates/microsoft.containerservi
 
 Preview cli:
 https://github.com/Azure/azure-cli-extensions/tree/master/src/
+https://github.com/Azure/azure-cli-extensions/tree/master/src/aks-preview
+Preview commands:
+
+https://github.com/Azure/azure-cli-extensions/blob/master/src/aks-preview/azext_aks_preview/_help.py
+Preview CLI release history:
+https://github.com/Azure/azure-cli-extensions/blob/master/src/aks-preview/HISTORY.md
 
 Azure Load Balancer annotations:
 https://github.com/kubernetes/cloud-provider-azure/blob/master/docs/services/README.md

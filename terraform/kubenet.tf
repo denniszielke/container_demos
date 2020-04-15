@@ -21,7 +21,7 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     vm_size         = var.vm_size # "Standard_DS2_v2"
     os_disk_size_gb = 120
     vnet_subnet_id = azurerm_subnet.aksnet.id
-    type            =  "AvailabilitySet" # "VirtualMachineScaleSets"
+    type            =  "VirtualMachineScaleSets"
 #SCALER    enable_auto_scaling = var.autoscaler
 #SCALER    min_count       = var.min_agent_count
 #SCALER    max_count       = var.max_agent_count

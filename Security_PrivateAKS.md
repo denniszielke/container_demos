@@ -111,6 +111,25 @@ az group deployment create \
         "vnetSubnetID=$KUBE_AGENT_SUBNET_ID" --no-wait
 ```
 
+
+Deploy cluster using cli
+```
+az aks create -g MyResourceGroup -n MyManagedCluster 
+az aks create \
+ --resource-group $KUBE_GROUP \
+ --name $KUBE_NAME \
+ --node-resource-group $NODE_GROUP \
+ --load-balancer-sku standard \
+ --enable-private-cluster \
+ --network-plugin azure \
+ --vnet-subnet-id $KUBE_AGENT_SUBNET_ID \
+ --docker-bridge-address 172.17.0.1/16 \
+ --dns-service-ip 10.2.0.10 \
+ --service-cidr 10.2.0.0/24 \
+ --enable-managed-identity
+
+```
+
 ## Configure azure firewall
 
 Setup the azure firewall diagnostics and create a dashboard by importing this file:

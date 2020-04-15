@@ -3,9 +3,9 @@
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="acsaksupgrade"
+KUBE_GROUP="acsaksupgrad"
 KUBE_NAME="dz-acs"
-LOCATION="westeurope"
+LOCATION="eastus"
 KUBE_VNET_NAME="KVNET"
 KUBE_AGENT_SUBNET_NAME="KVAGENTS"
 KUBE_MASTER_SUBNET_NAME="KVMASTERS"
@@ -25,6 +25,14 @@ tar -zxvf acs-engine-*-darwin-amd64.tar.gz
 # Prepare variables
 
 ```
+SP_NAME="acsupgrade"
+
+SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $SP_NAME -o json | jq -r '.appId')
+echo $SERVICE_PRINCIPAL_ID
+
+SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
+echo $SERVICE_PRINCIPAL_SECRET
+
 sed -e "s/AAD_APP_ID/$AAD_APP_ID/ ; s/AAD_CLIENT_ID/$AAD_CLIENT_ID/ ; s/SERVICE_PRINCIPAL_ID/$SERVICE_PRINCIPAL_ID/ ; s/SERVICE_PRINCIPAL_SECRET/$SERVICE_PRINCIPAL_SECRET/ ; s/TENANT_ID/$TENANT_ID/ ; s/ADMIN_GROUP_ID/$ADMIN_GROUP_ID/ ; s/SUBSCRIPTION_ID/$SUBSCRIPTION_ID/ ; s/KUBE_GROUP/$KUBE_GROUP/ ; s/GROUP_ID/$GROUP_ID/" acseng.json > acseng_out.json
 ```
 

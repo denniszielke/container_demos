@@ -7,25 +7,12 @@ resource "azurerm_key_vault" "aksvauls" {
 
   sku_name = "standard"
 
-  access_policy {
-    tenant_id = var.tenant_id
-    object_id = azuread_application.aks_app.application_id
-
-    key_permissions = [
-      "get",
-    ]
-
-    secret_permissions = [
-      "get",
-    ]
-  }
-
   network_acls {
     default_action = "Deny"
     bypass         = "AzureServices"
   }
 
   tags = {
-    Environment = var.environment
+    environment = var.environment
   }
 }

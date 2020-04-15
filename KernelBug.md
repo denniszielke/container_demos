@@ -240,3 +240,8 @@ done
 [root@centos /]# while true ; do   res=$( { curl -o /dev/null -s -w %{time_namelookup}\\n  http://www.bing.com; } 2>&1 );   var=$((var+1));   now=$(date +"%T");   if [[ $res =~ ^[1-9] ]]; then     now=$(date +"%T");     echo "$var slow: $res $now";     break;   fi; done
 204 slow: 10.519 22:10:28
 ```
+
+while true ; do   res=$( { do time nslookup kubernetes.default } 2>&1 );   var=$((var+1));   now=$(date +"%T");   if [[ $res =~ ^[1-9] ]]; then     now=$(date +"%T");     echo "$var slow: $res $now";     break;   fi; done
+
+
+for i in `seq 1 100000`;do time nslookup kubernetes.default; sleep 100; done
