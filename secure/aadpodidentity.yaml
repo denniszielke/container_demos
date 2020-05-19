@@ -1,0 +1,8 @@
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentity
+metadata:
+  name: keyvault-secrets-identity
+spec:
+  type: 0
+  ResourceID: {{AZUREIDENTITY_RESOURCEID}}
+  ClientID: {{AZUREIDENTITY_CLIENTID}}

@@ -34,7 +34,7 @@ AKS-Engine Backlog:
 https://github.com/Azure/aks-engine/projects/2
 
 OMS Docker Images:
-https://github.com/microsoft/OMS-docker/tree/master
+https://github.com/microsoft/OMS-Agent-for-Linux
 
 AKS ARM Template:
 https://docs.microsoft.com/en-us/azure/templates/microsoft.containerservice/2019-02-01/managedclusters
@@ -90,3 +90,8 @@ Using a daemonset :https://github.com/dgkanatsios/AksNodePublicIPController
 
 # Best practices
 https://learnk8s.io/production-best-practices/
+
+# Dapr 
+
+Grafana: https://github.com/RicardoNiepel/dapr-docs/blob/master/howto/setup-monitoring-tools/setup-prometheus-grafana.md
+Dapr VSCode: https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-dapr 

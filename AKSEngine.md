@@ -4,9 +4,9 @@ https://github.com/Azure/aks-engine/blob/master/docs/topics/clusterdefinitions.m
 0. Variables
 ```
 SUBSCRIPTION_ID=""
-KUBE_GROUP="dzaksipvslc"
+KUBE_GROUP="arc-infra"
 VNET_GROUP="aksengine"
-KUBE_NAME="dzaksipvslc"
+KUBE_NAME="dzarcsp"
 LOCATION="westeurope"
 SERVICE_PRINCIPAL_ID=""
 SERVICE_PRINCIPAL_SECRET=""
@@ -26,6 +26,17 @@ Download latest release from https://github.com/Azure/aks-engine/releases
 wget https://github.com/Azure/aks-engine/releases/download/v0.43.2/aks-engine-v0.43.2-darwin-amd64.tar.gz 
 tar -zxvf aks-engine-v0.43.2-darwin-amd64.tar.gz 
 cd aks-engine-v0.43.2-darwin-amd64
+```
+
+# Create Identity
+```
+SP_NAME="$KUBE_NAME-sp"
+
+SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $SP_NAME -o json | jq -r '.appId')
+echo $SERVICE_PRINCIPAL_ID
+
+SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
+echo $SERVICE_PRINCIPAL_SECRET
 ```
 
 # Prepare variables
@@ -62,7 +73,7 @@ az network vnet peering create -g $VNET_GROUP -n VMToKubePeer --vnet-name $VM_VN
 # Generate aks-engine
 
 ```
-./aks-engine generate akseng.json
+./aks-engine generate akseng-sp.json
 ```
 
 # Deploy cluster
@@ -111,6 +122,8 @@ az network vnet subnet update -n $KUBE_WORKER_SUBNET_NAME -g $VNET_GROUP --vnet-
 # Load kube config
 ```
 export KUBECONFIG=`pwd`/_output/$KUBE_NAME/kubeconfig/kubeconfig.$LOCATION.json
+
+
 ```
 
 # Delete everything

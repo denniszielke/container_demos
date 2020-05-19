@@ -17,3 +17,11 @@ Ingress
 - https://github.com/cncf/financial-user-group/tree/master/projects/k8s-threat-model 
 - https://github.com/kubernetes-simulator/simulator
 - https://medium.com/hashicorp-engineering/hashicorp-vault-delivering-secrets-with-kubernetes-1b358c03b2a3
+- https://github.com/dmauser/PrivateLink/tree/master/DNS-Integration-Scenarios#74-server-name-indication-sni-on-tls-request-client-hello
+
+GPU
+https://github.com/microsoft/az-deep-realtime-score
+https://github.com/microsoft/KubeGPU
+https://github.com/Microsoft/KubeDevice
+
+https://github.com/Azure/kubelogin

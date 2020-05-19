@@ -95,7 +95,7 @@ kubectl delete pod -n kube-system --selector "component=kube-proxy"
 
 enumerate all service principals for all clusters
 
-az aks list --query '[].{Name:name, ClientId:servicePrincipalProfile.clientId}' -o table
+az aks list --query '[].{Name:name, ClientId:servicePrincipalProfile.clientId, MsiId:identity.principalId}' -o table
 
 
 ```

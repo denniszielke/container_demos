@@ -1,0 +1,7 @@
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentityBinding
+metadata:
+  name: keyvault-secrets-identitybinding
+spec:
+  AzureIdentity: {{AZUREIDENTITY_NAME}}
+  Selector: {{POD_LABEL_SELECTOR}}

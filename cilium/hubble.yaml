@@ -168,8 +168,8 @@ spec:
             - kube-system
       containers:
       - name: hubble
-        image: "quay.io/cilium/hubble:latest"
-        imagePullPolicy: Always
+        image: "quay.io/cilium/hubble:v0.5.1"
+        imagePullPolicy: IfNotPresent
         command:
         - hubble
         args:
@@ -242,6 +242,7 @@ spec:
       labels:
         k8s-app: hubble-ui
     spec:
+      priorityClassName: 
       serviceAccountName: hubble-ui
       containers:
         - name: hubble-ui

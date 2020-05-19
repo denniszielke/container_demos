@@ -8,6 +8,7 @@ export cluster_region="$3"
 export cni_type="$4"
 export cluster_size="$5"
 export kube_version="$6"
+export kube_auth="$7"
 
 OUTPUT_PATH=$HOME/terra_out
 TERRA_PATH=$HOME/lib/terraform/terraform
@@ -81,6 +82,12 @@ fi
 if [ "$autoscaler" == "" ]; then
 echo "turn on autoscaler? [y], [n]: "
 read -n 1 autoscaler
+echo
+fi
+
+if [ "$kube_auth" == "" ]; then
+echo "turn on msi? [m], [s]: "
+read -n 1 kube_auth
 echo
 fi
 
@@ -188,7 +195,9 @@ mkdir $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 fi
 
 cp $SUBSCRIPTION_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME/variables.tf
-#cp $SP_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+if [ "$kube_auth" == "s" ]; then
+cp $SP_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
+fi
 cp $LOGS_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 cp $VNET_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME
 cp $KV_FILE $OUTPUT_PATH/$TERRAFORM_STORAGE_NAME

@@ -31,6 +31,24 @@ SERVICE_PRINCIPAL_ID=""
 SERVICE_PRINCIPAL_SECRET=""
 ```
 
+KUBE_NAME=monitoring71
+SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
+
+AZURE_TENANT_ID=$(az account show --query tenantId -o tsv)
+echo $AZURE_TENANT_ID
+SERVICE_PRINCIPAL_ID=$(az ad sp show --id $KUBE_NAME -o json | jq -r '.[0].appId')
+echo $SERVICE_PRINCIPAL_ID
+
+SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --append --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
+
+echo -e "\n\n Remember these outputs:"
+echo -e "Your Kubernetes service_principal_id should be \e[7m$SERVICE_PRINCIPAL_ID\e[0m"
+echo -e "Your Kubernetes service_principal_secret should be \e[7m$SERVICE_PRINCIPAL_SECRET\e[0m"
+echo -e "Your Azure tenant_id should be \e[7m$AZURE_TENANT_ID\e[0m"
+echo -e "Your Azure subscription_id should be \e[7m$SUBSCRIPTION_ID\e[0m"
+echo -e "\n\n"
+
+
 DashboardId
 10956
 

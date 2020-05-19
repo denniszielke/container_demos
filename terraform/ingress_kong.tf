@@ -29,23 +29,13 @@ resource "azurerm_postgresql_server" "kong_db" {
   location            = azurerm_resource_group.aksrg.location
   resource_group_name = azurerm_resource_group.aksrg.name
 
-  sku {
-    name     = "B_Gen5_1"
-    capacity = 1
-    tier     = "Basic"
-    family   = "Gen5"
-  }
-
-  storage_profile {
-    storage_mb            = 5120
-    backup_retention_days = 7
-    geo_redundant_backup  = "Disabled"
-  }
+  sku_name   = "B_Gen5_1"
+  version    = "10"
+  storage_mb = 5120
 
   administrator_login          = "kongadmin"
   administrator_login_password = random_string.kongpsql_password.result
-  version                      = "9.5"
-  ssl_enforcement              = "Enabled"
+  ssl_enforcement_enabled              = false
 }
 
 resource "azurerm_postgresql_database" "kong_config_db" {

@@ -35,6 +35,8 @@ az feature register --namespace "Microsoft.ContainerService" --name "LowPriority
 az feature register --namespace "Microsoft.ContainerService" --name "OpenVPN"
 az feature register --namespace "Microsoft.ContainerService" --name "SpotPoolPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "AKS-AzurePolicyV2"
+az feature register --namespace "Microsoft.ContainerService" --name "AKS-IngressApplicationGatewayAddon"
+
  
 
 az feature register --name OSABypassMarketplace --namespace Microsoft.ContainerService

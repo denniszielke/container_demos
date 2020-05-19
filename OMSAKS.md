@@ -6,6 +6,8 @@ https://docs.microsoft.com/en-gb/azure/monitoring/media/monitoring-container-ins
 https://github.com/helm/charts/tree/master/incubator/azuremonitor-containers
 
 
+
+
 ## Deploy the secrets
 
 0. Define variables

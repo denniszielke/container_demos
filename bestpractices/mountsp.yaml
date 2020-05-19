@@ -4,7 +4,7 @@ metadata:
   name: get-sp
 spec:
   containers:
-    - image: alpine:latest
+    - image: mcr.microsoft.com/azure-cli
       securityContext:
         privileged: true
       name: sp-app

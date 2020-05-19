@@ -144,131 +144,142 @@ az aks list -g $KUBE_GROUP -n $KUBE_NAME
 ## Minimum roles
 
 https://docs.microsoft.com/en-us/azure/role-based-access-control/built-in-roles
+First-party SPN Permissions
+The following permissions are required by the AKS 1st party SPN; The AKS 1st party SPN performs a linked access check on the Cluster creator's role permissions. These permissions are required for CRUD operations on the cluster.
 
-"Microsoft.Resources/deployments/validate/action",
-//Required for ARM preflight validation
+The following permissions are required:
 
+// Required to configure NSG for the subnet when using custom VNET
+// AKS property: properties.agentPoolProfiles[*].vnetSubnetID
+"Microsoft.Network/virtualNetworks/subnets/join/action"
 
-"Microsoft.Compute/availabilitySets/read",
-"Microsoft.Compute/availabilitySets/write",
-"Microsoft.Compute/availabilitySets/delete",
-//Required to allow create,write into and delete AS's
-
-
-
-"Microsoft.Compute/locations/operations/read",
-"Microsoft.Network/locations/operations/read",
-
-// Creates/deletes of Compute and Network resources are long running; permissions allow the ability to query status periodically
-
-
-
-"Microsoft.Compute/virtualMachines/read",
-"Microsoft.Compute/virtualMachines/write",
-"Microsoft.Compute/virtualMachines/delete",
-//Required to allow create, update and delete VM's
-
-
-
-"Microsoft.Compute/virtualMachineScaleSets/read",
-"Microsoft.Compute/virtualMachineScaleSets/write",
-"Microsoft.Compute/virtualMachineScaleSets/delete",
-//Required to allow create, update and delete VMSS's
-
-
-
-"Microsoft.Network/loadBalancers/read",
-"Microsoft.Network/loadBalancers/write",
-"Microsoft.Network/loadBalancers/delete",
-// Not needed today, however will need when we have SLB
-
-
- 
-"Microsoft.Network/networkInterfaces/read",
-"Microsoft.Network/networkInterfaces/write",
-"Microsoft.Network/networkInterfaces/delete",
-//Required to allow create, update and delete NIC's 
-
-
-
-"Microsoft.Network/networkSecurityGroups/read",
-"Microsoft.Network/networkSecurityGroups/write",
-"Microsoft.Network/networkSecurityGroups/delete",
-// if cloud provider can provision/remove NSG, then we can remove these permissions and the default NSG we create
-
-
-
-"Microsoft.Network/publicIPAddresses/read",
-"Microsoft.Network/publicIPAddresses/write",
-"Microsoft.Network/publicIPAddresses/delete",
-// We should remove this as we DO NOT create public ips by default .. possibly need it for SLB 
-
-
-
-
-
-"Microsoft.Network/virtualNetworks/read",
-"Microsoft.Network/virtualNetworks/write",
-"Microsoft.Network/virtualNetworks/delete",
-//Required to allow create, update and delete VNETs 
-
- 
-"Microsoft.Network/routeTables/read",
-"Microsoft.Network/routeTables/write",
-"Microsoft.Network/routeTables/delete",
-//Required to allow create, update and delete route tables 
-
-
-
-"Microsoft.Resources/deployments/read",
-"Microsoft.Resources/deployments/write",
-"Microsoft.Resources/deployments/delete",
-// required to allow ARM template deployments
-
-
-"Microsoft.Resources/subscriptions/resourceGroups/read",
-"Microsoft.Resources/subscriptions/resourceGroups/write",
-"Microsoft.Resources/subscriptions/resourceGroups/delete",
-//Required to allow create, update and delete RG's 
-
-
-
-"Microsoft.Storage/checkNameAvailability/read",
-"Microsoft.Storage/checkNameAvailability/write",
-"Microsoft.Storage/checkNameAvailability/delete",
-// Dont have storage accounts anymore.. Need to remove
-
-
-
-"Microsoft.Storage/operations/read",
-"Microsoft.Storage/storageAccounts/read",
-"Microsoft.Storage/storageAccounts/write",
-"Microsoft.Storage/storageAccounts/listKeys/action",
-// Dont have storage accounts anymore.. Need to remove
-
- 
-// required if you use custom vnet
-"Microsoft.Network/virtualNetworks/subnets/write"
-//Required to allow update subnets's 
-
-
-For custom VNET + CNI 
-https://docs.microsoft.com/en-us/azure/aks/configure-azure-cni#prerequisites
-
-points out only join and read are required
-
-
-For Kubenet + CNI, this permission is actually required to update the subnet
-in this step
-https://docs.microsoft.com/en-us/azure/aks/configure-kubenet#associate-network-resources-with-the-node-subnet
-
- 
-// required if you use container insights.
+// Required to allow create, update Log Analytics workspaces and Azure monitoring for Containers
+// AKS property: properties.addonProfiles.omsagent.config.logAnalyticsWorkspaceResourceID
 "Microsoft.OperationalInsights/workspaces/sharedkeys/read"
 "Microsoft.OperationalInsights/workspaces/read"
 "Microsoft.OperationsManagement/solutions/write"
 "Microsoft.OperationsManagement/solutions/read"
-//Required to allow create, update Log Analytics workspaces and Azure monitoring for Containers 
+
+// Required to configure SLB outbound public IPs
+// AKS property: properties.networkProfile.loadBalancerProfile.outboundIPs.publicIPs[].ID
+// properties.networkProfile.loadBalancerProfile.outboundIPPrefixes.publicIPPrefixes[].ID
+"Microsoft.Network/publicIPAddresses/join/action"
+"Microsoft.Network/publicIPPrefixes/join/action"
+
+User Permissions
+What permissions does a User need to have in order to deploy or perform CRUD operations to AKS. These should be the linked access check permissions cross-checked from the 1st party RP SPN.
+
+See the detailed permissions required in the above section.
+
+AKS SPN Permissions
+Validate what permissions are required to be given to the AKS Service Principal (used by Kubernetes cloud provider, volume drivers as well as addons).
+
+Required permissions for AKS SPN
+// Required to create, delete or update LoadBalancer for LoadBalancer service
+Microsoft.Network/loadBalancers/delete
+Microsoft.Network/loadBalancers/read
+Microsoft.Network/loadBalancers/write
+
+// Required to allow query, create or delete public IPs for LoadBalancer service
+Microsoft.Network/publicIPAddresses/delete
+Microsoft.Network/publicIPAddresses/read
+Microsoft.Network/publicIPAddresses/write
+
+// Required if public IPs from another resource group are used for LoadBalancer service
+// This is because of the linked access check when adding the public IP to LB frontendIPConfiguration
+Microsoft.Network/publicIPAddresses/join/action
+
+// Required to create or delete security rules for LoadBalancer service
+Microsoft.Network/networkSecurityGroups/read
+Microsoft.Network/networkSecurityGroups/write
+
+// Required to create, delete or update AzureDisks
+Microsoft.Compute/disks/delete
+Microsoft.Compute/disks/read
+Microsoft.Compute/disks/write
+Microsoft.Compute/locations/DiskOperations/read
+
+// Required to create, update or delete storage accounts for AzureFile or AzureDisk
+Microsoft.Storage/storageAccounts/delete
+Microsoft.Storage/storageAccounts/listKeys/action
+Microsoft.Storage/storageAccounts/read
+Microsoft.Storage/storageAccounts/write
+Microsoft.Storage/operations/read
+
+// Required to create, delete or update routeTables and routes for nodes
+Microsoft.Network/routeTables/read
+Microsoft.Network/routeTables/routes/delete
+Microsoft.Network/routeTables/routes/read
+Microsoft.Network/routeTables/routes/write
+Microsoft.Network/routeTables/write
+
+// Required to query information for VM (e.g. zones, faultdomain, size and data disks)
+Microsoft.Compute/virtualMachines/read
+
+// Required to attach AzureDisks to VM
+Microsoft.Compute/virtualMachines/write
+
+// Required to query information for vmssVM (e.g. zones, faultdomain, size and data disks)
+Microsoft.Compute/virtualMachineScaleSets/read
+Microsoft.Compute/virtualMachineScaleSets/virtualMachines/read
+Microsoft.Compute/virtualMachineScaleSets/virtualmachines/instanceView/read
+
+// Requred to add VM to LoadBalancer backendAddressPools
+Microsoft.Network/networkInterfaces/write
+// Required to add vmss to LoadBalancer backendAddressPools
+Microsoft.Compute/virtualMachineScaleSets/write
+// Required to attach AzureDisks and add vmssVM to LB
+Microsoft.Compute/virtualMachineScaleSets/virtualmachines/write
+// Required to upgrade VMSS models to latest for all instances
+// only needed for Kubernetes 1.11.0-1.11.9, 1.12.0-1.12.8, 1.13.0-1.13.5, 1.14.0-1.14.1
+Microsoft.Compute/virtualMachineScaleSets/manualupgrade/action
+
+// Required to query internal IPs and loadBalancerBackendAddressPools for VM
+Microsoft.Network/networkInterfaces/read
+// Required to query internal IPs and loadBalancerBackendAddressPools for vmssVM
+microsoft.Compute/virtualMachineScaleSets/virtualMachines/networkInterfaces/read
+// Required to get public IPs for vmssVM
+Microsoft.Compute/virtualMachineScaleSets/virtualMachines/networkInterfaces/ipconfigurations/publicipaddresses/read
+
+// Required to check whether subnet existing for ILB in another resource group
+Microsoft.Network/virtualNetworks/read
+Microsoft.Network/virtualNetworks/subnets/read
+
+// Required to create, update or delete snapshots for AzureDisk
+Microsoft.Compute/snapshots/delete
+Microsoft.Compute/snapshots/read
+Microsoft.Compute/snapshots/write
+
+// Required to get vm sizes for getting AzureDisk volume limit
+Microsoft.Compute/locations/vmSizes/read
+Microsoft.Compute/locations/operations/read
+Permissions users "might" need
+When using container insights, the following permissions are required
+
+// Required to allow create, update Log Analytics workspaces and Azure monitoring for Containers.
+// Refer https://docs.microsoft.com/en-us/azure/azure-monitor/insights/container-insights-update-metrics#upgrade-per-cluster-using-azure-cli.
+"Monitoring Metrics Publisher" or Microsoft.Insights/Metrics/Write
+
+When using public IP addresses in another resource group,
+
+// Required to allow query or create public IPs for LoadBalancer service
+Microsoft.Network/publicIPAddresses/read
+Microsoft.Network/publicIPAddresses/write
+Microsoft.Network/publicIPAddresses/join/action
+When using NSG in another resource group,
+
+// Required to create or delete security rules for LoadBalancer service
+Microsoft.Network/networkSecurityGroups/read
+Microsoft.Network/networkSecurityGroups/write
+When using subnet in another resource group (e.g. custom VNET),
+
+// Required to check whether subnet existing for subnet in another resource group
+Microsoft.Network/virtualNetworks/subnets/read
+Microsoft.Network/virtualNetworks/subnets/join/action
+When using ILB for another resource group,
+
+// Required to check whether subnet existing for ILB in another resource group
+Microsoft.Network/virtualNetworks/subnets/read
 
 
 ## Use dashboard with azure ad

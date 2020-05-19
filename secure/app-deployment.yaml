@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secrets-store-app
+  namespace: demo-secrets
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: secrets-store
+  template:
+    metadata:
+      labels:
+        app: secrets-store
+        aadpodidbinding: keyvault-secrets
+    spec:
+      containers:
+      - image: busybox
+        name: demo
+        args:
+        - sleep
+        - "86400"
+        volumeMounts:
+        - name: application-secrets
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
+      volumes:
+      - name: application-secrets
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: app-secrets

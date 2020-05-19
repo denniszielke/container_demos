@@ -30,12 +30,18 @@ export NODE_GROUP=$(cat table.json | jq -r ".[$cluster_id].nodeResourceGroup" )
 export KUBE_GROUP=$(cat table.json | jq -r ".[$cluster_id].resourceGroup" )
 # service principal id
 export SERVICE_PRINCIPAL_ID=$(cat table.json | jq -r ".[$cluster_id].servicePrincipalProfile.clientId" )
+# service principal id for MSI
+export SERVICE_MSI_ID=$(cat table.json | jq -r ".[$cluster_id].identity.principalId" )
 echo "KUBE_NAME=$KUBE_NAME"
 echo "LOCATION=$LOCATION"
 echo "KUBE_GROUP=$KUBE_GROUP"
 echo "KUBE_VERSION=$KUBE_VERSION"
 echo "NODE_GROUP=$NODE_GROUP"
 echo "SERVICE_PRINCIPAL_ID=$SERVICE_PRINCIPAL_ID"
+
+if [ "$SERVICE_MSI_ID" != "null" ]; then
+echo "SERVICE_PRINCIPAL_ID=$SERVICE_MSI_ID"
+fi
 
 rm table.json
 #az aks list -o table | awk 'NR==3{print $2}'

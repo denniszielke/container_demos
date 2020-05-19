@@ -19,18 +19,31 @@ helm template cilium \
   --set global.cni.configMap=cni-configuration \
   --set global.tunnel=disabled \
   --set global.masquerade=false \
-  > ../../../cilium/cilium-full.yaml
+  > ../../../container_demos/cilium/cilium-full.yaml
+
+helm template cilium \
+  --namespace cilium \
+  --set global.cni.chainingMode=generic-veth \
+  --set global.cni.customConf=true \
+  --set global.nodeinit.enabled=true \
+  --set nodeinit.azure=true \
+  --set global.cni.configMap=cni-configuration \
+  --set global.tunnel=disabled \
+  --set global.masquerade=false \
+  > ../../../container_demos/cilium/cilium-full.yaml
 
 cd ../../../
 
 kubectl apply -f cilium/cilium-full.yaml
 
 kubectl -n kube-system get pods --watch
+kubectl -n cilium get pods --watch
 ```
 
 deploy connectivity set
 ```
 kubectl apply -f https://raw.githubusercontent.com/cilium/cilium/HEAD/examples/kubernetes/connectivity-check/connectivity-check.yaml
+
 
 
 kubectl logs -l name=echo
@@ -42,13 +55,15 @@ https://github.com/cilium/hubble
 
 ```
 git clone https://github.com/cilium/hubble.git
+git clone https://github.com/cilium/hubble.git --branch v0.5
+
 cd hubble/install/kubernetes
 
 helm template hubble \
     --namespace kube-system \
     --set metrics.enabled="{dns:query;ignoreAAAA;destinationContext=pod-short,drop:sourceContext=pod;destinationContext=pod,tcp,flow,port-distribution,icmp,http}" \
     --set ui.enabled=true \
-> hubble.yaml
+  > ../../../container_demos/cilium/hubble.yaml
 
 kubectl apply -f cilium/hubble.yaml
 

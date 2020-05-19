@@ -7,7 +7,7 @@ metadata:
   name: centos
 spec:
   containers:
-  - name: centoss
+  - name: centos
     image: centos
     ports:
     - containerPort: 80
