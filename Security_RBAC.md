@@ -144,6 +144,7 @@ az aks list -g $KUBE_GROUP -n $KUBE_NAME
 ## Minimum roles
 
 https://docs.microsoft.com/en-us/azure/role-based-access-control/built-in-roles
+```
 First-party SPN Permissions
 The following permissions are required by the AKS 1st party SPN; The AKS 1st party SPN performs a linked access check on the Cluster creator's role permissions. These permissions are required for CRUD operations on the cluster.
 
@@ -280,7 +281,7 @@ When using ILB for another resource group,
 
 // Required to check whether subnet existing for ILB in another resource group
 Microsoft.Network/virtualNetworks/subnets/read
-
+```
 
 ## Use dashboard with azure ad
 https://gist.github.com/digeler/0dbc40141c9ee8a41b42e808a2859f14
