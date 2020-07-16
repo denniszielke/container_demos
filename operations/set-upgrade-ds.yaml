@@ -5,10 +5,13 @@ metadata:
   labels:
     app: set-upgrade-daemon
 spec:
+  selector:
+    matchLabels:
+      app: set-upgrade-daemon
   template:
     metadata:
       labels:
-        name: set-upgrade-daemon
+        app: set-upgrade-daemon
     spec:
       containers:
         - name: set-upgrade-daemon
