@@ -54,7 +54,7 @@ variable "vm_size" {
 
 # kubernetes version
 variable "kubernetes_version" {
-    default = "1.15.10"
+    default = "1.18.16"
 }
 # default ssh key
 variable "ssh_public_key" {

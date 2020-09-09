@@ -162,3 +162,256 @@ az network lb rule update  --name a13c54ea6e04e11e984ea82987248e36-ing-4-subnet-
 az network lb rule list --lb-name kubernetes-internal --resource-group kub_ter_a_m_scaler_nodes_westeurope
 
 az network lb rule update  --name a69b6ac41e04e11e98bc46e0d4f805cb-ing-4-subnet-TCP-80 --lb-name kubernetes-internal --resource-group kub_ter_a_m_scaler_nodes_westeurope --enable-tcp-reset true
+
+
+# Scaling with custom metrics
+https://github.com/Azure/azure-k8s-metrics-adapter
+
+```
+AKS_GROUP=dzphix_520
+AKS_NAME=dzphix-520
+BLOB_NAME=dzphinx520
+LOCATION=westeurope
+AZURE_TENANT_ID=$(az account show --query tenantId -o tsv)
+AZURE_SUBSCRIPTION_NAME=$(az account show --query name -o tsv)
+AZURE_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+
+
+AKS_METRICS_PRINCIPAL_ID=$(az ad sp create-for-rbac -n "$BLOB_NAME-sp" --role "Monitoring Reader" --scopes /subscriptions/$AZURE_SUBSCRIPTION_ID/resourceGroups/$AKS_GROUP -o json | jq -r '.appId')
+AKS_METRICS_PRINCIPAL_SECRET=$(az ad app credential reset --id $AKS_METRICS_PRINCIPAL_ID -o json | jq '.password' -r)
+
+az storage account create --resource-group $AKS_GROUP --name $BLOB_NAME --location $LOCATION --sku Standard_LRS --output none
+
+STORAGE_KEY=$(az storage account keys list --account-name $BLOB_NAME --resource-group $AKS_GROUP --query "[0].value" -o tsv)
+
+az storage container create -n tfstate --account-name $BLOB_NAME --account-key $STORAGE_KEY --output none
+
+#use values from service principle created above to create secret
+kubectl create secret generic azure-k8s-metrics-adapter -n custom-metrics \
+  --from-literal=azure-tenant-id=$AZURE_TENANT_ID \
+  --from-literal=azure-client-id=$AKS_METRICS_PRINCIPAL_ID  \
+  --from-literal=azure-client-secret=$AKS_METRICS_PRINCIPAL_SECRET
+
+kubectl apply -f https://raw.githubusercontent.com/Azure/azure-k8s-metrics-adapter/master/deploy/adapter.yaml
+
+cat <<EOF | kubectl apply -f -
+apiVersion: azure.com/v1alpha2
+kind: ExternalMetric
+metadata:
+  name: external-metric-blobs
+  namespace: custom-metrics
+spec:
+  type: azuremonitor
+  azure:
+    resourceGroup: $AKS_GROUP
+    resourceName: 
+    resourceProviderNamespace: Microsoft.Storage
+    resourceType: storageAccounts/$BLOB_NAME/blobServices
+  metric:
+    metricName: BlobCount
+    aggregation: Total
+    filter: BlobType eq 'Block blob'
+EOF
+
+kubectl get --raw "/apis/external.metrics.k8s.io/v1beta1" | jq .
+
+kubectl  get --raw "/apis/external.metrics.k8s.io/v1beta1/namespaces/custom-metrics/external-metric-blobs" | jq .
+
+
+cat <<EOF | kubectl apply -f -
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+ name: external-metric-blobs
+spec:
+ scaleTargetRef:
+   apiVersion: apps/v1
+   kind: Deployment
+   name: consumer
+ minReplicas: 1
+ maxReplicas: 10
+ metrics:
+  - type: External
+    external:
+      metricName: external-metric-blobs
+      targetValue: 30
+EOF
+
+```
+
+# metrics
+
+```
+
+AKS_GROUP=dzphix_520
+AKS_NAME=dzphix-520
+BLOB_NAME=dzphinx520
+LOCATION=westeurope
+AZURE_TENANT_ID=$(az account show --query tenantId -o tsv)
+AZURE_SUBSCRIPTION_NAME=$(az account show --query name -o tsv)
+AZURE_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+
+
+AKS_METRICS_PRINCIPAL_ID=$(az ad sp create-for-rbac -n "$BLOB_NAME-sp" --role "Monitoring Reader" --scopes /subscriptions/$AZURE_SUBSCRIPTION_ID/resourceGroups/$AKS_GROUP -o json | jq -r '.appId')
+AKS_METRICS_PRINCIPAL_SECRET=$(az ad app credential reset --id $AKS_METRICS_PRINCIPAL_ID -o json | jq '.password' -r)
+
+curl -X POST https://login.microsoftonline.com/$AZURE_TENANT_ID/oauth2/token -F "grant_type=client_credentials" -F "$AKS_METRICS_PRINCIPAL_ID" -F "client_secret=$AKS_METRICS_PRINCIPAL_SECRET" -F "resource=https://monitoring.azure.com/"
+```
+
+# Promitor
+
+wget -b https://raw.githubusercontent.com/tomkerkhove/promitor/master/charts/promitor-agent-scraper/values.yaml
+
+https://github.com/tomkerkhove/promitor/blob/master/docs/configuration/v2.x/metrics/blob-storage.md
+
+helm repo add promitor https://promitor.azurecr.io/helm/v1/repo
+
+helm upgrade promitor-agent-scraper promitor/promitor-agent-scraper \
+               --set azureAuthentication.appId="$AKS_METRICS_PRINCIPAL_ID" \
+               --set azureAuthentication.appKey="$AKS_METRICS_PRINCIPAL_SECRET" \
+               --set azureMetadata.tenantId="$AZURE_TENANT_ID" \
+               --set azureMetadata.subscriptionId="$AZURE_SUBSCRIPTION_ID" \
+               --set azureMetadata.resourceGroupName="$AKS_GROUP" \
+               --values values.yaml --install
+
+helm delete promitor-agent-scraper
+
+export POD_NAME=$(kubectl get pods --namespace default -l "app=promitor-agent-scraper,release=promitor-agent-scraper" -o jsonpath="{.items[0].metadata.name}")
+
+kubectl port-forward --namespace default $POD_NAME 8080:8080
+
+http://0.0.0.0:8080/metrics
+
+```
+
+
+# keda
+
+
+```
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: azure-monitor-secrets
+data:
+  activeDirectoryClientId: $AKS_METRICS_PRINCIPAL_ID
+  activeDirectoryClientPassword: $AKS_METRICS_PRINCIPAL_SECRET
+---
+apiVersion: keda.k8s.io/v1alpha1
+kind: TriggerAuthentication
+metadata: 
+  name: azure-monitor-trigger-auth
+spec:
+  secretTargetRef:
+    - parameter: activeDirectoryClientId
+      name: azure-monitor-secrets
+      key: activeDirectoryClientId
+    - parameter: activeDirectoryClientPassword
+      name: azure-monitor-secrets
+      key: activeDirectoryClientPassword
+---
+apiVersion: keda.k8s.io/v1alpha1
+kind: ScaledObject
+metadata:
+  name: azure-monitor-scaler
+  labels:
+    app: azure-monitor-example
+spec:
+  scaleTargetRef:
+    deploymentName: azure-monitor-example
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  triggers:
+  - type: azure-monitor
+    metadata:
+      resourceURI: Microsoft.ContainerService/managedClusters/azureMonitorCluster 
+      tenantId: $AZURE_TENANT_ID
+      subscriptionId: $AZURE_SUBSCRIPTION_ID
+      resourceGroupName: $AKS_GROUP
+      metricName: kube_pod_status_ready
+      metricFilter: namespace eq 'default'
+      metricAggregationInterval: "0:1:0"
+      metricAggregationType: Average
+      targetValue: "1"
+    authenticationRef:
+      name: azure-monitor-trigger-auth
+EOF
+```
+
+
+# builtin
+cat <<EOF | kubectl apply -f -
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: dummy-logger
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: dummy-logger
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Pods
+    pods:
+      metric:
+        name: packets-per-second
+      target:
+        type: AverageValue
+        averageValue: 10
+EOF
+
+
+cat <<EOF | kubectl apply -f -
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: dummy-logger
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: dummy-logger
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Pods
+    pods:
+      metric:
+        name: http_requests
+      target:
+        type: AverageValue
+        averageValue: 10
+EOF
+
+###
+
+kubectl create deployment hello-echo --image=k8s.gcr.io/echoserver:1.10 --namespace=ingress-basic
+
+kubectl expose deployment echoserver --type=LoadBalancer --port=8080 --namespace=ingress-basic
+
+cat <<EOF | kubectl apply -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: calculator-ingress
+  namespace: ingress-basic
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  tls:
+  - hosts:
+    - 20.50.218.151.xip.io
+    secretName: tls-secret
+  rules:
+  - host: 20.50.218.151.xip.io
+    http:
+      paths:
+      - backend:
+          serviceName: echoserver
+          servicePort: 8080
+        path: /
+EOF

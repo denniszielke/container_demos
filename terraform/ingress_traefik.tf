@@ -23,7 +23,7 @@ resource "kubernetes_namespace" "traefik-ns" {
 # https://www.terraform.io/docs/providers/helm/release.html
 resource "helm_release" "traefik_ingress" {
   name       = "traefikingress"
-  repository = data.helm_repository.stable.metadata.0.name
+  repository = "https://kubernetes-charts.storage.googleapis.com" 
   chart      = "traefik"
   namespace  = "traefik"
   force_update = "true"

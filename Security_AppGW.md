@@ -16,7 +16,8 @@ KUBE_ACI_SUBNET_NAME="aci-2-subnet"
 KUBE_FW_SUBNET_NAME="AzureFirewallSubnet"
 KUBE_ING_SUBNET_NAME="ing-4-subnet"
 KUBE_AGENT_SUBNET_NAME="aks-5-subnet"
-KUBE_VERSION="1.16.7"
+KUBE_AGENT2_SUBNET_NAME="aks-6-subnet"
+KUBE_VERSION="1.16.10"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
 
@@ -299,6 +300,25 @@ spec:
 EOF
 
 kubectl delete ingress dummy-logger
+
+cat <<EOF | kubectl apply -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: dummy-logger-private
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/use-private-ip: "true"
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          serviceName: dummy-logger
+          servicePort: 80
+EOF
+
+kubectl delete ingress dummy-logger-private
 
 cat <<EOF | kubectl apply -f -
 apiVersion: extensions/v1beta1

@@ -3,20 +3,19 @@ https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough
 
 0. Variables
 ```
-SUBSCRIPTION_ID=""
-KUBE_GROUP="dzielkeakspot"
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+TENANT_ID=$(az account show --query tenantId -o tsv)
+KUBE_GROUP="dzscalers"
 KUBE_NAME="akspot"
 LOCATION="westeurope"
-KUBE_VERSION="1.15.7"
+KUBE_VERSION="1.18.4"
 REGISTRY_NAME=""
 APPINSIGHTS_KEY=""
 
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
 
-SP_NAME="aksgame"
-
-SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $SP_NAME -o json | jq -r '.appId')
+SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $KUBE_NAME-sp -o json | jq -r '.appId')
 echo $SERVICE_PRINCIPAL_ID
 
 SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
@@ -41,7 +40,7 @@ az aks get-versions -l $LOCATION -o table
 
 2. Create the aks cluster
 ```
-az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3 --generate-ssh-keys --kubernetes-version 1.10.6
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3 --generate-ssh-keys --kubernetes-version $KUBE_VERSION
 
 az aks create -g $KUBE_GROUP -n $KUBE_NAME --kubernetes-version $KUBE_VERSION --node-count 1 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION
 
@@ -213,16 +212,21 @@ az aks nodepool add -g $KUBE_GROUP --cluster-name $KUBE_NAME -n mynodepool --mod
 
 
 az aks nodepool add -g $KUBE_GROUP --cluster-name $KUBE_NAME -n linuxpool2 -c 1
+
+az aks nodepool add -g $KUBE_GROUP --cluster-name $KUBE_NAME -n scalingpool -c 0 --enable-cluster-autoscaler --min-count 0 --max-count 3
 az aks nodepool add -g $KUBE_GROUP --cluster-name $KUBE_NAME --os-type Windows -n winpoo -c 1 --node-vm-size Standard_D2_v2
 
 az aks nodepool list -g $KUBE_GROUP --cluster-name $KUBE_NAME -o table
 
+az aks nodepool scale -g $KUBE_GROUP --cluster-name $KUBE_NAME  -n scalingpool -c 0
 az aks nodepool scale -g $KUBE_GROUP --cluster-name $KUBE_NAME  -n cheap -c 1
 az aks nodepool scale -g $KUBE_GROUP --cluster-name $KUBE_NAME  -n agentpool -c 1
 ```
 
 # autoscaler
 https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/FAQ.md#im-running-cluster-with-nodes-in-multiple-zones-for-ha-purposes-is-that-supported-by-cluster-autoscaler
+
+https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/azure/README.md
 
 ```
 az aks nodepool scale -g $KUBE_GROUP --cluster-name $KUBE_NAME  -n agentpool1 -c 1
@@ -231,7 +235,182 @@ az aks nodepool update --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --
 ```
 
 ```
+az aks nodepool add -g $KUBE_GROUP --cluster-name $KUBE_NAME -n gpuworkers -c 1 --mode user --labels workload=zeroscaler --node-taints expensive=true:NoSchedule  --node-vm-size Standard_NC6
+
+az aks nodepool delete -g $KUBE_GROUP --cluster-name $KUBE_NAME -n gpuworker
+
 kubectl -n kube-system describe configmap cluster-autoscaler-status
+
+kubectl label node aks-nodepool1-36260817-vmss000000 workload=core
+
+kubectl label node aks-scalingpool-36260817-vmss000000 workload=zeroscaler
+
+kubectl taint node aks-gpuworker-36260817-vmss000001 expensive=true:NoSchedule
+
+
+[?storageProfile.osDisk.osType=='Linux'].{Name:name,  admin:osProfile.adminUsername}" --output tabl
+
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+TENANT_ID=$(az account show --query tenantId -o tsv)
+SERVICE_PRINCIPAL_ID=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query servicePrincipalProfile.clientId -o tsv)   
+SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID --append --credential-description "autoscaler" -o json | jq '.password' -r)
+NODE_GROUP=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query nodeResourceGroup -o tsv)
+SCALE_SET_NAME=$(az vmss list --resource-group $NODE_GROUP --query [0].name -o tsv)
+
+az role assignment create --role "Contributor" --assignee $SERVICE_PRINCIPAL_ID -g $KUBE_GROUP
+
+B_SERVICE_PRINCIPAL_ID=$(echo $SERVICE_PRINCIPAL_ID | base64 )
+B_SERVICE_PRINCIPAL_SECRET=$(echo $SERVICE_PRINCIPAL_SECRET | base64 )
+B_KUBE_NAME=$(echo $KUBE_NAME | base64 )
+B_KUBE_GROUP=$(echo $KUBE_GROUP | base64 )
+B_NODE_GROUP=$(echo $NODE_GROUP | base64 )
+B_SUBSCRIPTION_ID=$(echo $SUBSCRIPTION_ID | base64 )
+B_TENANT_ID=$(echo $TENANT_ID | base64 )
+
+helm template my-release stable/cluster-autoscaler  --set "cloudProvider=azure,autoscalingGroups[0].name=your-asg-name,autoscalingGroups[0].maxSize=10,autoscalingGroups[0].minSize=0,autoDiscovery.enabled=true"
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+data:
+  ClientID: $B_SERVICE_PRINCIPAL_ID
+  ClientSecret: $B_SERVICE_PRINCIPAL_SECRET
+  ResourceGroup: $B_NODE_GROUP
+  SubscriptionID: $B_SUBSCRIPTION_ID
+  TenantID: $B_TENANT_ID
+  VMType: dm1zcw==
+kind: Secret
+metadata:
+  name: cluster-autoscaler-azure
+  namespace: kube-system
+EOF
+
+for aKS
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+data:
+  ClientID: $B_SERVICE_PRINCIPAL_ID
+  ClientSecret: $B_SERVICE_PRINCIPAL_SECRET
+  ResourceGroup: $B_KUBE_GROUP
+  SubscriptionID: $B_SUBSCRIPTION_ID
+  TenantID: $B_TENANT_ID
+  VMType: QUtTCg==
+  ClusterName: $B_KUBE_NAME
+  NodeResourceGroup: $B_NODE_GROUP
+kind: Secret
+metadata:
+  name: cluster-autoscaler-azure
+  namespace: kube-system
+EOF
+
+kubectl get secret  cluster-autoscaler-azure -n kube-system -o yaml
+
+kubectl delete secret  cluster-autoscaler-azure -n kube-system
+
+kubectl apply -f bestpractices/zeroscaler.yaml         
+
+kubectl logs -l app=cluster-autoscaler --tail 2 -n kube-system
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: centos1
+spec:
+  containers:
+  - name: centos
+    image: centos
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+    resources:
+      limits:
+        nvidia.com/gpu: 1
+EOF
+
+kubectl patch deployment dummy-logger -p \
+  '{"spec":{"template":{"spec":{"tolerations":[{"key":"expensive","operator":"Equal","value":"true","effect":"NoSchedule"}]}}}}'
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: centos1
+spec:
+  nodeSelector:
+    workload: zeroscaler
+  tolerations:
+  - key: "expensive"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+  containers:
+  - name: centos
+    image: centos
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+    resources:
+      limits:
+        nvidia.com/gpu: 1
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: centos
+spec:
+  tolerations:
+  - key: "expensive"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+  containers:
+  - name: centos
+    image: centos
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+    resources:
+      limits:
+        nvidia.com/gpu: 1
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: samples-tf-mnist-demo
+  name: samples-tf-mnist-demo
+spec:
+  template:
+    metadata:
+      labels:
+        app: samples-tf-mnist-demo
+    spec:
+      tolerations:
+      - key: "expensive"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      containers:
+      - name: samples-tf-mnist-demo
+        image: microsoft/samples-tf-mnist-demo:gpu
+        args: ["--max_steps", "500"]
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+      restartPolicy: OnFailure
+EOF
+
 ```
 
 # Create SSH access

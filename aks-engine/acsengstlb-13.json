@@ -6,7 +6,7 @@
         "orchestratorRelease": "1.13",
         "kubernetesConfig": {
           "enableRbac": true,
-          "networkPolicy": "azure",
+          "networkPolicy": "cilium",
           "networkPlugin": "azure",
           "useManagedIdentity": true,
           "userAssignedID": "dzaksmsi",

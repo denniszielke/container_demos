@@ -29,9 +29,13 @@ https://github.com/Azure/container-compute-upstream/projects/1#card-18238708
  
 ACR Roadmap:
 https://github.com/Azure/acr/blob/master/docs/acr-roadmap.md 
+https://github.com/Azure/acr/projects/1
 
 AKS-Engine Backlog:
 https://github.com/Azure/aks-engine/projects/2
+
+Upstream backlog:
+https://github.com/Azure/container-compute-upstream/projects/1
 
 OMS Docker Images:
 https://github.com/microsoft/OMS-Agent-for-Linux

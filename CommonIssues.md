@@ -17,6 +17,8 @@ KUBE_EDITOR="nano" kubectl edit svc/nginxpod-service
 
 KUBE_EDITOR="nano" kubectl -n kube-system edit cm kube-proxy
 
+export KUBE_EDITOR='code --wait'
+kubectl edit deployment dummy -n dnamespace
 ```
 
 ## NIC in failed state
@@ -97,6 +99,12 @@ enumerate all service principals for all clusters
 
 az aks list --query '[].{Name:name, ClientId:servicePrincipalProfile.clientId, MsiId:identity.principalId}' -o table
 
+
+kubectl patch deployment myapp-deployment -p \
+  '{"spec":{"template":{"spec":{"containers":[{"name":"myapp","image":"172.20.34.206:5000/myapp:img:3.0"}]}}}}'
+
+kubectl patch deployment myapp-deployment -p \
+  '{"spec":{"template":{"spec":{"tolerations":[{"key":"expensive","operator":"Equal","value":"true","effect":"NoSchedule"}]}}}}'
 
 ```
 cat <<EOF | kubectl apply -f -

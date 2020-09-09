@@ -22,7 +22,7 @@ resource "kubernetes_namespace" "nginx-ns" {
 # https://www.terraform.io/docs/providers/helm/release.html
 resource "helm_release" "nginx_ingress" {
   name       = "nginx-ingress"
-  repository = data.helm_repository.stable.metadata.0.name
+  repository = "https://kubernetes-charts.storage.googleapis.com" 
   chart      = "nginx-ingress"
   namespace  = "nginx"
   force_update = "true"

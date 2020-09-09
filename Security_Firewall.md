@@ -9,22 +9,6 @@ My personal recommendation on this scenario is to use the firewall to diagnose t
 
 First we will setup the vnet - I prefer using azure cli over powershell but you can easy achieve the same using terraform or arm. If you have preferences on the naming conventions please adjust the variables below. In most companies the vnet is provided by the networking team so we should assume that the network configuration will not be done by the teams which is maintaining the aks cluster.
 
-You have to register the following features:
-```
-az feature register --name EnableSingleIPPerCCP --namespace Microsoft.ContainerService
-az feature register --name APIServerSecurityPreview --namespace Microsoft.ContainerService
-```
-
-Check if the feature is active
-```
-az feature list -o table --query "[?contains(name, 'Microsoft.Container‐Service/APIServerSecurityPreview')].{Name:name,State:properties.state}"
-az feature list -o table --query "[?contains(name, 'Microsoft.Container‐Service/EnableSingleIPPerCCP')].{Name:name,State:properties.state}"
-```
-
-Re-register the provider
-```
-az provider register --namespace Microsoft.ContainerService
-```
 
 0. Variables
 ```
@@ -89,15 +73,26 @@ az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --s
 * this is currently not possible via cli - the creation of the azure firewall in that vnet is only possible with the azure portal *
 ```
 
-az network public-ip create -g $KUBE_GROUP -n $FW_IP_NAME --sku Standard
-FW_PRIVATE_IP="10.0.3.4"
 az extension add --name azure-firewall
-
+az network public-ip create -g $KUBE_GROUP -n $FW_NAME-ip --sku Standard
 az network firewall create --name $FW_NAME --resource-group $KUBE_GROUP --location $LOCATION
+az network firewall ip-config create --firewall-name $FW_NAME --name $FW_NAME --public-ip-address $FW_NAME-ip --resource-group $KUBE_GROUP --vnet-name $KUBE_VNET_NAME
+FW_PRIVATE_IP=$(az network firewall show -g $KUBE_GROUP -n $FW_NAME --query "ipConfigurations[0].privateIpAddress" -o tsv)
+az monitor log-analytics workspace create --resource-group $KUBE_GROUP --workspace-name $FW_NAME-lgw --location $LOCATION
 
-az network firewall ip-config create --firewall-name $FW_NAME --name $FW_NAME --public-ip-address $FW_IP_NAME --resource-group $KUBE_GROUP --private-ip-address $FW_PRIVATE_IP --vnet-name $KUBE_VNET_NAME
+KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT_SUBNET_NAME"
+az network route-table create -g $KUBE_GROUP --name $FW_NAME-rt
+az network route-table route create --resource-group $KUBE_GROUP --name $FW_NAME --route-table-name $FW_NAME-rt --address-prefix 0.0.0.0/0 --next-hop-type VirtualAppliance --next-hop-ip-address $FW_PRIVATE_IP
+az network vnet subnet update --route-table $FW_NAME-rt --ids $KUBE_AGENT_SUBNET_ID
+az network route-table route list --resource-group $KUBE_GROUP --route-table-name $FW_NAME-rt
 
-az network firewall create --name $FW_NAME --resource-group $KUBE_GROUP
+az network firewall network-rule create --firewall-name $FW_NAME --collection-name "time" --destination-addresses "*"  --destination-ports 123 --name "allow network" --protocols "UDP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks node time sync rule" --priority 101
+az network firewall network-rule create --firewall-name $FW_NAME --collection-name "dns" --destination-addresses "*"  --destination-ports 53 --name "allow network" --protocols "UDP" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "aks node dns rule" --priority 102
+az network firewall network-rule create --firewall-name $FW_NAME --collection-name "servicetags" --destination-addresses "AzureContainerRegistry" "MicrosoftContainerRegistry" "AzureActiveDirectory" "AzureMonitor" --destination-ports "*" --name "allowservice  tags" --protocols "Any" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "allow service tags" --priority 110
+az network firewall network-rule create --firewall-name $FW_NAME --collection-name "hcp" --destination-addresses "*" --destination-ports "1194" --name "allow master tags" --protocols "Any" --resource-group $KUBE_GROUP --source-addresses "*" --action "Allow" --description "allow service tags" --priority 120
+
+az network firewall application-rule create --firewall-name $FW_NAME --resource-group $KUBE_GROUP --collection-name 'aksfwar' -n 'fqdn' --source-addresses '*' --protocols 'http=80' 'https=443' --fqdn-tags "AzureKubernetesService" --action allow --priority 101
+az network firewall application-rule create  --firewall-name $FW_NAME --collection-name "osupdates" --name "allow network" --protocols http=80 https=443 --source-addresses "*" --resource-group $KUBE_GROUP --action "Allow" --target-fqdns "download.opensuse.org" "security.ubuntu.com" "packages.microsoft.com" "azure.archive.ubuntu.com" "changelogs.ubuntu.com" "snapcraft.io" "api.snapcraft.io" "motd.ubuntu.com"  --priority 102
 ```
 
 6. Create UDR

@@ -261,3 +261,57 @@ export CLIENT_SECRET=$(cat /host/azure.json | jq -r ".[0].aadClientSecret" )
 az login --service-principal --username $CLIENT_ID --password $CLIENT_SECRET --tenant $TENANT_ID
 
 az role assignment list --assignee CLIENT_ID
+
+
+## Kubernetes AAD RBAC
+
+https://docs.microsoft.com/en-us/azure/aks/manage-azure-rbac
+KUBE_GROUP="dzaksaadv2"
+KUBE_NAME="aksaad"
+LOCATION="westus2"
+AZURE_TENANT_ID=$(az account show --query tenantId -o tsv)
+AAD_GROUP_ID=""
+
+SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $KUBE_NAME-sp -o json | jq -r '.appId')
+echo $SERVICE_PRINCIPAL_ID
+
+SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
+echo $SERVICE_PRINCIPAL_SECRET
+
+az group create -n $KUBE_GROUP -l $LOCATION
+
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --vm-set-type VirtualMachineScaleSets \
+    --load-balancer-sku standard \
+    --node-count 3 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID \
+    --enable-aad --enable-azure-rbac
+
+AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
+
+az role assignment create --role "Azure Kubernetes Service RBAC Admin" --assignee "dzielke@microsoft.com" --scope $AKS_ID
+
+az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee "dzielke@microsoft.com" --scope $AKS_ID/namespaces/aadsecured
+
+az aks update --resource-group $KUBE_GROUP --name $KUBE_NAME --aad-admin-group-object-ids $AAD_GROUP_ID
+
+kubectl get pod -n aadsecured
+
+``` 
+
+
+SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
+KUBE_GROUP="kub_ter_a_m_dzarc1"
+KUBE_NAME="dzarc1"
+LOCATION="westeurope"
+KUBE_VERSION="1.16.13"
+KUBE_VNET_NAME="dzarc1-vnet"
+KUBE_AGENT_SUBNET_NAME="aks-5-subnet"
+KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT_SUBNET_NAME"
+
+NODE_GROUP=$KUBE_GROUP"_"$KUBE_NAME"_nodes_"$LOCATION 
+
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-resource-group $NODE_GROUP --load-balancer-sku standard --enable-vmss --network-plugin azure  --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --enable-managed-identity --kubernetes-version $KUBE_VERSION  --uptime-sla  --enable-aad --enable-azure-rbac
+--vnet-subnet-id $KUBE_AGENT_SUBNET_ID   
+
+AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
+
+az role assignment create --role "Azure Kubernetes Service RBAC Admin" --assignee "dzielke@microsoft.com" --scope $AKS_ID

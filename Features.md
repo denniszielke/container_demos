@@ -36,8 +36,19 @@ az feature register --namespace "Microsoft.ContainerService" --name "OpenVPN"
 az feature register --namespace "Microsoft.ContainerService" --name "SpotPoolPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "AKS-AzurePolicyV2"
 az feature register --namespace "Microsoft.ContainerService" --name "AKS-IngressApplicationGatewayAddon"
+az feature register --namespace "Microsoft.ContainerService" --name "UseCustomizedContainerRuntime"
+az feature register --namespace "Microsoft.ContainerService" --name "UserAssignedIdentityPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "useContainerd"
+az feature register --namespace "Microsoft.ContainerService" --name "EnableAzureDiskFileCSIDriver"
+az feature register --namespace "Microsoft.ContainerService" --name "EnableUltraSSD"
+az feature register --namespace "Microsoft.ContainerService" --name "ProximityPlacementGroupPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "NodeImageUpgradePreview"
+az feature register --namespace "Microsoft.ContainerService" --name "MaxSurgePreview"
+az feature register --namespace "Microsoft.ContainerService" --name "AKS-GitOps"
+az feature register --namespace "Microsoft.ContainerService" --name "AKSNetworkModePreview"
+az feature register --namespace "Microsoft.ContainerService" --name "GPUDedicatedVHDPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "AKSHTTPCustomFeatures"
 
- 
 
 az feature register --name OSABypassMarketplace --namespace Microsoft.ContainerService
 az feature register --name AROGA --namespace Microsoft.ContainerService
@@ -50,6 +61,8 @@ az feature register --namespace "Microsoft.RedHatOpenShift" --name "PrivateClust
 az feature register --namespace "Microsoft.RedHatOpenShift" --name "INT-APROVED"
 az feature register --namespace "Microsoft.RedHatOpenShift" --name "INT-APPROVED"
 az provider register -n "Microsoft.RedHatOpenShift" --wait
+
+az feature register --namespace "Microsoft.Compute" --name "SharedDisksForPremium"
 
 ```
 

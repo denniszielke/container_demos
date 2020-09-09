@@ -1,0 +1,17 @@
+{
+  "name": "dummy-logger-node",
+  "version": "1.0.0",
+  "description": "dummy logger",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": {
+    "name": "dzielke"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "morgan": "^1.9.1",
+    "dotenv-extended": "^2.4.0"
+  }
+}

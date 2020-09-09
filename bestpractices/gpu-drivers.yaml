@@ -27,6 +27,10 @@ spec:
       - key: nvidia.com/gpu
         operator: Exists
         effect: NoSchedule
+      - key: "expensive"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
       containers:
       - image: nvidia/k8s-device-plugin:1.11
         name: nvidia-device-plugin-ctr

@@ -195,7 +195,6 @@ curl nginx.runningcode.local
 create internal load balancer for nginx
 ```
 kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/services/nginx-internal.yaml
-kubectl run nginx --image=nginx --port=80
 ```
 
 ```

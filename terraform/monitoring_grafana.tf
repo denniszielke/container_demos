@@ -50,7 +50,7 @@ resource "kubernetes_namespace" "monitoring_ns" {
 # https://www.terraform.io/docs/providers/helm/release.html
 resource "helm_release" "my_grafana" {
   name       = "my-grafana"
-  repository = data.helm_repository.stable.metadata.0.name
+  repository = "https://kubernetes-charts.storage.googleapis.com" 
   chart      = "grafana"
   namespace  = kubernetes_namespace.monitoring_ns.metadata.0.name
   force_update = "true"
@@ -79,7 +79,7 @@ resource "helm_release" "my_grafana" {
 # https://www.terraform.io/docs/providers/helm/release.html
 resource "helm_release" "my_prometheus" {
   name       = "my-prometheus"
-  repository = data.helm_repository.stable.metadata.0.name
+  repository = "https://kubernetes-charts.storage.googleapis.com" 
   chart      = "prometheus"
   namespace  = kubernetes_namespace.monitoring_ns.metadata.0.name
   force_update = "true"

@@ -2,7 +2,7 @@
 resource "azurerm_role_assignment" "aksacrrole" {
   scope                = azurerm_container_registry.aksacr.id
   role_definition_name = "Reader"
-  principal_id         = azurerm_kubernetes_cluster.akstf.identity.principal_id
+  principal_id         = azurerm_kubernetes_cluster.akstf.kubelet_identity[0].object_id
   # principal_id         = var.aks_client_id
   
   depends_on = [azurerm_container_registry.aksacr, azurerm_subnet.aksnet, azurerm_kubernetes_cluster.akstf]

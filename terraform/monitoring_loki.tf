@@ -1,8 +1,3 @@
-data "helm_repository" "loki" {
-    name = "loki"
-    url  = "https://grafana.github.io/loki/charts"
-}
-
 resource "kubernetes_namespace" "loki_ns" {
   metadata {
     name = "loki"
@@ -16,7 +11,7 @@ resource "kubernetes_namespace" "loki_ns" {
 # https://www.terraform.io/docs/providers/helm/release.html
 resource "helm_release" "my_loki" {
   name       = "my-loki"
-  repository = data.helm_repository.loki.metadata.0.name
+  repository = "https://grafana.github.io/loki/charts"
   chart      = "loki-stack"
   namespace  = kubernetes_namespace.loki_ns.metadata.0.name
   force_update = "true"

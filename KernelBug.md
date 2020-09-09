@@ -119,6 +119,32 @@ cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
+  name: dnstools
+spec:
+  containers:
+  - name: dnstools
+    image: ngayall/dnstools
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+
+dnstools# dig +short @169.254.20.10  google.com
+216.58.204.238
+
+dnstools# dig +short @10.0.0.10  google.com
+;; connection timed out; no servers could be reached
+
+dnstools# dig +short google.com
+;; connection timed out; no servers could be reached
+
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
   name: redis
   labels:
     name: redis

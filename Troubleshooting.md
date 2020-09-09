@@ -9,7 +9,13 @@ https://github.com/Azure/AKS/issues/1278
 
 az vmss update-instances -g <RESOURCE_GROUP_NAME> --name <VMSS_NAME> --instance-id <ID(number)>
 
+# enter ssh
 
+sudo wget https://raw.githubusercontent.com/andyzhangx/demo/master/dev/kubectl-enter
+
+sudo chmod a+x ./kubectl-enter
+
+./kubectl-enter <node-name>
 
 # Periscope
 https://github.com/Azure/aks-periscope/blob/master/README.md
@@ -45,6 +51,7 @@ Relevant logs:
 /var/log/cloud-init-output.log
 /var/log/azure/custom-script/handler.log
 /opt/azure/provision-ps.log
+/var/log/waagent.log
 
 Provision script log output:
 /var/log/azure/cluster-provision.log

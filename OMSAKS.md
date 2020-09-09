@@ -21,7 +21,7 @@ az monitor log-analytics workspace create --resource-group $KUBE_GROUP --workspa
 
 az monitor log-analytics workspace show --resource-group $KUBE_GROUP --workspace-name $WORKSPACE_NAME
 
-WORKSPACE_ID=$(az monitor log-analytics workspace show --resource-group $KUBE_GROUP --workspace-name dz-logs-aksmsi -o json | jq '.id' -r)
+WORKSPACE_ID=$(az monitor log-analytics workspace show --resource-group $KUBE_GROUP --workspace-name $WORKSPACE_NAME -o json | jq '.id' -r)
 
 az aks enable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME --addons monitoring --workspace-resource-id $WORKSPACE_ID
 
@@ -611,3 +611,4 @@ InsightsMetrics
 ```
 
 ```
+https://gist.github.com/vyta/d13151c7031054f998a7efc99ae706d0

@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lifecycle-playground
+spec:
+  replicas: 1 
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1 
+  selector:
+    matchLabels:
+      app: lifecycle-playground
+  template:
+    metadata:
+      labels:
+        app: lifecycle-playground
+    spec:
+      containers:
+      - name: lifecycle-playground
+        image: denniszielke/lifecycle-playground:latest  
+        ports:
+        - containerPort: 80
+        imagePullPolicy: Always   
+        livenessProbe:
+          httpGet:
+            path: /ping
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /start
+            port: 80
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        lifecycle:
+          # postStart:
+          #   httpGet:
+          #     path: /start
+          #     port: 80
+          preStop:
+            exec:
+              command: ["sleep","160"]
+            # httpGet:
+            #   path: /stop
+            #   port: 80
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"

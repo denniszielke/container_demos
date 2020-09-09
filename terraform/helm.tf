@@ -19,12 +19,6 @@ provider "helm" {
   }
 }
 
-# https://www.terraform.io/docs/providers/helm/repository.html
-data "helm_repository" "stable" {
-    name = "stable"
-    url  = "https://kubernetes-charts.storage.googleapis.com"
-}
-
 resource "kubernetes_namespace" "dummy-logger-ns" {
   metadata {
     name = "demo"

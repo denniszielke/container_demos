@@ -50,7 +50,7 @@ resource "azurerm_postgresql_database" "kong_config_db" {
 # https://www.terraform.io/docs/providers/helm/release.html
 resource "helm_release" "kong_ingress" {
   name       = "kong-ingress"
-  repository = data.helm_repository.stable.metadata.0.name
+  repository = "https://kubernetes-charts.storage.googleapis.com" 
   chart      = "kong"
   namespace  = "kong"
   force_update = "true"

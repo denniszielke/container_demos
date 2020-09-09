@@ -32,6 +32,17 @@ helm template cilium \
   --set global.masquerade=false \
   > ../../../container_demos/cilium/cilium-full.yaml
 
+helm template cilium cilium/cilium --version 1.8.0 \
+  --namespace cilium \
+  --set global.cni.chainingMode=generic-veth \
+  --set global.cni.customConf=true \
+  --set global.nodeinit.enabled=true \
+  --set nodeinit.azure=true \
+  --set global.cni.configMap=cni-configuration \
+  --set global.tunnel=disabled \
+  --set global.masquerade=false  \
+  > cilium/cilium-full.yaml
+
 cd ../../../
 
 kubectl apply -f cilium/cilium-full.yaml

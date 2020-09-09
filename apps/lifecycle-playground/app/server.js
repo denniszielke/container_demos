@@ -72,10 +72,15 @@ app.get('/rate/me', function(req, res) {
     }
 });
 
-app.get('/headers', function(req, res) {
-    console.log('received headers');
-    console.log(req.headers);
-    res.send(req.headers);
+app.get('/start', function(req, res) {
+    console.log('received start request');
+    res.send('Started');
+});
+
+app.get('/stop', function(req, res) {
+    console.log('received stop request');
+    res.status(200);
+    res.send('stopped');
 });
 
 app.get('/ping', function(req, res) {
@@ -134,3 +139,23 @@ console.log(config);
 console.log(OS.hostname());
 app.listen(config.port);
 console.log('Listening on localhost:'+ config.port);
+
+process.once('SIGQUIT', function (code) {
+    console.log("Caught sigquit....");
+});
+
+process.once('SIGTERM', function (code) {
+    console.log("Caught sigterm....");
+});
+
+setInterval(function() {
+    var startDate = new Date();
+    var month = (((startDate.getMonth()+1)<10) ? '0' + (startDate.getMonth()+1) : (startDate.getMonth()+1));
+    var day = (((startDate.getDate())<10) ? '0' + (startDate.getDate()) : (startDate.getDate()));
+    var hour = (((startDate.getHours())<10) ? '0' + (startDate.getHours()) : (startDate.getHours()));
+    var minute = (((startDate.getMinutes())<10) ? '0' + (startDate.getMinutes()) : (startDate.getMinutes()));
+    var seconds = (((startDate.getSeconds())<10) ? '0' + (startDate.getSeconds()) : (startDate.getSeconds()));
+    var logDate = startDate.getFullYear() + "-" +
+        month+  "-" + day + " " + hour + ":" + minute + ":" + seconds; 
+    console.log(OS.hostname() + " still alive " + logDate);
+    }, 1000);

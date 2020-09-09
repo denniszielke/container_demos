@@ -28,7 +28,7 @@ resource "kubernetes_namespace" "ambassador-ns" {
 # https://github.com/datawire/ambassador-chart
 resource "helm_release" "ambassador_ingress" {
   name       = "ambassador-ingress"
-  repository = data.helm_repository.datawire.metadata.0.name
+  repository = "https://kubernetes-charts.storage.googleapis.com" 
   chart      = "ambassador"
   namespace  = "ambassador"
   force_update = "true"
