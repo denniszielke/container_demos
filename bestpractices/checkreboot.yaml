@@ -1,10 +1,13 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: check-reboot
   labels:
     app: check-reboot
 spec:
+  selector:
+    matchLabels: 
+      name: check-reboot
   template:
     metadata:
       labels:
