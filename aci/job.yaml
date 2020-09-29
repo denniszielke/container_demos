@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: samples-tf-mnist-demo
+  name: samples-tf-mnist-demo
+spec:
+  completions: 1
+  template:
+    metadata:
+      labels:
+        app: samples-tf-mnist-demo
+    spec:
+      nodeSelector:
+        kubernetes.io/role: agent
+        beta.kubernetes.io/os: linux
+        type: virtual-kubelet
+      tolerations:
+        - key: virtual-kubelet.io/provider
+          operator: Exists
+        - key: azure.com/aci
+          effect: NoSchedule
+      containers:
+      - name: samples-tf-mnist-demo
+        image: microsoft/samples-tf-mnist-demo:gpu
+        command:
+        - sleep
+        - "3600"
+        args: ["--max_steps", "500"]
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: INPUT_FOLDER
+            value: /input/fulltest-uuid-used-for1-testing23456
+          - name: OUTPUT_FOLDER
+            value: /input/fulltest-uuid-used-for1-testing23456/masks
+        volumeMounts:
+          - name: volume-fulltest-uuid-used-for1-testing23456
+            mountPath: /input
+      restartPolicy: OnFailure
+      volumes:
+        - name: volume-fulltest-uuid-used-for1-testing23456
+          azureFile:
+            shareName: "job"
+            readOnly: false
+            secretName: azurefile-secret

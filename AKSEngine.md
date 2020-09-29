@@ -3,10 +3,11 @@ https://github.com/Azure/aks-engine/blob/master/docs/topics/clusterdefinitions.m
 
 0. Variables
 ```
-SUBSCRIPTION_ID=""
-KUBE_GROUP="akse444"
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+TENANT_ID=$(az account show --query tenantId -o tsv)
+KUBE_GROUP="akseipv6"
 VNET_GROUP="aksengine"
-KUBE_NAME="dz-aks444"
+KUBE_NAME="dz-akseipv6"
 LOCATION="westeurope"
 SERVICE_PRINCIPAL_ID=""
 SERVICE_PRINCIPAL_SECRET=""
@@ -73,7 +74,7 @@ az network vnet peering create -g $VNET_GROUP -n VMToKubePeer --vnet-name $VM_VN
 # Generate aks-engine
 
 ```
-./aks-engine generate akseng-sp.json
+./aks-engine generate akseng.json
 ```
 
 # Deploy cluster

@@ -21,6 +21,8 @@ echo $SERVICE_PRINCIPAL_ID
 SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
 echo $SERVICE_PRINCIPAL_SECRET
 
+az ad sp create-for-rbac --sdk-auth
+
 ```
 
 Select subscription

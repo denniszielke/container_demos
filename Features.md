@@ -48,6 +48,8 @@ az feature register --namespace "Microsoft.ContainerService" --name "AKS-GitOps"
 az feature register --namespace "Microsoft.ContainerService" --name "AKSNetworkModePreview"
 az feature register --namespace "Microsoft.ContainerService" --name "GPUDedicatedVHDPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "AKSHTTPCustomFeatures"
+az feature register --namespace "Microsoft.ContainerService" --name "EnableEphemeralOSDiskPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "StartStopPreview"
 
 
 az feature register --name OSABypassMarketplace --namespace Microsoft.ContainerService

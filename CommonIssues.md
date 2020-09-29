@@ -11,6 +11,15 @@ WORKING_VERSION=2.0.23-1
 sudo apt-get install azure-cli=$WORKING_VERSION
 ```
 
+## Get latest supported version
+```
+LOCATION='westeurope'
+az aks get-versions -l $LOCATION --query "orchestrators[?default == `true` && isPreview == `null`].orchestratorVersion" --output tsv
+
+az aks get-versions -l $LOCATION --query 'orchestrators[?default == `true`].orchestratorVersion' -o tsv
+
+```
+
 ## Edit using NANO
 ```
 KUBE_EDITOR="nano" kubectl edit svc/nginxpod-service

@@ -13,6 +13,9 @@ CustomAKS.md
 Permissions.md
 demo.md
 config.yaml
+terraform_agic/.terraform
+terraform_agic/*.plan
+Lima.md
 demos
 twistlock.md
 Jenkins-ACI.md

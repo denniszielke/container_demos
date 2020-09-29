@@ -104,3 +104,48 @@ spec:
 EOF
 
 kubectl get pods --selector app=samples-tf-mnist-demo
+
+
+## aci 
+
+
+
+az aks enable-addons \
+    --resource-group $KUBE_GROUP \
+    --name $KUBE_NAME \
+    --addons virtual-node \
+    --subnet-name aci-2-subnet
+
+STORAGE_ACCOUNT=$KUBE_NAME
+
+NODE_GROUP=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query nodeResourceGroup -o tsv)
+
+az storage account create --resource-group  $NODE_GROUP --name $STORAGE_ACCOUNT --location $LOCATION --sku Standard_LRS --kind StorageV2 --access-tier hot --https-only false
+
+STORAGE_KEY=$(az storage account keys list --account-name $STORAGE_ACCOUNT --resource-group $NODE_GROUP --query "[0].value")
+
+az storage share create -n job --quota 10 --account-name $STORAGE_ACCOUNT --account-key $STORAGE_KEY
+
+kubectl create secret generic azurefile-secret --from-literal=azurestorageaccountname=$STORAGE_ACCOUNT --from-literal=azurestorageaccountkey=$STORAGE_KEY 
+
+
+
+# Create a storage account
+
+STORAGE_ACCOUNT=dzkubv1
+az storage account create -n $STORAGE_ACCOUNT -g $KUBE_GROUP -l $LOCATION --sku Standard_LRS
+
+# Export the connection string as an environment variable, this is used when creating the Azure file share
+export AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-string -n $STORAGE_ACCOUNT -g $KUBE_GROUP -o tsv)
+
+# Create the file share
+az storage share create -n $STORAGE_ACCOUNT --connection-string $AZURE_STORAGE_CONNECTION_STRING
+
+# Get storage account key
+STORAGE_KEY=$(az storage account keys list --resource-group $KUBE_GROUP --account-name $STORAGE_ACCOUNT --query "[0].value" -o tsv)
+
+# Echo storage account name and key
+echo Storage account name: $STORAGE_ACCOUNT
+echo Storage account key: $STORAGE_KEY
+
+kubectl create secret generic azurefilev1-secret --from-literal=azurestorageaccountname=$STORAGE_ACCOUNT --from-literal=azurestorageaccountkey=$STORAGE_KEY

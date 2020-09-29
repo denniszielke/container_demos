@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aci-helloworld1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aci-helloworld1
+  template:
+    metadata:
+      labels:
+        app: aci-helloworld1
+    spec:
+      containers:
+      - name: aci-helloworld
+        image: microsoft/aci-helloworld
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - name: volume-fulltest-uuid-used-for1-testing23456
+            mountPath: /input
+      nodeSelector:
+        kubernetes.io/role: agent
+        beta.kubernetes.io/os: linux
+        type: virtual-kubelet
+      tolerations:
+      - key: virtual-kubelet.io/provider
+        operator: Exists
+      volumes:
+        - name: volume-fulltest-uuid-used-for1-testing23456
+          azureFile:
+            shareName: "job"
+            readOnly: false
+            secretName: azurefile-secret
