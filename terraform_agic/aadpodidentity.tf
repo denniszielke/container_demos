@@ -27,7 +27,7 @@ resource "azurerm_role_assignment" "podidentitykubelet" {
 # https://www.terraform.io/docs/providers/helm/release.html
 resource "helm_release" "aad-pod-identity" {
   name       = "aad-pod-identity"
-  repository = "https://kubernetes-charts.storage.googleapis.com" 
+  repository = "https://raw.githubusercontent.com/Azure/aad-pod-identity/master/charts" 
   chart      = "aad-pod-identity"
   namespace  = "kube-system"
   force_update = "true"

@@ -30,12 +30,12 @@ resource "helm_release" "ingress-azure" {
 
   set {
     name  = "appgw.name"
-    value = "azurerm_application_gateway.network.name"
+    value = azurerm_application_gateway.appgw.name
   }
 
   set {
     name  = "appgw.resourceGroup"
-    value = "azurerm_application_gateway.network.resource_group_name"
+    value = azurerm_resource_group.aksrg.name
   }
 
   set {

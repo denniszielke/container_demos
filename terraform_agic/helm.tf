@@ -28,7 +28,7 @@ resource "kubernetes_namespace" "dummy-logger-ns" {
 
 resource "null_resource" "delay_charts" {
   provisioner "local-exec" {
-    command = "sleep 100"
+    command = "sleep 30"
   }
 
   triggers = {
