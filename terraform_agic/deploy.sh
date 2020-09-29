@@ -90,3 +90,14 @@ $terra_path plan -out $deploymentname-out.plan -var="ad_admin_group_id=$aadadmin
 
 echo "running terraform apply..."
 $terra_path apply $deploymentname-out.plan
+
+echo "it seems there is no way to automatically assign a permission on the node group..."
+
+KUBELET_ID=$(az aks show -g $deploymentname -n $deploymentname --query identityProfile.kubeletidentity.clientId -o tsv)
+CONTROLLER_ID=$(az aks show -g $deploymentname -n $deploymentname --query identity.principalId -o tsv)
+CONTROLLER_ID=$(az aks show -g $deploymentname -n $deploymentname --query identity.principalId -o tsv)
+
+NODE_GROUP=$(az aks show --resource-group $deploymentname --name $deploymentname --query nodeResourceGroup -o tsv)
+
+az role assignment create --role "Managed Identity Operator" --assignee $KUBELET_ID --scope /subscriptions/$subscriptionid/resourcegroups/$NODE_GROUP
+az role assignment create --role "Managed Identity Operator" --assignee $CONTROLLER_ID --scope /subscriptions/$subscriptionid/resourcegroups/$NODE_GROUP

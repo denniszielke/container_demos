@@ -106,7 +106,7 @@ az role assignment create --role "Contributor" --assignee $SERVICE_PRINCIPAL_ID 
 
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-resource-group $KUBE_GROUP"_"$KUBE_NAME"_nodes_"$LOCATION --node-count 2 --network-plugin $KUBE_CNI_PLUGIN --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --no-ssh-key --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --outbound-type userDefinedRouting
 
-#fi
+fi
 
 az aks get-credentials -g $KUBE_GROUP -n $KUBE_NAME
 
