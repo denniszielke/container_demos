@@ -19,6 +19,31 @@ resource "azurerm_role_assignment" "agicidentityappgwgroup" {
   principal_id         = azurerm_user_assigned_identity.agicidentity.principal_id
 }
 
+
+resource "azurerm_role_assignment" "podidentitykubeletoperator" {
+  scope                = "/subscriptions/${var.subscription_id}/resourceGroups/${azurerm_kubernetes_cluster.akstf.node_resource_group}"
+  role_definition_name = "Managed Identity Operator"
+  principal_id         = azurerm_kubernetes_cluster.akstf.kubelet_identity[0].object_id
+
+  depends_on = [azurerm_kubernetes_cluster.akstf]
+}
+# try if can be removed
+resource "azurerm_role_assignment" "agicoperator" {
+  scope                = "/subscriptions/${var.subscription_id}/resourceGroups/${azurerm_kubernetes_cluster.akstf.node_resource_group}"
+  role_definition_name = "Managed Identity Operator"
+  principal_id         = azurerm_user_assigned_identity.agicidentity.principal_id
+
+  depends_on = [azurerm_kubernetes_cluster.akstf]
+}
+
+resource "azurerm_role_assignment" "contolleroperator" {
+  scope                = "/subscriptions/${var.subscription_id}/resourceGroups/${azurerm_kubernetes_cluster.akstf.node_resource_group}"
+  role_definition_name = "Managed Identity Operator"
+  principal_id         = azurerm_kubernetes_cluster.akstf.identity.0.principal_id
+
+  depends_on = [azurerm_kubernetes_cluster.akstf]
+}
+
 # https://www.terraform.io/docs/providers/helm/release.html
 resource "helm_release" "ingress-azure" {
   name       = "ingress-azure"
