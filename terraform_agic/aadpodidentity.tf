@@ -15,13 +15,13 @@ resource "azurerm_role_assignment" "podidentitykubelet" {
 }
 
 
-resource "azurerm_role_assignment" "podidentitykubeletvms" {
-  scope                = azurerm_kubernetes_cluster.akstf.node_resource_group
-  role_definition_name = "Virtual Machine Contributor"
-  principal_id         = azurerm_kubernetes_cluster.akstf.kubelet_identity[0].object_id
+# resource "azurerm_role_assignment" "podidentitykubeletvms" {
+#   scope                = azurerm_kubernetes_cluster.akstf.node_resource_group
+#   role_definition_name = "Virtual Machine Contributor"
+#   principal_id         = azurerm_kubernetes_cluster.akstf.kubelet_identity[0].object_id
 
-  depends_on = [azurerm_kubernetes_cluster.akstf]
-}
+#   depends_on = [azurerm_kubernetes_cluster.akstf]
+# }
 
 
 # https://www.terraform.io/docs/providers/helm/release.html
