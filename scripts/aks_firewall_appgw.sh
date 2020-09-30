@@ -1,6 +1,6 @@
-https://github.com/Azure/application-gateway-kubernetes-ingress/issues/939
-https://github.com/Azure/application-gateway-kubernetes-ingress/issues?page=2&q=is%3Aissue+is%3Aopen
-https://github.com/Azure/application-gateway-kubernetes-ingress
+#https://github.com/Azure/application-gateway-kubernetes-ingress/issues/939
+#https://github.com/Azure/application-gateway-kubernetes-ingress/issues?page=2&q=is%3Aissue+is%3Aopen
+#https://github.com/Azure/application-gateway-kubernetes-ingress
 
 SUBSCRIPTION_ID=$(az account show --query id -o tsv) #subscriptionid
 LOCATION="westeurope" # here enter the datacenter location
@@ -137,7 +137,7 @@ NODE_GROUP=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query 
 
 az role assignment create --role "Managed Identity Operator" --assignee $KUBELET_ID --scope /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$NODE_GROUP
 az role assignment create --role "Managed Identity Operator" --assignee $CONTROLLER_ID --scope /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$NODE_GROUP
-#az role assignment create --role "Virtual Machine Contributor" --assignee $KUBELET_ID --scope /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$NODE_GROUP
+az role assignment create --role "Virtual Machine Contributor" --assignee $KUBELET_ID --scope /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$NODE_GROUP
 az role assignment create --role "Reader" --assignee $KUBELET_ID --scope /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$APPGW_GROUP
 
 fi
