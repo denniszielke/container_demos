@@ -206,3 +206,24 @@ kubectl create clusterrolebinding aad-default-cluster-admin-binding --clusterrol
 ```
 kubectl auth can-i create deployments 
 ```
+
+
+## Azure RBAC
+
+```
+
+KUBE_NAME=dzuserauth
+
+AKS_ID=$(az aks show -g MyResourceGroup -n MyManagedCluster --query id -o tsv)
+
+az aks get-credentials -g MyResourceGroup -n MyManagedCluster --admin
+
+az role assignment create --role "Azure Kubernetes Service RBAC Viewer" --assignee "dzielke@microsoft.com" --scope $AKS_ID/namespaces/<namespace-name>
+
+SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $KUBE_NAME-sp -o json | jq -r '.appId')
+echo $SERVICE_PRINCIPAL_ID
+
+SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
+echo $SERVICE_PRINCIPAL_SECRET
+
+```

@@ -17,6 +17,16 @@ spec:
         - containerPort: 80
           name: http
           protocol: TCP
+      livenessProbe:
+        httpGet:
+          path: /ping
+          port: 80
+      readinessProbe:
+        httpGet:
+          path: /ping
+          port: 80
+        initialDelaySeconds: 10
+        periodSeconds: 5
       resources:
         requests:
           memory: "128Mi"

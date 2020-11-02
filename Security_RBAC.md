@@ -39,6 +39,17 @@ EOF
 
 
 cat <<EOF | kubectl create -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dennis-nodes-get
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list"]
+EOF
+
+cat <<EOF | kubectl create -f -
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
@@ -46,12 +57,13 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: admin
+  name: dennis-nodes-get
 subjects:
 - kind: ServiceAccount
   name: dennis
   namespace: kube-system
 EOF
+
 ```
 
 after 1.8
@@ -396,6 +408,11 @@ centos
 curl -sSk -H "Authorization: Bearer $KUBE_TOKEN" https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_PORT_443_TCP_PORT/api/v1/namespaces/demo/pods
 
 curl -H "Authorization: Bearer $KUBE_TOKEN" https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_PORT_443_TCP_PORT/api/v1 --insecure
+
+curl -H "Authorization: Bearer $KUBE_TOKEN" https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_PORT_443_TCP_PORT/api/v1/nodes --insecure
+
+kubectl create clusterrolebinding demo-admin --clusterrole cluster-admin --serviceaccount=demo:centos
+
 
 ```
 

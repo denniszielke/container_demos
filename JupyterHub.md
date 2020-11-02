@@ -75,6 +75,16 @@ singleuser:
 rbac:
    enabled: false
 EOF
+
+cat  <<EOF >config.yaml
+proxy:
+  secretToken: "774629f880afc0302830c19a9f09be4f59e98b242b65983cea7560e828df2978"
+hub:
+  uid: 1000
+  cookieSecret: "774629f880afc0302830c19a9f09be4f59e98b242b65983cea7560e828df2978"
+rbac:
+   enabled: true
+EOF
 ```
 
 install jhub
@@ -82,13 +92,18 @@ install jhub
 helm repo add jupyterhub https://jupyterhub.github.io/helm-chart/
 helm repo update
 
-RELEASE=jhub
-NAMESPACE=jhub
+RELEASE=jhub1
+NAMESPACE=jhub1
 
-helm upgrade --install $RELEASE jupyterhub/jupyterhub \
-  --namespace $NAMESPACE  \
-  --version 0.7.0 \
+helm upgrade --cleanup-on-fail \
+  --install $RELEASE jupyterhub/jupyterhub \
+  --namespace $NAMESPACE \
+  --create-namespace \
+  --version=0.9.0 \
   --values config.yaml
+
+kubectl get service --namespace jhub
+
 ```
 
 cleanup

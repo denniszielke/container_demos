@@ -10,6 +10,7 @@ Ingress_EasyAuth.md
 table.csv
 Setup.md
 CustomAKS.md
+GlobalLB.md
 Permissions.md
 demo.md
 config.yaml

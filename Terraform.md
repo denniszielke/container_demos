@@ -2,6 +2,7 @@
 
 0. Variables
 ```
+export PATH=$PATH:$HOME/lib/terraform
 AZURE_TENANT_ID=$(az account show --query tenantId -o tsv)
 AZURE_SUBSCRIPTION_NAME=$(az account show --query name -o tsv)
 AZURE_SUBSCRIPTION_ID=$(az account show --query id -o tsv)

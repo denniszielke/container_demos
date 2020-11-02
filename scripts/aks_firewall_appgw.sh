@@ -7,6 +7,7 @@ LOCATION="westeurope" # here enter the datacenter location
 VNET_GROUP="securevnets1" # here enter the network resource group name
 HUB_VNET_NAME="hubnet1" # here enter the name of your hub net
 KUBE_VNET_NAME="k8snet1" # here enter the name of your k8s vnet
+PREM_VNET_NAME="onpremnet1" # here enter the name of your onprem vnet
 FW_NAME="dzk8sfw1" # name of your azure firewall resource
 APPGW_NAME="dzk8sappgw1"
 APPGW_GROUP="secureappgw1" # here enter the appgw resource group name
@@ -27,14 +28,18 @@ az group create -n $VNET_GROUP -l $LOCATION
 az group create -n $APPGW_GROUP -l $LOCATION
 
 az network vnet create -g $VNET_GROUP -n $HUB_VNET_NAME --address-prefixes 10.0.0.0/22
-az network vnet create -g $VNET_GROUP -n $KUBE_VNET_NAME --address-prefixes 10.0.4.0/22
+az network vnet create -g $VNET_GROUP -n $KUBE_VNET_NAME --address-prefixes 10.0.4.0/24 172.16.0.0/18
+az network vnet create -g $VNET_GROUP -n $PREM_VNET_NAME --address-prefixes 100.0.0.0/8
 az network vnet subnet create -g $VNET_GROUP --vnet-name $HUB_VNET_NAME -n AzureFirewallSubnet --address-prefix 10.0.0.0/24
-az network vnet subnet create -g $VNET_GROUP --vnet-name $HUB_VNET_NAME -n bastionsubnet --address-prefix 10.0.1.0/24
+az network vnet subnet create -g $VNET_GROUP --vnet-name $HUB_VNET_NAME -n $APPGW_SUBNET_NAME --address-prefix 10.0.1.0/24
 az network vnet subnet create -g $VNET_GROUP --vnet-name $KUBE_VNET_NAME -n $APPGW_SUBNET_NAME --address-prefix 10.0.4.0/24
-az network vnet subnet create -g $VNET_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --address-prefix 10.0.5.0/24 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault Microsoft.Storage
-az network vnet subnet create -g $VNET_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT2_SUBNET_NAME --address-prefix 10.0.6.0/24 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault Microsoft.Storage
+az network vnet subnet create -g $VNET_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --address-prefix 172.16.0.0/22 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault Microsoft.Storage
+az network vnet subnet create -g $VNET_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT2_SUBNET_NAME --address-prefix 172.16.4.0/22 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault Microsoft.Storage
+az network vnet subnet create -g $VNET_GROUP --vnet-name $PREM_VNET_NAME -n premnet --address-prefix 100.0.0.0/8
 az network vnet peering create -g $VNET_GROUP -n HubToSpoke1 --vnet-name $HUB_VNET_NAME --remote-vnet $KUBE_VNET_NAME --allow-vnet-access
 az network vnet peering create -g $VNET_GROUP -n Spoke1ToHub --vnet-name $KUBE_VNET_NAME --remote-vnet $HUB_VNET_NAME --allow-vnet-access
+az network vnet peering create -g $VNET_GROUP -n HubToPrem --vnet-name $HUB_VNET_NAME --remote-vnet $PREM_VNET_NAME --allow-vnet-access
+az network vnet peering create -g $VNET_GROUP -n PremToHub --vnet-name $PREM_VNET_NAME --remote-vnet $HUB_VNET_NAME --allow-vnet-access
 
 echo "setting up azure firewall"
 
@@ -44,7 +49,7 @@ FW_PUBLIC_IP=$(az network public-ip show -g $VNET_GROUP -n $FW_NAME-ip --query i
 az network firewall create --name $FW_NAME --resource-group $VNET_GROUP --location $LOCATION
 az network firewall ip-config create --firewall-name $FW_NAME --name $FW_NAME --public-ip-address $FW_NAME-ip --resource-group $VNET_GROUP --vnet-name $HUB_VNET_NAME
 FW_PRIVATE_IP=$(az network firewall show -g $VNET_GROUP -n $FW_NAME --query "ipConfigurations[0].privateIpAddress" -o tsv)
-az monitor log-analytics workspace create --resource-group $VNET_GROUP --workspace-name $FW_NAME-lagw --location $LOCATION
+az monitor log-analytics workspace create --resource-group $VNET_GROUP --workspace-name $FW_NAME-lagw1 --location $LOCATION
 
 echo "setting up user defined routes"
 
@@ -108,7 +113,7 @@ az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-resource-gro
 
 fi
 
-az aks get-credentials -g $KUBE_GROUP -n $KUBE_NAME
+az aks get-credentials -g $KUBE_GROUP -n $KUBE_NAME --overwrite-existing
 
 echo "setting up azure monitor"
 
@@ -118,10 +123,10 @@ az aks enable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME --addons mon
 
 echo "creating appgw"
 
-APPGW_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$VNET_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$APPGW_SUBNET_NAME"
+APPGW_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$VNET_GROUP/providers/Microsoft.Network/virtualNetworks/$HUB_VNET_NAME/subnets/$APPGW_SUBNET_NAME"
 az network public-ip create --resource-group $APPGW_GROUP --name $APPGW_NAME-pip --allocation-method Static --sku Standard
 APPGW_PUBLIC_IP=$(az network public-ip show -g $APPGW_GROUP -n $APPGW_NAME-pip --query ipAddress -o tsv)
-az network application-gateway create --name $APPGW_NAME --resource-group $APPGW_GROUP --location $LOCATION --http2 Enabled --min-capacity 0 --max-capacity 10 --sku WAF_v2  --vnet-name $KUBE_VNET_NAME --subnet $APPGW_SUBNET_ID --http-settings-cookie-based-affinity Disabled --frontend-port 80 --http-settings-port 80 --http-settings-protocol Http --public-ip-address $APPGW_NAME-pip
+az network application-gateway create --name $APPGW_NAME --resource-group $APPGW_GROUP --location $LOCATION --http2 Enabled --min-capacity 0 --max-capacity 10 --sku WAF_v2  --vnet-name $KUBE_VNET_NAME --subnet $APPGW_SUBNET_ID --http-settings-cookie-based-affinity Disabled --frontend-port 80 --http-settings-port 80 --http-settings-protocol Http --public-ip-address $APPGW_NAME-pip --private-ip-address "10.0.4.100"
 APPGW_NAME=$(az network application-gateway list --resource-group=$APPGW_GROUP -o json | jq -r ".[0].name")
 APPGW_RESOURCE_ID=$(az network application-gateway list --resource-group=$APPGW_GROUP -o json | jq -r ".[0].id")
 APPGW_SUBNET_ID=$(az network application-gateway list --resource-group=$APPGW_GROUP -o json | jq -r ".[0].gatewayIpConfigurations[0].subnet.id")
@@ -157,7 +162,8 @@ AGIC_ID_RESOURCE_ID="$(az identity show -g $NODE_GROUP -n $APPGW_NAME-id  --quer
 
 NODES_RESOURCE_ID=$(az group show -n $NODE_GROUP -o tsv --query "id")
 KUBE_GROUP_RESOURCE_ID=$(az group show -n $KUBE_GROUP -o tsv --query "id")
-sleep 5 # wait for replication
+sleep 15 # wait for replication
+echo "assigning permissions for AGIC client $AGIC_ID_CLIENT_ID"
 az role assignment create --role "Contributor" --assignee $AGIC_ID_CLIENT_ID --scope $APPGW_RESOURCE_ID
 az role assignment create --role "Reader" --assignee $AGIC_ID_CLIENT_ID --scope $KUBE_GROUP_RESOURCE_ID # might not be needed
 az role assignment create --role "Reader" --assignee $AGIC_ID_CLIENT_ID --scope $NODES_RESOURCE_ID # might not be needed
@@ -166,20 +172,22 @@ az role assignment create --role "Reader" --assignee $AGIC_ID_CLIENT_ID --scope 
 helm repo add application-gateway-kubernetes-ingress https://appgwingress.blob.core.windows.net/ingress-azure-helm-package/
 helm repo update
 
+helm pull application-gateway-kubernetes-ingress/ingress-azure
+
 helm upgrade ingress-azure application-gateway-kubernetes-ingress/ingress-azure \
      --namespace kube-system \
      --install \
      --set appgw.name=$APPGW_NAME \
      --set appgw.resourceGroup=$APPGW_GROUP \
      --set appgw.subscriptionId=$SUBSCRIPTION_ID \
-     --set appgw.usePrivateIP=false \
-     --set appgw.shared=false \
+     --set appgw.usePrivateIP=true \
+     --set appgw.shared=true \
      --set armAuth.type=aadPodIdentity \
      --set armAuth.identityClientID=$AGIC_ID_CLIENT_ID \
      --set armAuth.identityResourceID=$AGIC_ID_RESOURCE_ID \
      --set rbac.enabled=true \
-     --set verbosityLevel=3 \
-     --set kubernetes.watchNamespace=default
+     --set verbosityLevel=3 
+    # --set kubernetes.watchNamespace=default
 
 sleep 120 # this might take a while to configure correctly
 
@@ -229,22 +237,22 @@ fi
 kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/depl-logger.yaml
 kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/svc-logger.yaml
 
-cat <<EOF | kubectl apply -f -
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: dummy-logger
-  annotations:
-    kubernetes.io/ingress.class: azure/application-gateway
-spec:
-  rules:
-  - host: $APPGW_PUBLIC_IP.xip.io
-    http:
-      paths:
-      - backend:
-          serviceName: dummy-logger
-          servicePort: 80
-EOF
+# cat <<EOF | kubectl apply -f -
+# apiVersion: extensions/v1beta1
+# kind: Ingress
+# metadata:
+#   name: dummy-logger
+#   annotations:
+#     kubernetes.io/ingress.class: azure/application-gateway
+# spec:
+#   rules:
+#   - host: $APPGW_PUBLIC_IP.xip.io
+#     http:
+#       paths:
+#       - backend:
+#           serviceName: dummy-logger
+#           servicePort: 80
+# EOF
 
 open "http://$APPGW_PUBLIC_IP.xip.io/ping"
 
@@ -258,7 +266,7 @@ metadata:
   name: centos
 spec:
   containers:
-  - name: centoss
+  - name: centos
     image: centos
     ports:
     - containerPort: 80
@@ -266,5 +274,7 @@ spec:
     - sleep
     - "3600"
 EOF
+
+sleep 10
 
 kubectl exec -ti centos -- /bin/bash

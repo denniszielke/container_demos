@@ -145,3 +145,39 @@ https://github.com/andyzhangx/Demo/tree/master/debug#q-how-to-get-k8s-kubelet-lo
 
 using storage in windows agents:
 https://github.com/andyzhangx/demo/tree/master/windows
+
+
+## Issues
+- AHS VHD https://github.com/Azure/aks-engine/tree/master/vhd/release-notes/aks-windows
+- Windows Containers (Pods) does not respect CPU Resources Limits in AKS v 1.17.X https://github.com/kubernetes/kubernetes/pull/86101
+- Host Aliases do not work in Windows Container RUN Add-Content -Path C:\Windows\System32\drivers\etc\hosts -Value  https://github.com/kubernetes/kubernetes/issues/91132
+- Timezone https://github.com/microsoft/Windows-Containers/issues/15
+- AHAB https://docs.microsoft.com/en-us/azure/aks/windows-faq#can-i-use-azure-hybrid-benefit-with-windows-nodes
+- Keine Hyper-V Isolated Container
+- ContainerD (with Hyper-V)
+Windows Containers (Pods) does not respect CPU Resources Limits in AKS v 1.17.X
+
+
+Setting CPU resource Limits in Windows Container (Pod) yaml files are neglected causing the PODs to starve the node resources, which in turn makes it very hard to roll deployment updates, as there is no room for max surge pods to be deployed.
+
+The issue is fixed in this GitHub pull request and rolled out starting version k8s 1.18.
+	
+Host Aliases does not work in Windows Containers.
+
+Unexpectedly setting Host Aliases in Windows Pod yaml files will be neglected, according to the following issue raised in GitHub, it is a known issue in Kubernetes, we ended up adding the following command in the docker file to overcome this:
+
+RUN Add-Content -Path C:\Windows\System32\drivers\etc\hosts -Value "<IP>`<Domain>" -Force
+	
+The need of increased Worker Processes to Increase performance.
+
+We noticed a slowness and a waste of CPU resources, due the fact that each Windows Pod is only running one worker process, we managed to overcome this issue by adding the following line to docker file:
+
+RUN C:\windows\system32\inetsrv\appcmd.exe set apppool "DefaultAppPool" /processModel.maxProcesses:5
+
+Which in turn increased worker processes to 5 wps, and also helped in mitigating the risk of SQL Server backend reaching the limit of 32767 max concurrent connections.
+	
+Linux nodes taking over the responsibility of In/Out Bandwidth.
+	
+Environment Variables are not automatically favored over Application configuration files.
+
+Lack of official SMB drivers for mounting PVT based on Caching Servers.

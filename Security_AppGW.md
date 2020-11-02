@@ -259,6 +259,7 @@ helm template ingress-azure ./ingress-azure \
 ### test
 
 ```
+kubectl logs -n kube-system -l app=ingress-azure
 
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/examples/master/guestbook/all-in-one/guestbook-all-in-one.yaml
 
@@ -282,6 +283,7 @@ kubectl delete ingress guestbook
 
 kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/depl-logger.yaml
 kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/svc-logger.yaml
+kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/echo-server.yaml
 
 cat <<EOF | kubectl apply -f -
 apiVersion: extensions/v1beta1
@@ -317,6 +319,77 @@ spec:
           serviceName: dummy-logger
           servicePort: 80
 EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: dummy-logger-private
+  annotations:
+    appgw.ingress.kubernetes.io/backend-path-prefix: /dummy
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/use-private-ip: "true"
+    appgw.ingress.kubernetes.io/backend-hostname: "dummy.example.com"
+spec:
+  rules:
+  - host: dummy.example.com
+    http:
+      paths:
+      - path: /dummy/
+        backend:
+          serviceName: dummy-logger
+          servicePort: 80
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: echo-service
+  annotations:
+    appgw.ingress.kubernetes.io/backend-path-prefix: /echo
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/use-private-ip: "true"
+    appgw.ingress.kubernetes.io/backend-hostname: "src.example.com"
+spec:
+  rules:
+  - host: src.example.com
+    http:
+      paths:
+      - path: /echo/
+        backend:
+          serviceName: echo-service
+          servicePort: 80
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: echo-service
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/use-private-ip: "true"
+spec:
+  rules:
+  - host: src.example.com
+    http:
+      paths:
+      - path: /echo/
+        backend:
+          serviceName: echo-service
+          servicePort: 80
+  - host: dummy.example.com
+    http:
+      paths:
+      - path: /dummy/
+        backend:
+          serviceName: dummy-logger
+          servicePort: 80
+EOF
+
+curl http://src.example.com --resolve src.example.com:80:10.0.4.100
+curl http://dummy.example.com --resolve dummy.example.com:80:10.0.4.100
 
 kubectl delete ingress dummy-logger-private
 

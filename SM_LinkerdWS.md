@@ -30,6 +30,10 @@ kubectl get -n emojivoto deploy -o yaml \
   | linkerd inject - \
   | kubectl apply -f -
 
+kubectl get deploy -o yaml \
+  | linkerd inject - \
+  | kubectl apply -f -
+
 ## get swagger and create service profile
 curl https://run.linkerd.io/booksapp/authors.swagger
 
@@ -69,6 +73,9 @@ linkerd routes svc/authors
 
 ## insert retries
 https://linkerd.io/2/tasks/configuring-retries/
+
+https://linkerd.io/2/tasks/books/#retries
+
 linkerd routes deploy/books --to svc/authors
 
 linkerd routes deployment/multicalchart-backend --namespace $APP_NS --to svc/$APP_IN-calc-backend-svc --to-namespace $APP_NS
@@ -186,3 +193,17 @@ linkerd tap deploy/authors --to ns/default -o wide | grep rt_route="GET /authors
 
 invert all that do not send to any route
 linkerd tap deploy/authors --to ns/default -o wide | grep -v rt_route
+
+
+kubectl -n booksapp port-forward svc/webapp 7000
+
+
+curl -sL https://run.linkerd.io/booksapp/webapp.swagger \
+  | linkerd -n booksapp profile --open-api - webapp \
+  | kubectl -n booksapp apply -f -
+
+kubectl get ServiceProfile
+
+kubectl -n booksapp edit sp/authors.booksapp.svc.cluster.local
+
+linkerd -n booksapp routes deploy/books --to svc/authors -o wide

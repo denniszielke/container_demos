@@ -1,0 +1,54 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "dummy-logger-small"
+  },
+  "spec": {
+    "replicas": 5,
+    "minReadySeconds": 10,
+    "strategy": {
+      "type": "RollingUpdate",
+      "rollingUpdate": {
+        "maxUnavailable": 1,
+        "maxSurge": 1
+      }
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "dummy-logger-small"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "dummy-logger-small"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "dummy-logger",
+            "image": "denniszielke/dummy-logger:latest",
+            "ports": [
+              {
+                "containerPort": 80
+              }
+            ],
+            "imagePullPolicy": "Always",
+            "resources": {
+              "requests": {
+                "memory": "128Mi",
+                "cpu": "100m"
+              },
+              "limits": {
+                "memory": "256Mi",
+                "cpu": "200m"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

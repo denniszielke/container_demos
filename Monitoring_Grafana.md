@@ -62,7 +62,7 @@ LOKI_NS=loki
 helm repo add loki https://grafana.github.io/loki/charts
 helm repo update
 kubectl create ns $LOKI_NS
-helm upgrade --install $LOKI_IN -n=$LOKI_NS loki/loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false
+helm upgrade --install $LOKI_IN -n=$LOKI_NS loki/loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=true,prometheus.server.persistentVolume.enabled=true
 helm -n loki-stack ls
 ```
 

@@ -13,7 +13,7 @@ kubectl apply -f https://raw.githubusercontent.com/containous/traefik/v1.7/examp
 ```
 KUBE_GROUP=security
 KUBE_NAME=pspcluster
-DNS_NAME=dzapis
+DNS_NAME=dztraefik1
 IP_NAME=traefik-ingress-pip
 NODE_GROUP=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query nodeResourceGroup -o tsv)
 
@@ -26,11 +26,18 @@ az network public-ip create \
 DNS=$(az network public-ip show --resource-group $NODE_GROUP --name $IP_NAME --query dnsSettings.fqdn --output tsv)
 IP=$(az network public-ip show --resource-group $NODE_GROUP --name $IP_NAME --query ipAddress --output tsv)
 
-helm install stable/traefik --name traefikingress --namespace kube-system --set dashboard.enabled=true,dashboard.domain=dashboard.localhost,rbac.enabled=true,loadBalancerIP=$IP,externalTrafficPolicy=Local,replicas=2,ssl.enabled=true,ssl.permanentRedirect=true,ssl.insecureSkipVerify=true,acme.enabled=true,acme.challengeType=http-01,acme.email=$MY_ID,acme.staging=false
+helm repo add traefik https://helm.traefik.io/traefik
 
-helm upgrade traefikingress stable/traefik --install --namespace kube-system --set dashboard.enabled=true,dashboard.domain=dashboard.localhost,rbac.enabled=true,loadBalancerIP=$IP,externalIP=$IP,externalTrafficPolicy=Local,replicas=2,ssl.enabled=true,ssl.permanentRedirect=true,ssl.insecureSkipVerify=true,acme.enabled=true,acme.challengeType=http-01,acme.email=$MY_ID,acme.staging=false
+helm repo update
 
-kubectl -n kube-system port-forward $(kubectl -n kube-system get pod -l app=traefik -o jsonpath='{.items[0].metadata.name}') 8080:8080
+kubectl create namespace traefik
+
+helm install stable/traefik --name traefikingress --namespace traefik --set dashboard.enabled=true,dashboard.domain=dashboard.localhost,rbac.enabled=true,loadBalancerIP=$IP,externalTrafficPolicy=Local,replicas=2,ssl.enabled=true,ssl.permanentRedirect=true,ssl.insecureSkipVerify=true,acme.enabled=true,acme.challengeType=http-01,acme.email=$MY_ID,acme.staging=false
+
+helm upgrade traefikingress traefik/traefik--install --namespace traefik --set dashboard.enabled=true,dashboard.domain=dashboard.localhost,rbac.enabled=true,loadBalancerIP=$IP,externalIP=$IP,externalTrafficPolicy=Local,replicas=2,ssl.enabled=true,ssl.permanentRedirect=true,ssl.insecureSkipVerify=true,acme.enabled=true,acme.challengeType=http-01,acme.email=$MY_ID,acme.staging=false
+
+helm upgrade traefikingress traefik/traefik --install --namespace traefik
+
 
 annotations:
 https://docs.traefik.io/configuration/backends/kubernetes/#general-annotations
@@ -42,11 +49,11 @@ kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/
 
 kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/yaml/calc-min-depl.yaml
 
-kubectl get -n colors deploy -o yaml \
+kubectl get -n default deploy -o yaml \
   | linkerd inject - \
   | kubectl apply -f -
 
-DNS=13.95.69.233.xip.io
+DNS=51.124.71.77.xip.io
 
 cat <<EOF | kubectl apply -f -
 apiVersion: extensions/v1beta1
@@ -58,7 +65,7 @@ metadata:
     ingress.kubernetes.io/whitelist-x-forwarded-for: "true"
     traefik.ingress.kubernetes.io/redirect-permanent: "true"
     traefik.ingress.kubernetes.io/preserve-host: "true"
-    traefik.ingress.kubernetes.io/rewrite-target: /
+    traefik.ingress.kubernetes.io/rewrite-target: /logger
     traefik.ingress.kubernetes.io/rate-limit: |
       extractorfunc: client.ip
       rateset:
@@ -71,13 +78,28 @@ spec:
   - host: $DNS
     http:
       paths:
-      - path: /
+      - path: /logger
         backend:
-          serviceName: nginx
+          serviceName: dummy-logger-cluster 
           servicePort: 80
-      - path: /calc
-        backend:
-          serviceName: calc-frontend-svc
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: web-ingress
+  namespace: emojivoto
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    ingress.kubernetes.io/custom-request-headers: l5d-dst-override:web-svc.emojivoto.svc.cluster.local:80
+spec:
+  rules:
+  - host: $DNS
+    http:
+      paths:
+      - backend:
+          serviceName: web-svc
           servicePort: 80
 EOF
 

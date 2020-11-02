@@ -29,3 +29,9 @@ kubectl get no -o json | jq -r '.items | sort_by(.status.capacity.memory)[]|[.me
 ```
 
 
+curl -X GET $APISERVER/api/v1/nodes --header "Authorization: Bearer $TOKEN" --insecure
+
+curl -X GET $APISERVER/api/v1/nodes?fieldSelector="metadata.name" --header "Authorization: Bearer $TOKEN" --insecure
+
+
+kubectl get nodes --field-selector

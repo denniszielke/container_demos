@@ -4,7 +4,7 @@ https://docs.microsoft.com/en-us/azure/aks/networking-overview
 
 0. Variables
 ```
-SUBSCRIPTION_ID=""
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 KUBE_GROUP="privateaks"
 KUBE_NAME="dzpaks"
 LOCATION="westeurope"
@@ -16,7 +16,7 @@ KUBE_FW_SUBNET_NAME="AzureFirewallSubnet"
 KUBE_ING_SUBNET_NAME="ing-4-subnet"
 KUBE_AGENT_SUBNET_NAME="aks-5-subnet"
 KUBE_AGENT2_SUBNET_NAME="aks-6-subnet"
-KUBE_VERSION="1.15.7"
+KUBE_VERSION="$(az aks get-versions -l $LOCATION --query 'orchestrators[?default == `true`].orchestratorVersion' -o tsv)"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
 AAD_APP_NAME=""

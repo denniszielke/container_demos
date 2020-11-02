@@ -282,10 +282,19 @@ az group create -n $KUBE_GROUP -l $LOCATION
 
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --vm-set-type VirtualMachineScaleSets \
     --load-balancer-sku standard \
-    --node-count 3 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID \
+    --node-count 1 --enable-managed-identity \
     --enable-aad --enable-azure-rbac
 
 AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
+
+az aks get-credentials -g $KUBE_GROUP -n $KUBE_NAME --admin
+
+kubectl create ns aadsecured
+
+kubectl run --generator=run-pod/v1 --image=k8s.gcr.io/echoserver:1.10 echoserver --port=80 -n aadsecured
+kubectl run --generator=run-pod/v1 --image=nginx nginx --port=80 -n aadsecured
+kubectl create secret generic azure-secret --from-literal accountname=dzpremium1 --from-literal accountkey="QmJPk8fBkpLbK1wCjrNvYSVFFIb9sCT9GI7QeAkURJZEIjKecMYA4HC0saEJmj9u6jRiB+Tp6hNhuoBOYnDVLQ==" --type=Opaque -n aadsecured
+
 
 az role assignment create --role "Azure Kubernetes Service RBAC Admin" --assignee "dzielke@microsoft.com" --scope $AKS_ID
 
@@ -295,6 +304,56 @@ az aks update --resource-group $KUBE_GROUP --name $KUBE_NAME --aad-admin-group-o
 
 kubectl get pod -n aadsecured
 
+KUBE_NAME=dzuserauth
+
+AKS_ID=$(az aks show -g MyResourceGroup -n MyManagedCluster --query id -o tsv)
+
+az aks get-credentials -g MyResourceGroup -n MyManagedCluster --admin
+
+az role assignment create --role "Azure Kubernetes Service RBAC Viewer" --assignee "dzielke@microsoft.com" --scope $AKS_ID/namespaces/aadsecured
+
+
+az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee "dzielke@microsoft.com" --scope $AKS_ID/namespaces/aadsecured
+
+
+SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $KUBE_NAME-sp -o json | jq -r '.appId')
+echo $SERVICE_PRINCIPAL_ID
+
+SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
+echo $SERVICE_PRINCIPAL_SECRET
+
+KUBE_NAME=MyManagedCluster
+KUBE_GROUP=myResourceGroup
+
+az aks get-credentials -g MyResourceGroup -n MyManagedCluster
+
+SERVICE_PRINCIPAL_ID=
+SERVICE_PRINCIPAL_SECRET=
+AZURE_TENANT_ID=
+
+az login --service-principal -u $SERVICE_PRINCIPAL_ID -p $SERVICE_PRINCIPAL_SECRET --tenant $AZURE_TENANT_ID
+az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee "$SERVICE_PRINCIPAL_ID" --scope $AKS_ID/namespaces/aadsecured
+
+
+wget https://github.com/Azure/kubelogin/releases/download/v0.0.6/kubelogin-linux-amd64.zip
+unzip kubelogin-linux-amd64.zip -d kubetools
+
+export KUBECONFIG=/home/dennis/.kube/config
+
+az aks get-credentials -g MyResourceGroup -n MyManagedCluster
+
+rm /home/dennis/.kube/config
+touch /home/dennis/.kube/config
+
+kubelogin convert-kubeconfig -l ropc
+
+
+export AAD_USER_PRINCIPAL_NAME=
+export AAD_SERVICE_PRINCIPAL_CLIENT_ID=
+export AAD_SERVICE_PRINCIPAL_CLIENT_SECRET=
+export AAD_USER_PRINCIPAL_PASSWORD=
+
+kubectl get no
 ``` 
 
 

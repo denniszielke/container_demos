@@ -24,6 +24,13 @@ kubectl run hello-world --quiet --image=busybox --restart=OnFailure -- echo "Hel
 kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/crashing-app/crashing-app.yaml
 ```
 
+## vm logger
+```
+curl -sL https://run.linkerd.io/install | sh
+
+
+
+```
 
 ## linkerd smi
 https://linkderdsmi.westeurope.cloudapp.azure.com/

@@ -62,3 +62,69 @@ kubectl logs $(kubectl -n gatekeeper-system get pods -l gatekeeper.sh/system=yes
 delete gatekeeper
 kubectl delete -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/master/deploy/gatekeeper.yaml
 helm delete azure-policy-addon --namespace=kube-system
+
+kubectl delete serviceaccount azure-policy -n kube-system 
+kubectl delete serviceaccount azure-policy-webhook-account -n kube-system 
+kubectl delete role policy-pod-agent -n kube-system
+kubectl delete rolebinding policy-pod-agent -n kube-system
+kubectl delete clusterrole policy-agent
+kubectl delete clusterrole gatekeeper-manager-role
+kubectl delete ClusterRoleBinding policy-agent
+kubectl delete ClusterRoleBinding gatekeeper-manager-rolebinding
+kubectl delete ns gatekeeper-system      
+
+kubectl delete crd \
+  configs.config.gatekeeper.sh \
+  constraintpodstatuses.status.gatekeeper.sh \
+  constrainttemplatepodstatuses.status.gatekeeper.sh \
+  constrainttemplates.templates.gatekeeper.sh
+
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+
+helm install azure-policy-addon azure-policy/azure-policy-addon-aks-engine --set azurepolicy.env.resourceid="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP"
+
+helm delete azure-policy-addon 
+
+kubectl apply -f built-in-references/Kubernetes/container-require-livenessProbe/template.yaml
+kubectl apply -f built-in-references/Kubernetes/container-require-livenessProbe/constraint.yaml
+
+
+# yaml
+
+kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/release-3.1/deploy/gatekeeper.yaml
+
+kubectl delete -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/master/deploy/gatekeeper.yaml
+
+
+# helm open source
+
+kubectl create ns gatekeeper-system
+helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
+helm repo update
+helm upgrade gatekeeper gatekeeper/gatekeeper -n gatekeeper-system --install
+
+
+# custom policy
+
+kubectl logs -l control-plane=controller-manager -n gatekeeper-system
+
+kubectl apply -f built-in-references/Kubernetes/container-require-livenessProbe/template.yaml
+kubectl apply -f built-in-references/Kubernetes/container-require-livenessProbe/constraint.yaml
+
+cat <<EOF | kubectl apply -f -
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredProbes
+metadata:
+  name: must-have-probes
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+  excludedNamespaces:
+    - kube-system
+    - gatekeeper-system
+  parameters:
+    probes: ["readinessProbe", "livenessProbe"]
+    probeTypes: ["tcpSocket", "httpGet", "exec"]
+EOF

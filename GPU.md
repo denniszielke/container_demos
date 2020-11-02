@@ -32,9 +32,16 @@ az group create -n $KUBE_GROUP -l $LOCATION
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --vm-set-type VirtualMachineScaleSets --load-balancer-sku standard --kubernetes-version $KUBE_VERSION \
     --node-count 3 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --aks-custom-headers CustomizedUbuntu=aks-ubuntu-1804,ContainerRuntime=containerd,UseGPUDedicatedVHD=true
 
+az aks nodepool add -g $KUBE_GROUP --cluster-name $KUBE_NAME -n gpuvhdct --mode user -c 1 --node-vm-size Standard_NC6 --enable-cluster-autoscaler --min-count 0 --max-count 3
+
 az aks nodepool add -g $KUBE_GROUP --cluster-name $KUBE_NAME -n gpuvhdct -c 1 --mode user --node-vm-size Standard_NC6 --aks-custom-headers CustomizedUbuntu=aks-ubuntu-1804,ContainerRuntime=containerd,UseGPUDedicatedVHD=true
 
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --vm-set-type VirtualMachineScaleSets --load-balancer-sku standard --kubernetes-version $KUBE_VERSION \
+    --node-count 3 --enable-managed-identity 
+
+
 cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: nvidia-device-plugin-daemonset
