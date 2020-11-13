@@ -99,6 +99,8 @@ We are still getting customer feedback that are complaining about dns timeouts a
 
 I used a centos for testing
 
+
+
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Pod
@@ -106,8 +108,25 @@ metadata:
   name: centos
 spec:
   containers:
-  - name: centoss
+  - name: centos
     image: centos
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: debian
+spec:
+  containers:
+  - name: debian
+    image: debian
     ports:
     - containerPort: 80
     command:

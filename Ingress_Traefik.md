@@ -28,15 +28,18 @@ IP=$(az network public-ip show --resource-group $NODE_GROUP --name $IP_NAME --qu
 
 helm repo add traefik https://helm.traefik.io/traefik
 
+
 helm repo update
 
 kubectl create namespace traefik
 
 helm install stable/traefik --name traefikingress --namespace traefik --set dashboard.enabled=true,dashboard.domain=dashboard.localhost,rbac.enabled=true,loadBalancerIP=$IP,externalTrafficPolicy=Local,replicas=2,ssl.enabled=true,ssl.permanentRedirect=true,ssl.insecureSkipVerify=true,acme.enabled=true,acme.challengeType=http-01,acme.email=$MY_ID,acme.staging=false
 
-helm upgrade traefikingress traefik/traefik--install --namespace traefik --set dashboard.enabled=true,dashboard.domain=dashboard.localhost,rbac.enabled=true,loadBalancerIP=$IP,externalIP=$IP,externalTrafficPolicy=Local,replicas=2,ssl.enabled=true,ssl.permanentRedirect=true,ssl.insecureSkipVerify=true,acme.enabled=true,acme.challengeType=http-01,acme.email=$MY_ID,acme.staging=false
+helm upgrade traefikingress traefik/traefik --install --namespace traefik --set dashboard.enabled=true,dashboard.domain=dashboard.localhost,rbac.enabled=true,loadBalancerIP=$IP,externalIP=$IP,externalTrafficPolicy=Local,replicas=2,ssl.enabled=true,ssl.permanentRedirect=true,ssl.insecureSkipVerify=true,acme.enabled=true,acme.challengeType=http-01,acme.email=$MY_ID,acme.staging=false
 
 helm upgrade traefikingress traefik/traefik --install --namespace traefik
+
+kubectl port-forward $(kubectl get pods --selector "app.kubernetes.io/name=traefik" --output=name --namespace traefik) 9000:9000 --namespace traefik
 
 
 annotations:
@@ -85,22 +88,36 @@ spec:
 EOF
 
 cat <<EOF | kubectl apply -f -
-apiVersion: extensions/v1beta1
-kind: Ingress
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
 metadata:
-  name: web-ingress
-  namespace: emojivoto
-  annotations:
-    kubernetes.io/ingress.class: "traefik"
-    ingress.kubernetes.io/custom-request-headers: l5d-dst-override:web-svc.emojivoto.svc.cluster.local:80
+  name: l5d-header-middleware
+  namespace: traefik
 spec:
-  rules:
-  - host: $DNS
-    http:
-      paths:
-      - backend:
-          serviceName: web-svc
-          servicePort: 80
+  headers:
+    customRequestHeaders:
+      l5d-dst-override: "web-svc.emojivoto.svc.cluster.local:80"
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  creationTimestamp: null
+  name: emojivoto-web-ingress-route
+  namespace: emojivoto
+spec:
+  entryPoints: []
+  routes:
+  - kind: Rule
+    match: PathPrefix(`/`)
+    priority: 0
+    middlewares:
+    - name: l5d-header-middleware
+    services:
+    - kind: Service
+      name: web-svc
+      port: 80
 EOF
 
 for i in `seq 1 10000`; do time curl -s http://$DNS > /dev/null; done
@@ -136,6 +153,17 @@ spec:
         path: /color
 EOF
 ```
+
+cat <<EOF | kubectl apply -f -
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: test-ratelimit
+spec:
+  rateLimit:
+    average: 1
+    burst: 2
+EOF
 
 ## Traefik Oauth2Proxy
 https://geek-cookbook.funkypenguin.co.nz/reference/oauth_proxy/

@@ -486,3 +486,100 @@ EOF
 
 kubectl exec -it nginx-secrets-store-inline-pod-identity cat /kvmnt/testsecret
 ```
+
+
+# new CSI
+
+helm repo add csi-secrets-store-provider-azure https://raw.githubusercontent.com/Azure/secrets-store-csi-driver-provider-azure/master/charts
+kubectl create ns csi-secrets-store
+
+helm upgrade csi-secret-driver csi-secrets-store-provider-azure/csi-secrets-store-provider-azure --namespace csi-secrets-store --install
+
+VAULT_NAME=appgw5-vault
+
+
+az identity create -g $NODE_GROUP -n $VAULT_NAME-id
+sleep 5 # wait for replication
+AGIC_ID_CLIENT_ID="$(az identity show -g $NODE_GROUP -n $VAULT_NAME-id  --query clientId -o tsv)"
+AGIC_ID_RESOURCE_ID="$(az identity show -g $NODE_GROUP -n $VAULT_NAME-id  --query id -o tsv)"
+
+NODES_RESOURCE_ID=$(az group show -n $NODE_GROUP -o tsv --query "id")
+KUBE_GROUP_RESOURCE_ID=$(az group show -n $KUBE_GROUP -o tsv --query "id")
+sleep 15 # wait for replication
+echo "assigning permissions for AGIC client $AGIC_ID_CLIENT_ID"
+az role assignment create --role "Contributor" --assignee $AGIC_ID_CLIENT_ID --scope $APPGW_RESOURCE_ID
+az role assignment create --role "Reader" --assignee $AGIC_ID_CLIENT_ID --scope $KUBE_GROUP_RESOURCE_ID # might not be needed
+az role assignment create --role "Reader" --assignee $AGIC_ID_CLIENT_ID --scope $NODES_RESOURCE_ID # might not be needed
+az role assignment create --role "Reader" --assignee $AGIC_ID_CLIENT_ID --scope /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$KUBE_GROUP
+
+cat <<EOF | kubectl apply -f -
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+  name: azure-kvname
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "true"                   # [REQUIRED] Set to "true" if using managed identities
+    useVMManagedIdentity: "false"             # [OPTIONAL] if not provided, will default to "false"
+    userAssignedIdentityID: "$AGIC_ID_CLIENT_ID"      
+                                                             #     az ad sp show --id http://contosoServicePrincipal --query appId -o tsv
+                                                             #     the preceding command will return the client ID of your service principal
+    keyvaultName: "$VAULT_NAME"          # [REQUIRED] the name of the key vault
+                                              #     az keyvault show --name contosoKeyVault5
+                                              #     the preceding command will display the key vault metadata, which includes the subscription ID, resource group name, key vault 
+    cloudName: "AzurePublicCloud"                                # [OPTIONAL for Azure] if not provided, Azure environment will default to AzurePublicCloud
+    objects:  |
+      array:
+        - |
+          objectName: dummy
+          objectType: secret
+          objectVersion: ""
+    resourceGroup: "$KUBE_GROUP"     # [REQUIRED] the resource group name of the key vault
+    subscriptionId: "$SUBSCRIPTION_ID"          # [REQUIRED] the subscription ID of the key vault
+    tenantId: "$TENANT_ID"                      # [REQUIRED] the tenant ID of the key vault
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentity
+metadata:
+    name: "$VAULT_NAME-id"               # The name of your Azure identity
+spec:
+    type: 0                                 # Set type: 0 for managed service identity
+    resourceID: "$AGIC_ID_RESOURCE_ID"
+    clientID: "$AGIC_ID_CLIENT_ID"     # The clientId of the Azure AD identity that you created earlier
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentityBinding
+metadata:
+    name: azure-pod-identity-binding
+spec:
+    azureIdentity: "$VAULT_NAME-id"      # The name of your Azure identity
+    selector: azure-pod-identity-binding-selector
+EOF
+
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-secrets-store-inline
+  labels:
+    aadpodidbinding: azure-pod-identity-binding-selector
+spec:
+  containers:
+    - name: nginx
+      image: nginx
+      volumeMounts:
+        - name: secrets-store-inline
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
+  volumes:
+    - name: secrets-store-inline
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: azure-kvname
+EOF

@@ -3,18 +3,19 @@ https://www.getambassador.io/user-guide/helm/
 
 ```
 
-kubectl apply -f https://getambassador.io/yaml/ambassador/ambassador-rbac.yaml
+helm repo add datawire https://www.getambassador.io
+
 
 IP=
 IP_NAME=ambassador-ingress-pip
-AMB_NS=kube-system
+AMB_NS=ambassador
 AMB_IN=ambassador-ingress
 
 
 DNS=$(az network public-ip show --resource-group $NODE_GROUP --name $IP_NAME --query dnsSettings.fqdn --output tsv)
 IP=$(az network public-ip show --resource-group $NODE_GROUP --name $IP_NAME --query ipAddress --output tsv)
 
-helm upgrade --install $AMB_IN stable/ambassador
+helm upgrade --install $AMB_IN datawire/ambassador --namespace $AMB_NS
 export SERVICE_IP=$(kubectl get svc --namespace default ambassador -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
 helm upgrade --install $AMB_IN stable/ambassador --set service.loadBalancerIP=$IP  --set service.externalTrafficPolicy=Local --set crds.create=false --namespace $AMB_NS
@@ -185,3 +186,66 @@ cat <<EOT > access-rule-oathkeeper.json
   "credentials_issuer": { "handler": "noop" }
 }]
 EOT
+
+
+## Quota
+
+cat <<EOF | kubectl apply -f -
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quote
+  namespace: ambassador
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  selector:
+    app: quote
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quote
+  namespace: ambassador
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quote
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: quote
+    spec:
+      containers:
+      - name: backend
+        image: docker.io/datawire/quote:0.4.1
+        ports:
+        - name: http
+          containerPort: 8080
+EOF
+
+cat <<EOF | kubectl apply -f -
+---
+apiVersion: getambassador.io/v2
+kind: Mapping
+metadata:
+  name: quote-backend
+  namespace: ambassador
+spec:
+  prefix: /backend/
+  service: quote
+EOF
+
+
+curl -Lk https://${AMBASSADOR_LB_ENDPOINT}/backend/
+{
+ "server": "idle-cranberry-8tbb6iks",
+ "quote": "Non-locality is the driver of truth. By summoning, we vibrate.",
+ "time": "2019-12-11T20:10:16.525471212Z"
+}

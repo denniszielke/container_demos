@@ -1,0 +1,22 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: logger-ingress
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/connection-draining: "true"
+    appgw.ingress.kubernetes.io/connection-draining-timeout: "30"
+    cert-manager.io/cluster-issuer: letsencrypt
+    cert-manager.io/acme-challenge-type: http01
+spec:
+  tls:
+  - hosts:
+    - dzgw4.northeurope.cloudapp.azure.com
+    secretName: dummy-logger-secret-name
+  rules:
+  - host: dzgw4.northeurope.cloudapp.azure.com
+    http:
+      paths:
+      - backend:
+          serviceName: dummy-logger-cluster
+          servicePort: 80

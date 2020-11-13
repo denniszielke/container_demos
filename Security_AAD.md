@@ -272,12 +272,6 @@ LOCATION="westus2"
 AZURE_TENANT_ID=$(az account show --query tenantId -o tsv)
 AAD_GROUP_ID=""
 
-SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $KUBE_NAME-sp -o json | jq -r '.appId')
-echo $SERVICE_PRINCIPAL_ID
-
-SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
-echo $SERVICE_PRINCIPAL_SECRET
-
 az group create -n $KUBE_GROUP -l $LOCATION
 
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --vm-set-type VirtualMachineScaleSets \

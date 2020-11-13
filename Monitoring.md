@@ -52,179 +52,22 @@ InsightsMetrics
 | render timechart
 ```
 
-# image inventory
-```
-ContainerInventory 
-| distinct  Repository, Image, ImageTag 
-| order by Repository, Image
-```
+## Full stack
 
-# error types
+```
+kubectl create namespace monitoring
 
-Events
-```
-KubeEvents
-| where TimeGenerated > ago(1h)
-| project Computer, Namespace, Name, Reason, Count
-```
-
-Kubelet errors in the last errors
-```
-let data = InsightsMetrics
-| where Origin == 'container.azm.ms/telegraf'
-| where TimeGenerated > ago(1h)
-| where Namespace == 'container.azm.ms/prometheus'
-| where Name == 'kubelet_docker_operations' or Name == 'kubelet_docker_operations_errors'
-| extend Tags = todynamic(Tags)
-| extend OperationType = tostring(Tags['operation_type']), HostName = tostring(Tags.hostName)
-| where '*' in ('*') or HostName in ('*')
-| where '*' in ('*') or OperationType in ('*')
-| extend partitionKey = strcat(HostName, '/' , Name, '/', OperationType)
-| order by partitionKey asc, TimeGenerated asc
-| serialize
-| extend PrevVal = iif(prev(partitionKey) != partitionKey, 0.0, prev(Val)), PrevTimeGenerated = iif(prev(partitionKey) != partitionKey, datetime(null), prev(TimeGenerated))
-| where isnotnull(PrevTimeGenerated) and PrevTimeGenerated != TimeGenerated
-| extend Rate = iif(PrevVal > Val, Val, Val - PrevVal)
-| where isnotnull(Rate)
-| project TimeGenerated, Name, HostName, Rate;
-let operationData = data
-| where Name == 'kubelet_docker_operations';
-let totalOperationsByNode = operationData
-| summarize Rate = sum(Rate) by HostName
-| project HostName, TotalOperations = Rate;
-let totalOperationsByNodeSeries = operationData
-| make-series TotalOperationsSeries = sum(Rate) default = 0 on TimeGenerated from ago(21600s) to now() step 10m by HostName
-| project-away TimeGenerated;
-let errorData = data
-| where Name == 'kubelet_docker_operations_errors';
-let totalErrorsByNode = errorData
-| summarize Rate = sum(Rate) by HostName
-| project HostName, TotalErrors = Rate;
-let totalErrorsByNodeSeries = errorData
-| make-series TotalErrorsSeries = sum(Rate) default = 0 on TimeGenerated from ago(21600s) to now() step 10m by HostName
-| project-away TimeGenerated;
-totalOperationsByNode
-| join kind = leftouter
-(
-    totalErrorsByNode
-)
-on HostName
-| join kind = leftouter
-(
-    totalOperationsByNodeSeries
-)
-on HostName
-| join kind = leftouter
-(
-    totalErrorsByNodeSeries
-)
-on HostName
-| extend TotalErrors = iif(isempty(TotalErrors), 0.0, TotalErrors)
-| extend SeriesOfEqualLength = range(1, array_length(TotalOperationsSeries), 1)
-| extend SeriesOfZeroes = series_multiply(SeriesOfEqualLength, 0)
-| extend TotalErrorsSeries = iif(isempty(TotalErrorsSeries), SeriesOfZeroes, TotalErrorsSeries)
-| project-away HostName1, HostName2, HostName3
-| extend TotalSuccessfulOperationsSeries = series_subtract(TotalOperationsSeries, TotalErrorsSeries)
-| extend IsNegativeTotalSuccessfulOperationsSeries = series_less(TotalSuccessfulOperationsSeries, SeriesOfZeroes)
-| extend TotalSuccessfulOperationsSeries = array_iif(IsNegativeTotalSuccessfulOperationsSeries, SeriesOfZeroes, TotalSuccessfulOperationsSeries)
-| extend SuccessPercentage = round(iif(TotalOperations == 0, 1.0, iif(TotalErrors > TotalOperations, 0.0, 1 - (TotalErrors / TotalOperations))), 4), SuccessPercentageSeries = series_divide(TotalSuccessfulOperationsSeries, TotalOperationsSeries)
-| extend SeriesOfOneHundo = series_multiply(series_divide(SeriesOfEqualLength, SeriesOfEqualLength), 100)
-| extend SuccessfulOperationsEqualsTotalOperationsSeries = series_equals(TotalSuccessfulOperationsSeries, TotalOperationsSeries)
-| extend SuccessPercentageSeries = array_iff(SuccessfulOperationsEqualsTotalOperationsSeries, SeriesOfOneHundo, SuccessPercentageSeries)
-| project HostName, TotalOperations, TotalErrors, SuccessPercentage
-| order by SuccessPercentage asc, HostName asc
-| project-rename Node = HostName, ['Total Operations'] = TotalOperations, ['Total Errors'] = TotalErrors
-```
-
-Kubelet operations by operation type
-```
-let data = InsightsMetrics
-| where Origin == 'container.azm.ms/telegraf'
-| where Namespace == 'container.azm.ms/prometheus'
-| where Name == 'kubelet_docker_operations' or Name == 'kubelet_docker_operations_errors'
-| extend Tags = todynamic(Tags)
-| extend OperationType = tostring(Tags['operation_type']), HostName = tostring(Tags.hostName)
-| where '*' in ('*') or HostName in ('*')
-| where '*' in ('*') or OperationType in ('*')
-| extend partitionKey = strcat(HostName, '/' , Name, '/', OperationType)
-| order by partitionKey asc, TimeGenerated asc
-| serialize
-| extend PrevVal = iif(prev(partitionKey) != partitionKey, 0.0, prev(Val)), PrevTimeGenerated = iif(prev(partitionKey) != partitionKey, datetime(null), prev(TimeGenerated))
-| where isnotnull(PrevTimeGenerated) and PrevTimeGenerated != TimeGenerated
-| extend Rate = iif(PrevVal > Val, Val, Val - PrevVal)
-| where isnotnull(Rate)
-| project TimeGenerated, Name, OperationType, Rate;
-let operationData = data
-| where Name == 'kubelet_docker_operations';
-let totalOperationsByType = operationData
-| summarize Rate = sum(Rate) by OperationType
-| project OperationType, TotalOperations = Rate;
-let totalOperationsByTypeSeries = operationData
-| make-series TotalOperationsByTypeSeries = sum(Rate) default = 0 on TimeGenerated from ago(21600s) to now() step 10m by OperationType
-| project-away TimeGenerated;
-let errorsData = data
-| where Name == 'kubelet_docker_operations_errors';
-let totalErrorsByType = errorsData
-| summarize Rate = sum(Rate) by OperationType
-| project OperationType, TotalErrors = Rate;
-let totalErrorsByTypeSeries = errorsData
-| make-series TotalErrorsByTypeSeries = sum(Rate) default = 0 on TimeGenerated from ago(21600s) to now() step 10m by OperationType
-| project-away TimeGenerated;
-let seriesLength = toscalar(   totalOperationsByTypeSeries
-| extend ArrayLength = array_length(TotalOperationsByTypeSeries)
-| summarize Array_Length = max(ArrayLength)  );
-totalOperationsByType
-| join kind = leftouter
-(
-    totalErrorsByType
-)
-on OperationType
-| project-away OperationType1
-| extend TotalErrors = iif(isempty(TotalErrors), 0.0, TotalErrors)
-| join kind = leftouter
-(
-    totalErrorsByTypeSeries
-)
-on OperationType
-| project-away OperationType1
-| extend SeriesOfEqualLength = range(1, seriesLength, 1)
-| extend SeriesOfZeroes = series_subtract(SeriesOfEqualLength, SeriesOfEqualLength)
-| extend SeriesOfOneHundo = series_multiply(series_divide(SeriesOfEqualLength, SeriesOfEqualLength), 100)
-| extend TotalErrorsByTypeSeries = iif(isempty(TotalErrorsByTypeSeries), SeriesOfZeroes, TotalErrorsByTypeSeries)
-| join kind=leftouter
-(
-    totalOperationsByTypeSeries
-)
-on OperationType
-| project-away OperationType1
-| extend TotalSuccessfulOperationsByTypeSeries = series_subtract(TotalOperationsByTypeSeries, TotalErrorsByTypeSeries)
-| extend IsNegativeTotalSuccessfulOperationsByTypeSeries = series_less(TotalSuccessfulOperationsByTypeSeries, SeriesOfZeroes)
-| extend TotalSuccessfulOperationsByTypeSeries = array_iif(IsNegativeTotalSuccessfulOperationsByTypeSeries, SeriesOfZeroes, TotalSuccessfulOperationsByTypeSeries)
-| extend SuccessPercentage = round(iif(TotalOperations == 0, 1.0, iif(TotalErrors > TotalOperations, 0.0, 1 - (TotalErrors / TotalOperations))), 4), SuccessPercentageSeries = series_divide(TotalSuccessfulOperationsByTypeSeries, TotalOperationsByTypeSeries)
-| extend SuccessfulOperationsEqualsTotalOperationsSeries = series_equals(TotalSuccessfulOperationsByTypeSeries, TotalOperationsByTypeSeries)
-| extend SuccessPercentageSeries = array_iff(SuccessfulOperationsEqualsTotalOperationsSeries, SeriesOfOneHundo, SuccessPercentageSeries)
-| project OperationType, TotalOperations, TotalErrors, SuccessPercentage
-| order by SuccessPercentage asc, OperationType asc
-| project-rename ['Operation Type'] = OperationType, ['Total Operations'] = TotalOperations, ['Total Errors'] = TotalErrors, ['Success %'] = SuccessPercentage
-```
+helm repo add prometheus-operator https://kubernetes-charts.storage.googleapis.com
+helm repo add loki https://grafana.github.io/loki/charts
+helm repo add promtail https://grafana.github.io/loki/charts
 
 
-## Alerts
-https://docs.microsoft.com/bs-latn-ba/azure/azure-monitor/insights/container-insights-alerts
+helm repo update
+helm upgrade --install po  prometheus-operator/prometheus-operator -n=monitoring
 
+helm upgrade --install loki -n=monitoring loki/loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=true,prometheus.server.persistentVolume.enabled=true
 
-Alert for disc utiluzation
-let clusterId = '/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourceGroups/kub_ter_a_m_monitoring71/providers/Microsoft.ContainerService/managedClusters/monitoring71';
-let endDateTime = now();
-let startDateTime = ago(1h);
-let trendBinSize = 1m;
-InsightsMetrics
-| where TimeGenerated < endDateTime
-| where TimeGenerated >= startDateTime
-| where Origin == 'container.azm.ms/telegraf'            
-| where Namespace == 'container.azm.ms/disk'            
-| extend Tags = todynamic(Tags)            
-| project TimeGenerated, ClusterId = Tags['container.azm.ms/clusterId'], Computer = tostring(Tags.hostName), Device = tostring(Tags.device), Path = tostring(Tags.path), DiskMetricName = Name, DiskMetricValue = Val   
-| where ClusterId =~ clusterId       
-| where DiskMetricName == 'used_percent'
-| summarize AggregatedValue = max(DiskMetricValue)
+helm upgrade --install promtail -n=monitoring promtail/promtail
+
+kubectl get secret --namespace monitoring loki-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+kubectl port-forward --namespace monitoring service/loki-grafana 3000:80

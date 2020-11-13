@@ -12,6 +12,10 @@ az feature list --namespace Microsoft.RedHatOpenShift -o table
 
 Register a feature and reregister the provider
 ```
+az feature register --name CustomNodeConfigPreview --namespace Microsoft.ContainerService
+az feature register --name PodSubnetPreview --namespace Microsoft.ContainerService
+az feature register --name EnableACRTeleport --namespace Microsoft.ContainerService
+az feature register --name AutoUpgradePreview --namespace Microsoft.ContainerService
 az feature register --name MobyImage --namespace Microsoft.ContainerService
 az feature register --name AKSAuditLog --namespace Microsoft.ContainerService
 az feature register --name EnableSingleIPPerCCP --namespace Microsoft.ContainerService

@@ -1,0 +1,30 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sAzureAllowedUsersGroups
+metadata:
+  name: psp-allowed-users-groups
+spec:
+  match:
+    excludedNamespaces:       
+    - kube-system
+    - gatekeeper-system
+    - azure-arc
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+  parameters:
+    runAsUser: 
+      ranges:
+      - max: 9999
+        min: 30
+      rule: MustRunAsNonRoot
+    runAsGroup: 
+      ranges:
+      - max: 9999
+        min: 30
+      rule: RunAsAny
+    supplementalGroups: 
+      ranges: []
+      rule: RunAsAny
+    fsGroup: 
+      ranges: []
+      rule: RunAsAny

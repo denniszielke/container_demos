@@ -26,9 +26,33 @@ az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_NAME-vnet -n aks-
 ```
 
 KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_NAME-vnet/subnets/aks-subnet"
+KUBE_VNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_NAME-vnet
+
+SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $KUBE_NAME-sp -o json | jq -r '.appId')
+echo $SERVICE_PRINCIPAL_ID
+
+SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
+echo $SERVICE_PRINCIPAL_SECRET
+
+az role assignment create --role "Contributor" --assignee $SERVICE_PRINCIPAL_ID -g $KUBE_GROUP
+
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --vm-set-type VirtualMachineScaleSets --load-balancer-sku standard --kubernetes-version $KUBE_VERSION \
+    --node-count 3 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID  --enable-rbac --enable-addons monitoring --enable-vmss --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --service-cidr 10.2.0.0/24 --dns-service-ip 10.2.0.10
+
 
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --vm-set-type VirtualMachineScaleSets --load-balancer-sku standard --kubernetes-version $KUBE_VERSION \
     --node-count 3 --enable-managed-identity  --enable-rbac --enable-addons monitoring --enable-vmss --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --service-cidr 10.2.0.0/24 --dns-service-ip 10.2.0.10
+
+KUBELET_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query identityProfile.kubeletidentity.clientId -o tsv)
+CONTROLLER_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query identity.principalId -o tsv)
+NODE_GROUP=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query nodeResourceGroup -o tsv)
+
+az role assignment create --role "Contributor" --assignee $SERVICE_PRINCIPAL_ID --scope /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$NODE_GROUP
+
+
+
+az role assignment create --role "Contributor" --assignee $CONTROLLER_ID --scope /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$NODE_GROUP
+az role assignment create --role "Contributor" --assignee $CONTROLLER_ID --scope $KUBE_VNET_ID
 
 az aks install-connector --resource-group $KUBE_GROUP --name $KUBE_NAME --aci-resource-group $ACI_GROUP
  
@@ -109,6 +133,20 @@ spec:
 EOF
 ```
 
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: job-claim
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: azurefile
+EOF
+
 ```
 cat <<EOF | kubectl apply -f -
 apiVersion: apps/v1
@@ -134,12 +172,151 @@ spec:
           limits:
            nvidia.com/gpu: 1
       nodeSelector:
-        kubernetes.io/hostname: virtual-node-aci-linux-helm 
+        kubernetes.io/hostname: virtual-node-aci-linux
       tolerations:
       - key: virtual-kubelet.io/provider
         operator: Equal
         value: azure
         effect: NoSchedule
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aci-helloworldnode
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aci-helloworldnode
+  template:
+    metadata:
+      labels:
+        app: aci-helloworldnode
+    spec:
+      containers:
+      - name: aci-helloworldnode
+        image: microsoft/aci-helloworld
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - name: files
+            mountPath: /mnt/azure
+      volumes:
+      - name: files
+        azureFile:
+          shareName: "job"
+          readOnly: false
+          secretName: azurefile-secret
+EOF
+
+
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aci-helloworld
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aci-helloworld
+  template:
+    metadata:
+      labels:
+        app: aci-helloworld
+    spec:
+      containers:
+      - name: aci-helloworld
+        image: microsoft/aci-helloworld
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - name: files
+            mountPath: /mnt/azure
+      nodeSelector:
+        kubernetes.io/hostname: virtual-node-aci-linux
+      tolerations:
+      - key: virtual-kubelet.io/provider
+        operator: Equal
+        value: azure
+        effect: NoSchedule
+      volumes:
+      - name: files
+        azureFile:
+          shareName: "job"
+          readOnly: false
+          secretName: azurefile-secret
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aci-helloworldv1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aci-helloworldv1
+  template:
+    metadata:
+      labels:
+        app: aci-helloworldv1
+    spec:
+      containers:
+      - name: aci-helloworldv1
+        image: microsoft/aci-helloworld
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - name: files
+            mountPath: /mnt/azure
+      nodeSelector:
+        kubernetes.io/hostname: virtual-node-aci-linux
+      tolerations:
+      - key: virtual-kubelet.io/provider
+        operator: Equal
+        value: azure
+        effect: NoSchedule
+      volumes:
+      - name: files
+        azureFile:
+          shareName: "job"
+          readOnly: false
+          secretName: azurefilev1-secret
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aci-helloworldnodev1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aci-helloworldnodev1
+  template:
+    metadata:
+      labels:
+        app: aci-helloworldnodev1
+    spec:
+      containers:
+      - name: aci-helloworldnodev1
+        image: microsoft/aci-helloworld
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - name: files
+            mountPath: /mnt/azure
+      volumes:
+      - name: files
+        azureFile:
+          shareName: "job"
+          readOnly: false
+          secretName: azurefilev1-secret
 EOF
 ```
 4. clean up
@@ -148,3 +325,39 @@ kubectl delete pods,services -l app=hello-app
 
 kubectl delete pods,services -l pod-template-hash=916745872
 ```
+
+
+## Storage
+
+```
+
+STORAGE_ACCOUNT=$KUBE_NAME
+
+NODE_GROUP=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query nodeResourceGroup -o tsv) 
+
+az storage account create --resource-group  $NODE_GROUP --name $STORAGE_ACCOUNT --location $LOCATION --sku Standard_LRS --kind StorageV2 --access-tier hot --https-only false
+
+
+STORAGE_KEY=$(az storage account keys list --account-name $STORAGE_ACCOUNT --resource-group $NODE_GROUP --query "[0].value")
+
+
+az storage share create -n job --quota 10 --account-name $STORAGE_ACCOUNT --account-key $STORAGE_KEY
+ 
+
+kubectl create secret generic azurefile-secret --from-literal=azurestorageaccountname=$STORAGE_ACCOUNT --from-literal=azurestorageaccountkey=$STORAGE_KEY
+
+
+STORAGE_ACCOUNT=dzstorv1
+
+NODE_GROUP=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query nodeResourceGroup -o tsv) 
+
+az storage account create --resource-group  $NODE_GROUP --name $STORAGE_ACCOUNT --location $LOCATION --sku Standard_LRS --kind Storage --https-only false
+
+
+STORAGE_KEY=$(az storage account keys list --account-name $STORAGE_ACCOUNT --resource-group $NODE_GROUP --query "[0].value")
+
+
+az storage share create -n job --quota 10 --account-name $STORAGE_ACCOUNT --account-key $STORAGE_KEY
+ 
+
+kubectl create secret generic azurefilev1-secret --from-literal=azurestorageaccountname=$STORAGE_ACCOUNT --from-literal=azurestorageaccountkey=$STORAGE_KEY
