@@ -1,10 +1,9 @@
 # Install istio
-https://istio.io/docs/setup/kubernetes/quick-start/#download-and-prepare-for-the-installation
+https://istio.io/latest/docs/setup/getting-started/#download
 
 curl -L https://git.io/getLatestIstio | sh -
 
-export PATH="$PATH:/Users/dennis/istio-0.8.0/bin"
-export PATH="$PATH:/Users/dennis/lib/istio-1.0.0/bin"
+export PATH="$PATH:/Users/dennis/lib/istio-1.8.0/bin"
 
 https://istio.io/docs/setup/kubernetes/helm-install/
 
@@ -16,9 +15,14 @@ helm template install/kubernetes/helm/istio --name istio --namespace istio-syste
 
 kubectl -n istio-system port-forward $(kubectl -n istio-system get pod -l app=grafana -o jsonpath='{.items[0].metadata.name}') 3000:3000 &
 
-kubectl label namespace calculator istio-injection=enabled
+kubectl label namespace default istio-injection=enabled
 kubectl label namespace calculator istio-injection=disabled
 
+
+kubernetes.azure.com/mode=system
+
+kubectl patch deployment istio-egressgateway -n istio-system -p \
+  '{"spec":{"template":{"spec":{"nodeSelector":[{"kubernetes.azure.com/mode":"system"}]}}}}'
 
 ## Install grafana dashboard
 https://istio.io/docs/tasks/telemetry/using-istio-dashboard/
@@ -254,3 +258,230 @@ curl -s http://${GATEWAY_URL}/productpage | grep -o "<title>.*</title>"
 set destination rules
 
 kubectl apply -f samples/bookinfo/networking/destination-rule-all.yaml
+
+
+## Egress gateway
+
+meshConfig.outboundTrafficPolicy.mode 
+
+istioctl install <flags-you-used-to-install-Istio> \
+                   --set meshConfig.outboundTrafficPolicy.mode=REGISTRY_ONLY
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: centos
+spec:
+  containers:
+  - name: centos
+    image: centos
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+
+[root@centos /]# curl app.azuredns.com:8080/ip
+{"realip":"172.16.0.180","remoteaddr":"172.16.0.180","remoteip":"172.16.0.180"}
+
+app.azuredns.com:8080/ip
+
+kubectl delete serviceentry azuredns
+kubectl delete gateway istio-egressgateway
+kubectl delete virtualservice direct-cnn-through-egress-gateway
+kubectl delete destinationrule egressgateway-for-cnn
+
+kubectl apply -f - <<EOF
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: azuredns
+spec:
+  hosts:
+  - app.azuredns.com
+  ports:
+  - number: 80
+    name: http
+    protocol: HTTP
+  resolution: DNS
+EOF
+
+kubectl apply -f - <<EOF
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: istio-egressgateway
+spec:
+  selector:
+    istio: egressgateway
+  servers:
+  - port:
+      number: 8080
+      name: http
+      protocol: HTTP
+    hosts:
+    - app.azuredns.com
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: egressgateway-for-cnn
+spec:
+  host: istio-egressgateway.istio-system.svc.cluster.local
+  subsets:
+  - name: azuredns
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: direct-cnn-through-egress-gateway
+spec:
+  hosts:
+  - app.azuredns.com
+  gateways:
+  - mesh
+  - istio-egressgateway
+  http:
+  - match:
+    - gateways:
+      - mesh
+    route:
+    - destination:
+        host: istio-egressgateway.istio-system.svc.cluster.local
+        subset: azuredns
+        port:
+          number: 8080
+  - match:
+    - gateways:
+      - istio-egressgateway
+    route:
+    - destination:
+        host: app.azuredns.com
+        port:
+          number: 8080
+      weight: 100
+EOF
+
+
+kubectl apply -f - <<EOF
+kind: Service
+apiVersion: v1
+metadata:
+  name: my-httpbin
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+EOF
+
+kubectl apply -f - <<EOF
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: my-httpbin
+spec:
+  host: my-httpbin.default.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: DISABLE
+EOF
+
+
+kubectl apply -f - <<EOF
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: istio-egressgateway
+spec:
+  selector:
+    istio: egressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - app.azuredns.com
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: egressgateway-for-cnn
+spec:
+  host: istio-egressgateway.istio-system.svc.cluster.local
+  subsets:
+  - name: azuredns
+EOF
+
+
+kubectl apply -f - <<EOF
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: direct-cnn-through-egress-gateway
+spec:
+  hosts:
+  - app.azuredns.com
+  gateways:
+  - istio-egressgateway
+  - mesh
+  http:
+  - match:
+    - gateways:
+      - mesh
+      port: 80
+    route:
+    - destination:
+        host: istio-egressgateway.istio-system.svc.cluster.local
+        subset: azuredns
+        port:
+          number: 80
+      weight: 100
+  - match:
+    - gateways:
+      - istio-egressgateway
+      port: 80
+    route:
+    - destination:
+        host: app.azuredns.com
+        port:
+          number: 80
+      weight: 100
+EOF
+
+kubectl logs -l istio=egressgateway -c istio-proxy -n istio-system | tail
+
+➜  ~ (⎈ |dzvnets:default) kubectl exec -ti centos -- /bin/bash
+Defaulting container name to centos.
+Use 'kubectl describe pod/centos -n default' to see all of the containers in this pod.
+[root@centos /]# curl app.azuredns.com/ip
+{"realip":"10.0.5.35","remoteaddr":"10.0.5.35","remoteip":"10.0.5.35"}
+[root@centos /]# exit
+exit
+➜  ~ (⎈ |dzvnets:default) kubectl logs -l istio=egressgateway -c istio-proxy -n istio-system | tail
+2020-11-23T17:15:54.429430Z	info	sds	Skipping waiting for gateway secret
+2020-11-23T17:15:54.429461Z	info	cache	Loaded root cert from certificate ROOTCA
+2020-11-23T17:15:54.429698Z	info	sds	resource:ROOTCA pushed root cert to proxy
+2020-11-23T17:15:56.021434Z	info	Envoy proxy is ready
+[2020-11-23T17:42:48.178Z] "- - -" 0 - "-" "-" 906 1302575 56 - "-" "-" "-" "-" "151.101.193.67:443" outbound|443||edition.cnn.com 10.0.5.36:43256 10.0.5.36:8443 172.16.0.173:33606 edition.cnn.com -
+2020-11-23T17:48:34.633000Z	warning	envoy config	StreamAggregatedResources gRPC config stream closed: 13, 
+2020-11-23T18:19:01.780475Z	warning	envoy config	StreamAggregatedResources gRPC config stream closed: 13, 
+2020-11-23T18:49:28.622501Z	warning	envoy config	StreamAggregatedResources gRPC config stream closed: 13, 
+2020-11-23T19:19:35.472602Z	warning	envoy config	StreamAggregatedResources gRPC config stream closed: 13, 
+[2020-11-23T19:28:26.170Z] "GET /ip HTTP/2" 200 - "-" "-" 0 71 6 6 "172.16.0.173" "curl/7.61.1" "789cbf9c-cb21-9fd8-b9c8-44acc00232e3" "app.azuredns.com" "10.240.0.4:80" outbound|80||app.azuredns.com 10.0.5.36:60168 10.0.5.36:8080 172.16.0.173:36988 - -
+➜  ~ (⎈ |dzvnets:default) kubectl get pod -n istio-system -o wide                                  
+NAME                                    READY   STATUS    RESTARTS   AGE    IP             NODE                                NOMINATED NODE   READINESS GATES
+istio-egressgateway-5dd8975cb-h262m     1/1     Running   0          133m   10.0.5.36      aks-nodepool1-38665453-vmss000001   <none>           <none>
+istio-ingressgateway-76447f8f85-6kgg9   1/1     Running   0          143m   172.16.0.138   aks-router-38665453-vmss000001      <none>           <none>
+istiod-75c5776d98-hwdxx                 1/1     Running   0          159m   172.16.0.182   aks-router-38665453-vmss000002      <none>           <none>
+
+
+
+https://preliminary.istio.io/latest/blog/2018/egress-mongo/
+
+https://github.com/istio/istio/issues/26772

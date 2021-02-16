@@ -19,6 +19,8 @@ curl -X GET http://$CRASHING_APP_IP/crash
 Built in issue detection
 https://docs.microsoft.com/en-gb/azure/azure-monitor/insights/container-insights-analyze?toc=%2Fazure%2Fmonitoring%2Ftoc.json#view-performance-directly-from-an-aks-cluster
 
+az role assignment create --assignee 88cf3744-9ed9-4d55-a563-e027e7f8687f --scope /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$KUBE_GROUP/providers/Microsoft.ContainerService/managedClusters/$KUBE_NAME --role "Monitoring Metrics Publisher"
+
 # cluster health
 https://docs.microsoft.com/en-us/azure/azure-monitor/insights/container-insights-health
 

@@ -10,9 +10,18 @@ https://github.com/dwaiba/aks-terraform
 
 1. Install helm
 ```
+
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+
 wget https://storage.googleapis.com/kubernetes-helm/helm-v2.14.3-linux-amd64.tar.gz
 tar -zxvf helm-v2.14.3-linux-amd64.tar.gz
 sudo mv linux-amd64/helm /usr/local/bin/helm
+
+export PATH=$PATH:/home/dennis/linux-amd64
 ```
 
 upgrade helm via homebrew

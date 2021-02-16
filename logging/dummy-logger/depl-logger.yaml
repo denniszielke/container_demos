@@ -30,14 +30,14 @@ spec:
             port: 80
         readinessProbe:
           httpGet:
-            path: /ping
+            path: ping
             port: 80
           initialDelaySeconds: 10
           periodSeconds: 5
         resources:
           requests:
-            memory: "128Mi"
-            cpu: "100m"
+            memory: "58Mi"
+            cpu: "50m"
           limits:
-            memory: "256Mi"
-            cpu: "200m"
+            memory: "156Mi"
+            cpu: "100m"

@@ -15,8 +15,7 @@ kubectl create namespace kong
 helm upgrade kong-ingress kong/kong --install --values https://bit.ly/2UAv0ZE --set ingressController.installCRDs=false --namespace kong \
   --set serviceMonitor.enabled=true --set proxy.enabled=true --set admin.enabled=true --set manager.enabled=true --set portal.enabled=true
 
-helm install --name kong-ingress stable/kong --set ingressController.enabled=true \
-  --set postgresql.enabled=true --set env.database=off --namespace kong
+helm upgrade kong-ingress kong/kong --install --set ingressController.installCRDs=false --namespace kong
 
 helm install --name kong-ingress stable/kong --set ingressController.enabled=true --set proxy.type=LoadBalancer --set postgresql.enabled=false --set env.database=off --namespace kong
 
@@ -46,6 +45,8 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: demo
+  annotations:
+    kubernetes.io/ingress.class: kong
 spec:
   rules:
   - http:
@@ -55,6 +56,7 @@ spec:
           serviceName: echo
           servicePort: 80
 " | kubectl apply -f -
+ingress.extensions/demo created
 
 
 # GRPC
@@ -247,3 +249,63 @@ spec:
 ' | kubectl apply -f -
 
 https://linkerd.io/2/tasks/using-ingress/#kong
+
+
+## Linkerd
+
+echo "
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: set-l5d-header
+  namespace: emojivoto
+plugin: request-transformer
+config:
+  add:
+    headers:
+    - l5d-dst-override:$(headers.host).svc.cluster.local
+" | kubectl apply -f -
+
+
+echo "
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: web-ingress
+  namespace: emojivoto
+  annotations:
+    kubernetes.io/ingress.class: "kong"
+    konghq.com/plugins: set-l5d-header
+spec:
+  rules:
+    - host: 51.136.80.117.xip.io
+      http:
+        paths:
+          - path: /api/vote
+            backend:
+              serviceName: web-svc
+              servicePort: http
+          - path: /api/vote
+            backend:
+              serviceName: web-svc
+              servicePort: http
+          - path: /
+            backend:
+              serviceName: web-svc
+              servicePort: http
+" | kubectl apply -f -
+
+
+kubectl get deployment kong-ingress-kong -n kong -o yaml | linkerd inject --ingress - | kubectl apply -f -
+kubectl get deployment <ingress-controller> -n <ingress-namespace> -o yaml | linkerd inject --ingress - | kubectl apply -f -
+
+
+
+kubectl edit deployment vote-bot -n emojivoto
+env:
+# Target the Kong ingress instead of the Emojivoto web service
+- name: WEB_HOST
+  value: kong-ingress-kong-proxy.kong:80
+# Override the host header on requests so that it can be used to set the l5d-dst-override header
+- name: HOST_OVERRIDE
+  value: web-svc.emojivoto

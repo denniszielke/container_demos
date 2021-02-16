@@ -157,7 +157,6 @@ https://github.com/andyzhangx/demo/tree/master/windows
 - ContainerD (with Hyper-V)
 Windows Containers (Pods) does not respect CPU Resources Limits in AKS v 1.17.X
 
-
 Setting CPU resource Limits in Windows Container (Pod) yaml files are neglected causing the PODs to starve the node resources, which in turn makes it very hard to roll deployment updates, as there is no room for max surge pods to be deployed.
 
 The issue is fixed in this GitHub pull request and rolled out starting version k8s 1.18.

@@ -124,36 +124,6 @@ while true; do sleep 1; curl http://10.0.1.14/ping; echo -e '\n\n\n\n'$(date);do
 
 az network lb rule list --lb-name kubernetes-internal --resource-group kub_ter_a_m_scaler2_nodes_westeurope
 
-[
-  {
-    "backendAddressPool": {
-      "id": "/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourceGroups/kub_ter_a_m_scaler2_nodes_westeurope/providers/Microsoft.Network/loadBalancers/kubernetes-internal/backendAddressPools/kubernetes",
-      "resourceGroup": "kub_ter_a_m_scaler2_nodes_westeurope"
-    },
-    "backendPort": 80,
-    "disableOutboundSnat": true,
-    "enableFloatingIp": true,
-    "enableTcpReset": false,
-    "etag": "W/\"bbe57a78-66f4-440a-afcb-510577c2e476\"",
-    "frontendIpConfiguration": {
-      "id": "/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourceGroups/kub_ter_a_m_scaler2_nodes_westeurope/providers/Microsoft.Network/loadBalancers/kubernetes-internal/frontendIPConfigurations/a13c54ea6e04e11e984ea82987248e36-ing-4-subnet",
-      "resourceGroup": "kub_ter_a_m_scaler2_nodes_westeurope"
-    },
-    "frontendPort": 80,
-    "id": "/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourceGroups/kub_ter_a_m_scaler2_nodes_westeurope/providers/Microsoft.Network/loadBalancers/kubernetes-internal/loadBalancingRules/a13c54ea6e04e11e984ea82987248e36-ing-4-subnet-TCP-80",
-    "idleTimeoutInMinutes": 4,
-    "loadDistribution": "Default",
-    "name": "a13c54ea6e04e11e984ea82987248e36-ing-4-subnet-TCP-80",
-    "probe": {
-      "id": "/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourceGroups/kub_ter_a_m_scaler2_nodes_westeurope/providers/Microsoft.Network/loadBalancers/kubernetes-internal/probes/a13c54ea6e04e11e984ea82987248e36-ing-4-subnet-TCP-80",
-      "resourceGroup": "kub_ter_a_m_scaler2_nodes_westeurope"
-    },
-    "protocol": "Tcp",
-    "provisioningState": "Succeeded",
-    "resourceGroup": "kub_ter_a_m_scaler2_nodes_westeurope",
-    "type": "Microsoft.Network/loadBalancers/loadBalancingRules"
-  }
-]
 
 
 az network lb rule update  --name a13c54ea6e04e11e984ea82987248e36-ing-4-subnet-TCP-80 --lb-name kubernetes-internal --resource-group kub_ter_a_m_scaler2_nodes_westeurope --enable-tcp-reset true

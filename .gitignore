@@ -2,7 +2,8 @@
 ## Visual Studio
 #################
 
-
+aad/*
+scripts/*lima*.sh
 todos.md
 GRPC.md
 ingress/*

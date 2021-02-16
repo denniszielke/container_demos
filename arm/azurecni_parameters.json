@@ -15,34 +15,16 @@
             "value": 2
         },
         "agentVMSize": {
-            "value": "Standard_B2s"
-        },
-        "servicePrincipalClientId": {
-            "value": "SERVICE_PRINCIPAL_ID"
-        },
-        "servicePrincipalClientSecret": {
-            "value": "SERVICE_PRINCIPAL_SECRET"
+            "value": "Standard_D2s_v3"
         },
         "kubernetesVersion": {
             "value": "KUBE_VERSION"
-        },
-        "workspaceName": {
-            "value": "DefaultWorkspace-SUBSCRIPTION_ID-WEU"
-        },
-        "omsWorkspaceId": {
-            "value": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/DefaultResourceGroup-WEU/providers/Microsoft.OperationalInsights/workspaces/DefaultWorkspace-SUBSCRIPTION_ID-WEU"
-        },
-        "workspaceRegion": {
-            "value": "LOCATION"
-        },
-        "enableHttpApplicationRouting": {
-            "value": false
         },
         "networkPlugin": {
             "value": "azure"
         },
         "enableRBAC": {
-            "value": false
+            "value": true
         },
         "vnetSubnetID": {
             "value": "KUBE_AGENT_SUBNET_ID"
@@ -57,7 +39,7 @@
             "value": "172.17.0.1/16"
         },
 	    "maxPods": {
-            "value": 15
+            "value": 30
         }
     }
 }

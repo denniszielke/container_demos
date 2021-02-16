@@ -95,10 +95,10 @@ az aks get
 kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/svc-int-ing-logger.yaml
 kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/depl-logger.yaml
 
-RESOURCE_ID=/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourceGroups/net_pg_networks/providers/Microsoft.Network/networkInterfaces/dzjumpbox527
+RESOURCE_ID=/subscriptions/$SUBSCRIPTION_ID/resourceGroups/net_pg_networks/providers/Microsoft.Network/networkInterfaces/dzjumpbox527
 az network nic show-effective-route-table --ids $RESOURCE_ID
 
 
-VMSS_RESOURCE_ID=/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourceGroups/net_pg_clusters_pgcluster1_nodes_australiaeast/providers/Microsoft.Compute/virtualMachineScaleSets/aks-nodepool1-15360881-vmss/virtualMachines/0/networkInterfaces/aks-nodepool1-15360881-vmss
+VMSS_RESOURCE_ID=/subscriptions/$SUBSCRIPTION_ID/resourceGroups/net_pg_clusters_pgcluster1_nodes_australiaeast/providers/Microsoft.Compute/virtualMachineScaleSets/aks-nodepool1-15360881-vmss/virtualMachines/0/networkInterfaces/aks-nodepool1-15360881-vmss
 
 az network nic show-effective-route-table --ids $VMSS_RESOURCE_ID

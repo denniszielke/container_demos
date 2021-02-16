@@ -44,5 +44,7 @@ echo "SERVICE_PRINCIPAL_ID=$SERVICE_MSI_ID"
 fi
 
 rm table.json
+
+az aks get-credentials -n $KUBE_NAME -g $KUBE_GROUP
 #az aks list -o table | awk 'NR==3{print $2}'
 #export KUBE_VERSION=$(az aks list -o tsv | awk 'NR==2'  | cut -f 5 | tr -d " ")

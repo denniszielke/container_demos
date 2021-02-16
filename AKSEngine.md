@@ -5,9 +5,9 @@ https://github.com/Azure/aks-engine/blob/master/docs/topics/clusterdefinitions.m
 ```
 SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 TENANT_ID=$(az account show --query tenantId -o tsv)
-KUBE_GROUP="akseipv6"
-VNET_GROUP="aksengine"
-KUBE_NAME="dz-akseipv6"
+KUBE_GROUP="akse118"
+VNET_GROUP="akse118"
+KUBE_NAME="dz-aksemsi"
 LOCATION="westeurope"
 SERVICE_PRINCIPAL_ID=""
 SERVICE_PRINCIPAL_SECRET=""

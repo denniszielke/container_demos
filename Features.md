@@ -8,6 +8,10 @@ az feature list --namespace Microsoft.DocumentDB -o table
 az feature list --namespace Microsoft.Network -o table
 az feature list --namespace Microsoft.Storage -o table
 az feature list --namespace Microsoft.RedHatOpenShift -o table
+az feature list --namespace Microsoft.Web -o table
+az feature list --namespace Microsoft.Compute -o table
+az feature list --namespace Microsoft.Kubernetes -o table
+az feature list --namespace Microsoft.KubernetesConfiguration -o table
 ```
 
 Register a feature and reregister the provider
@@ -54,7 +58,10 @@ az feature register --namespace "Microsoft.ContainerService" --name "GPUDedicate
 az feature register --namespace "Microsoft.ContainerService" --name "AKSHTTPCustomFeatures"
 az feature register --namespace "Microsoft.ContainerService" --name "EnableEphemeralOSDiskPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "StartStopPreview"
-
+az feature register --namespace "Microsoft.ContainerService" --name "AKS-OpenServiceMesh"
+az feature register --namespace "Microsoft.ContainerService" --name "EnablePodIdentityPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "AKS-OMSAppMonitoring"
+az feature register --namespace "Microsoft.ContainerService" --name "MigrateToMSIClusterPreview"
 
 az feature register --name OSABypassMarketplace --namespace Microsoft.ContainerService
 az feature register --name AROGA --namespace Microsoft.ContainerService
@@ -76,7 +83,7 @@ az feature register --namespace "Microsoft.Compute" --name "SharedDisksForPremiu
 
 Check if the feature is active
 ```
-az feature list -o table --query "[?contains(name, 'Microsoft.RedHatOpenShift')].{Name:name,State:properties.state}"
+az feature list -o table --query "[?contains(name, 'Microsoft.ContainerService/AKS-OpenServiceMesh')].{Name:name,State:properties.state}"
 ```
 
 Re-register the provider

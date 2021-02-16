@@ -5,8 +5,9 @@ https://docs.microsoft.com/en-us/azure/aks/networking-overview
 0. Variables
 ```
 SUBSCRIPTION_ID=$(az account show --query id -o tsv)
-KUBE_GROUP="privateaks"
-KUBE_NAME="dzpaks"
+TENANT_ID=$(az account show --query tenantId -o tsv)
+KUBE_GROUP="kub_ter_a_m_osm45"
+KUBE_NAME="osm45"
 LOCATION="westeurope"
 NODE_GROUP=$KUBE_GROUP"_"$KUBE_NAME"_nodes_"$LOCATION
 KUBE_VNET_NAME=$KUBE_NAME"-vnet"
@@ -16,6 +17,7 @@ KUBE_FW_SUBNET_NAME="AzureFirewallSubnet"
 KUBE_ING_SUBNET_NAME="ing-4-subnet"
 KUBE_AGENT_SUBNET_NAME="aks-5-subnet"
 KUBE_AGENT2_SUBNET_NAME="aks-6-subnet"
+KUBE_AGENT3_SUBNET_NAME="aks-7-subnet"
 KUBE_VERSION="$(az aks get-versions -l $LOCATION --query 'orchestrators[?default == `true`].orchestratorVersion' -o tsv)"
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
@@ -39,7 +41,7 @@ az group create -n $KUBE_GROUP -l $LOCATION
 
 2. Create VNETs
 ```
-az network vnet create -g $KUBE_GROUP -n $KUBE_VNET_NAME 
+az network vnet create -g $KUBE_GROUP -n $KUBE_VNET_NAME --address-prefixes 192.168.0.0/20 172.16.0.0/16 10.0.0.0/16
 ```
 
 Get available service endpoints
@@ -54,6 +56,13 @@ az network public-ip prefix create --length 31 --location $LOCATION --name akspr
 
 Assign permissions on vnet
 ```
+az identity create --name $KUBE_NAME -g $KUBE_GROUP
+
+SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $SP_NAME -o json | jq -r '.appId')
+echo $SERVICE_PRINCIPAL_ID
+
+SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
+echo $SERVICE_PRINCIPAL_SECRET
 az role assignment create --role "Virtual Machine Contributor" --assignee $SERVICE_PRINCIPAL_ID -g $KUBE_GROUP
 az role assignment create --role "Contributor" --assignee $SERVICE_PRINCIPAL_ID -g $KUBE_GROUP
 ```
@@ -73,6 +82,10 @@ az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUB
 az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_ING_SUBNET_NAME --address-prefix 10.0.4.0/24
 az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --address-prefix 10.0.5.0/24 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault Microsoft.Storage
 az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT2_SUBNET_NAME --address-prefix 10.0.6.0/24 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault Microsoft.Storage
+
+az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT2_SUBNET_NAME --address-prefix 192.168.0.0/24 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault Microsoft.Storage
+
+az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT3_SUBNET_NAME --address-prefix 172.16.0.0/24 --service-endpoints Microsoft.Sql Microsoft.AzureCosmosDB Microsoft.KeyVault Microsoft.Storage
 ```
 
 4. Create the aks cluster
@@ -87,9 +100,25 @@ create cluster without rbac
 
 KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT_SUBNET_NAME"
 
-KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT2_SUBNET_NAME"
+KUBE_AGENT2_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT2_SUBNET_NAME"
 
-az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 1 --ssh-key-value ~/.ssh/id_rsa.pub  --enable-vmss --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --network-policy calico --enable-rbac --enable-addons monitoring
+KUBE_AGENT3_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT3_SUBNET_NAME"
+
+CONTROLLER_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.ManagedIdentity/userAssignedIdentities/$KUBE_NAME"
+
+MSI_CLIENT_ID=$(az identity show -n $KUBE_NAME -g $KUBE_GROUP --query clientId -o tsv)
+
+az role assignment create --role "Contributor" --assignee $MSI_CLIENT_ID -g $KUBE_GROUP # will be done by aks-engine
+
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2 --ssh-key-value ~/.ssh/id_rsa.pub  --enable-vmss --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --network-policy calico --enable-rbac --enable-addons monitoring
+
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2 --ssh-key-value ~/.ssh/id_rsa.pub --enable-vmss --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --pod-subnet-id $KUBE_AGENT3_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --network-policy calico --enable-rbac --aks-custom-headers EnableSwiftNetworking=true --enable-addons monitoring
+
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2 --ssh-key-value ~/.ssh/id_rsa.pub  --enable-vmss --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24  --network-policy calico --enable-rbac --enable-addons monitoring --enable-managed-identity --aks-custom-headers CustomizedUbuntu=aks-ubuntu-1804,ContainerRuntime=containerd 
+
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2 --ssh-key-value ~/.ssh/id_rsa.pub  --enable-vmss --network-plugin kubenet --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24  --network-policy calico --enable-rbac --enable-addons monitoring --enable-managed-identity --assign-identity $CONTROLLER_ID --outbound-type userDefinedRouting
+
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2 --ssh-key-value ~/.ssh/id_rsa.pub  --enable-vmss --network-plugin kubenet --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --enable-rbac --kubernetes-version $KUBE_VERSION --enable-addons monitoring --enable-managed-identity --assign-identity $CONTROLLER_ID 
 ```
 
 for additional rbac
@@ -103,6 +132,12 @@ az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --s
 with kubenet
 ```
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 2  --ssh-key-value ~/.ssh/id_rsa.pub --network-plugin kubenet --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --pod-cidr 10.244.0.0/16 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION --enable-rbac --node-vm-size "Standard_D2s_v3" --vm-set-type VirtualMachineScaleSets --load-balancer-sku standard --enable-private-cluster 
+
+az aks nodepool add --name router --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --aks-custom-headers CustomizedUbuntu=aks-ubuntu-1804,ContainerRuntime=containerd --vnet-subnet-id $KUBE_AGENT2_SUBNET_ID --mode user --labels workload=nonrouter 
+
+az aks nodepool add --name ub1804pip --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --aks-custom-headers CustomizedUbuntu=aks-ubuntu-1804,ContainerRuntime=containerd --vnet-subnet-id $KUBE_AGENT2_SUBNET_ID
+
+az aks nodepool add --name router --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --aks-custom-headers CustomizedUbuntu=aks-ubuntu-1804,ContainerRuntime=containerd --vnet-subnet-id $KUBE_AGENT3_SUBNET_ID --mode user --labels workload=router 
 
 ```
 
@@ -247,4 +282,58 @@ az network vnet peering create -g $JUMPBOX_GROUP -n KubeToVMPeer --vnet-name $KU
 
 az network vnet peering create -g $JUMPBOX_GROUP -n VMToKubePeer --vnet-name $JUMPBOX_VNET --remote-vnet $KUBE_VNET_NAME --allow-vnet-access
 
+```
+
+# BYO Outbound IP
+
+```
+
+az network public-ip show --resource-group myResourceGroup --name myPublicIP --query id -o tsv
+
+
+IP="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/aksoutbound/providers/Microsoft.Network/publicIPAddresses/aksoutbound1"
+SP_NAME="aksoutbound"
+KUBE_GROUP="aksoutbound"
+
+SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $SP_NAME -o json | jq -r '.appId')
+echo $SERVICE_PRINCIPAL_ID
+
+SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
+echo $SERVICE_PRINCIPAL_SECRET
+
+az role assignment create --role "Contributor" --assignee $SERVICE_PRINCIPAL_ID -g $KUBE_GROUP
+
+az aks create \
+    --resource-group aksoutbound \
+    --name myAKSCluster --network-plugin kubenet \
+    --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID  \
+    --load-balancer-outbound-ips $IP
+
+
+    service.beta.kubernetes.io/azure-load-balancer-resource-group
+
+    service.beta.kubernetes.io/azure-pip-name
+
+KUBE_NAME=myAKSCluster
+KUBE_GROUP=aksoutbound
+
+kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/depl-logger.yaml
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: dummy-logger-pub-lb
+  namespace: default
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: aksoutbound
+    service.beta.kubernetes.io/azure-pip-name: aksoutbound1
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: dummy-logger
+  type: LoadBalancer
+EOF
 ```

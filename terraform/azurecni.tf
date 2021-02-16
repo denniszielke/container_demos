@@ -22,7 +22,7 @@ resource "azurerm_kubernetes_cluster" "akstf" {
     max_pods           = 30
     vnet_subnet_id     = azurerm_subnet.aksnet.id
     type               = "VirtualMachineScaleSets" #"AvailabilitySet" #
-    availability_zones = ["1", "2"]
+#    availability_zones = ["1", "2"]
     node_labels = {
       pool = "default"
       environment = var.environment
@@ -42,11 +42,12 @@ resource "azurerm_kubernetes_cluster" "akstf" {
 
   network_profile {
       network_plugin = "azure"
+      network_policy = "calico"
       service_cidr   = "10.2.0.0/24"
       dns_service_ip = "10.2.0.10"
       docker_bridge_cidr = "172.17.0.1/16"
       #pod_cidr = "" selected by subnet_id
-      #network_policy = "calico"
+
       load_balancer_sku = "standard" # "basic"
   }
 

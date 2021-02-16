@@ -3,20 +3,20 @@
     "properties": {
       "orchestratorProfile": {
         "orchestratorType": "Kubernetes",
-        "orchestratorRelease": "1.16",
+        "orchestratorRelease": "1.18",
         "kubernetesConfig": {
           "enableRbac": true,
           "networkPolicy": "calico",
           "useManagedIdentity": true,
           "loadBalancerSku": "standard",
-          "networkPlugin": "kubenet",
+          "networkPlugin": "azure",
           "addons": [
             {
               "name": "cluster-autoscaler",
               "enabled": true,
               "config": {
                 "minNodes": "1",
-                "maxNodes": "3"
+                "maxNodes": "5"
               }
             }
           ]
@@ -26,18 +26,18 @@
         "count": 1,
         "dnsPrefix": "dz-aksemsi",
         "vmSize": "Standard_DS1_v2",
-        "vnetSubnetId": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/VNET_GROUP/providers/Microsoft.Network/virtualNetworks/aksvnet/subnets/m-1-subnet",
+        "vnetSubnetId": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/akse118/providers/Microsoft.Network/virtualNetworks/aksvnet/subnets/m-1-subnet",
         "firstConsecutiveStaticIP": "172.16.1.4",
         "vnetCIDR": "172.16.1.0/24"
       },
       "agentPoolProfiles": [
         {
           "name": "agentpool1",
-          "count": 2,
+          "count": 1,
           "vmSize": "Standard_D2_v2",
           "storageProfile": "ManagedDisks",
           "availabilityProfile": "VirtualMachineScaleSets",
-          "vnetSubnetId": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/VNET_GROUP/providers/Microsoft.Network/virtualNetworks/aksvnet/subnets/w-2-subnet"
+          "vnetSubnetId": "/subscriptions//resourceGroups/akse118/providers/Microsoft.Network/virtualNetworks/aksvnet/subnets/w-2-subnet"
         }
       ],
       "linuxProfile": {

@@ -495,7 +495,8 @@ kubectl create ns csi-secrets-store
 
 helm upgrade csi-secret-driver csi-secrets-store-provider-azure/csi-secrets-store-provider-azure --namespace csi-secrets-store --install
 
-VAULT_NAME=appgw5-vault
+VAULT_NAME=dzphix1-436-vault
+
 
 
 az identity create -g $NODE_GROUP -n $VAULT_NAME-id
@@ -511,6 +512,11 @@ az role assignment create --role "Contributor" --assignee $AGIC_ID_CLIENT_ID --s
 az role assignment create --role "Reader" --assignee $AGIC_ID_CLIENT_ID --scope $KUBE_GROUP_RESOURCE_ID # might not be needed
 az role assignment create --role "Reader" --assignee $AGIC_ID_CLIENT_ID --scope $NODES_RESOURCE_ID # might not be needed
 az role assignment create --role "Reader" --assignee $AGIC_ID_CLIENT_ID --scope /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$KUBE_GROUP
+
+helm repo add aad-pod-identity https://raw.githubusercontent.com/Azure/aad-pod-identity/master/charts
+helm repo update
+helm upgrade aad-pod-identity --install --namespace kube-system aad-pod-identity/aad-pod-identity
+
 
 cat <<EOF | kubectl apply -f -
 apiVersion: secrets-store.csi.x-k8s.io/v1alpha1

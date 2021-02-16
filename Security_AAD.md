@@ -6,7 +6,7 @@ https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough
 SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
 KUBE_GROUP="dzaksaadv2"
 KUBE_NAME="aksaad"
-KUBE_VERSION="1.16.7" # here enter the kubernetes version of your aks
+KUBE_VERSION="1.18.10" # here enter the kubernetes version of your aks
 KUBE_VNET_NAME="spoke1-kubevnet"
 KUBE_ING_SUBNET_NAME="ing-1-subnet" # here enter the name of your ingress subnet
 KUBE_AGENT_SUBNET_NAME="aks-2-subnet" # here enter the name of your aks subnet
@@ -290,9 +290,11 @@ kubectl run --generator=run-pod/v1 --image=nginx nginx --port=80 -n aadsecured
 kubectl create secret generic azure-secret --from-literal accountname=dzpremium1 --from-literal accountkey="QmJPk8fBkpLbK1wCjrNvYSVFFIb9sCT9GI7QeAkURJZEIjKecMYA4HC0saEJmj9u6jRiB+Tp6hNhuoBOYnDVLQ==" --type=Opaque -n aadsecured
 
 
-az role assignment create --role "Azure Kubernetes Service RBAC Admin" --assignee "dzielke@microsoft.com" --scope $AKS_ID
+az role assignment create --role "Azure Kubernetes Service RBAC Admin" --assignee "d@microsoft.com" --scope $AKS_ID
 
-az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee "dzielke@microsoft.com" --scope $AKS_ID/namespaces/aadsecured
+az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee "d@microsoft.com" --scope $AKS_ID/namespaces/default
+
+az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee "d@microsoft.com" --scope $AKS_ID/namespaces/aadsecured
 
 az aks update --resource-group $KUBE_GROUP --name $KUBE_NAME --aad-admin-group-object-ids $AAD_GROUP_ID
 
@@ -308,6 +310,8 @@ az role assignment create --role "Azure Kubernetes Service RBAC Viewer" --assign
 
 
 az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee "dzielke@microsoft.com" --scope $AKS_ID/namespaces/aadsecured
+
+az aks update --enable-pod-identity --resource-group $KUBE_GROUP --name $KUBE_NAME
 
 
 SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $KUBE_NAME-sp -o json | jq -r '.appId')
@@ -368,3 +372,64 @@ az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-resource-gro
 AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
 
 az role assignment create --role "Azure Kubernetes Service RBAC Admin" --assignee "dzielke@microsoft.com" --scope $AKS_ID
+
+
+## AAD Pod Identity
+
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+IDENTITY_NAME=podidentity1
+POD_IDENTITY_NAME="my-pod-identity"
+POD_IDENTITY_NAMESPACE="my-app"
+NODE_GROUP=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query nodeResourceGroup -o tsv)
+
+az identity create --resource-group ${NODE_GROUP} --name ${IDENTITY_NAME}
+IDENTITY_CLIENT_ID="$(az identity show -g ${NODE_GROUP} -n ${IDENTITY_NAME} --query clientId -o tsv)"
+IDENTITY_RESOURCE_ID="$(az identity show -g ${NODE_GROUP} -n ${IDENTITY_NAME} --query id -o tsv)"
+
+az aks update --resource-group $KUBE_GROUP --name $KUBE_NAME --enable-pod-identity
+
+kubectl create namespace $POD_IDENTITY_NAMESPACE
+
+az aks pod-identity add --resource-group ${KUBE_GROUP} --cluster-name ${KUBE_NAME} --namespace ${POD_IDENTITY_NAMESPACE}  --name ${POD_IDENTITY_NAME} --identity-resource-id ${IDENTITY_RESOURCE_ID}
+
+az role assignment create --role "Reader" --assignee "cd74751b-ed09-421a-9001-807cddbb29de" --scope /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$NODE_GROUP
+
+az role assignment create --role "Reader" --assignee "$IDENTITY_CLIENT_ID" --scope /subscriptions/$SUBSCRIPTION_ID/resourcegroups/$NODE_GROUP
+
+
+https://azure.github.io/aad-pod-identity/docs/configure/pod_identity_in_managed_mode/
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo
+  labels:
+    aadpodidbinding: $POD_IDENTITY_NAME
+  namespace: $POD_IDENTITY_NAMESPACE
+spec:
+  containers:
+  - name: demo
+    image: mcr.microsoft.com/oss/azure/aad-pod-identity/demo:v1.6.3
+    args:
+      - --subscriptionid=$SUBSCRIPTION_ID
+      - --clientid=$IDENTITY_CLIENT_ID
+      - --resourcegroup=$NODE_GROUP
+    env:
+      - name: MY_POD_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      - name: MY_POD_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
+      - name: MY_POD_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.podIP
+  nodeSelector:
+    kubernetes.io/os: linux
+EOF
+
+kubectl logs demo --follow --namespace my-app

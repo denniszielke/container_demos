@@ -27,6 +27,9 @@ spec:
     value: $HUB_CONNECTIONSTRING
 EOF
 
+curl -H 'Authorization: SharedAccessSignature sr={Service Bus Namespace}.servicebus.windows.net&sig={Url Encoded Shared Access Key}&se={Time Stamp with Shared Access Key expration}&skn={Shared Access Policy name}' -H 'Content-Type:application/atom+xml;type=entry;charset=utf-8' --data '{Event Data}' https://{Service Bus Namespace}.servicebus.windows.net/{Event Hub Name}/messages
+
+
 kubectl delete component eventhubs-input
 kubectl delete component eventhubs-input
 

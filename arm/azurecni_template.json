@@ -45,18 +45,6 @@
                 "description": "The size of the Virtual Machine."
             }
         },
-        "servicePrincipalClientId": {
-            "metadata": {
-                "description": "Client ID (used by cloudprovider)"
-            },
-            "type": "string"
-        },
-        "servicePrincipalClientSecret": {
-            "metadata": {
-                "description": "The Service Principal Client Secret."
-            },
-            "type": "string"
-        },
         "osType": {
             "type": "string",
             "defaultValue": "Linux",
@@ -72,51 +60,6 @@
             "defaultValue": "1.7.7",
             "metadata": {
                 "description": "The version of Kubernetes."
-            }
-        },
-        "enableOmsAgent": {
-            "type": "bool",
-            "defaultValue": true,
-            "metadata": {
-                "description": "boolean flag to turn on and off of omsagent addon"
-            }
-        },
-        "workspaceRegion": {
-            "type": "string",
-            "defaultValue": "East US",
-            "metadata": {
-                "description": "Specify the region for your OMS workspace"
-            }
-        },
-        "workspaceName": {
-            "type": "string",
-            "metadata": {
-                "description": "Specify the name of the OMS workspace"
-            }
-        },
-        "omsWorkspaceId": {
-            "type": "string",
-            "metadata": {
-                "description": "Specify the resource id of the OMS workspace"
-            }
-        },
-        "omsSku": {
-            "type": "string",
-            "defaultValue": "standalone",
-            "allowedValues": [
-                "free",
-                "standalone",
-                "pernode"
-            ],
-            "metadata": {
-                "description": "Select the SKU for your workspace"
-            }
-        },
-        "enableHttpApplicationRouting": {
-            "type": "bool",
-            "defaultValue": true,
-            "metadata": {
-                "description": "boolean flag to turn on and off of http application routing"
             }
         },
         "networkPlugin": {
@@ -170,7 +113,7 @@
     },
     "resources": [
         {
-            "apiVersion": "2018-03-31",
+            "apiVersion": "2020-09-01",
             "dependsOn": [],
             "type": "Microsoft.ContainerService/managedClusters",
             "location": "[parameters('location')]",
@@ -180,13 +123,11 @@
                 "enableRBAC": "[parameters('enableRBAC')]",
                 "dnsPrefix": "[parameters('dnsPrefix')]",
                 "addonProfiles": {
-                    "httpApplicationRouting": {
-                        "enabled": "[parameters('enableHttpApplicationRouting')]"
-                    }
                 },
                 "agentPoolProfiles": [
                     {
                         "name": "agentpool",
+                        "mode": "System",
                         "osDiskSizeGB": "[parameters('osDiskSizeGB')]",
                         "count": "[parameters('agentCount')]",
                         "vmSize": "[parameters('agentVMSize')]",
@@ -196,16 +137,17 @@
                         "vnetSubnetID": "[parameters('vnetSubnetID')]"
                     }
                 ],
-                "servicePrincipalProfile": {
-                    "ClientId": "[parameters('servicePrincipalClientId')]",
-                    "Secret": "[parameters('servicePrincipalClientSecret')]"
-                },
                 "networkProfile": {
                     "networkPlugin": "[parameters('networkPlugin')]",
+                    "loadBalancerSku": "standard",
+                    "networkMode": "transparent",
                     "serviceCidr": "[parameters('serviceCidr')]",
                     "dnsServiceIP": "[parameters('dnsServiceIP')]",
                     "dockerBridgeCidr": "[parameters('dockerBridgeCidr')]"
                 }
+            }, 
+            "identity": {
+             "type": "SystemAssigned"
             },
             "tags": {}
         }

@@ -53,8 +53,8 @@ Preview cli:
 https://github.com/Azure/azure-cli-extensions/tree/master/src/
 https://github.com/Azure/azure-cli-extensions/tree/master/src/aks-preview
 Preview commands:
-
 https://github.com/Azure/azure-cli-extensions/blob/master/src/aks-preview/azext_aks_preview/_help.py
+
 Preview CLI release history:
 https://github.com/Azure/azure-cli-extensions/blob/master/src/aks-preview/HISTORY.md
 
@@ -63,6 +63,7 @@ https://github.com/kubernetes/cloud-provider-azure/blob/master/docs/services/REA
 
 Azure troubleshooting:
 https://github.com/feiskyer/kubernetes-handbook/blob/master/en/troubleshooting/azure.md
+
 
 Azure Disk driver:
 https://github.com/kubernetes/examples/blob/master/staging/volumes/azure_disk/README.md

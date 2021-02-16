@@ -117,6 +117,19 @@ cat <<EOF | kubectl apply -f -
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
+  name: azurefile-csi-large
+provisioner: file.csi.azure.com
+parameters:
+  storageAccount: $STORAGE_ACCOUNT
+  shareName: large
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
   name: azurefile-csi-nfs
 provisioner: file.csi.azure.com
 parameters:
@@ -151,12 +164,12 @@ apiVersion: v1
 metadata:
   name: dbench-pv-claim-nfs
 spec:
-  storageClassName: azurefile-csi-nfs
+  storageClassName: azurefile-csi-large
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 10000Gi
+      storage: 100Ti
 EOF
 
 cat <<EOF | kubectl apply -f -

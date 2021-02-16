@@ -5,10 +5,10 @@ https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough
 ```
 SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 TENANT_ID=$(az account show --query tenantId -o tsv)
-KUBE_GROUP="dzscalers"
-KUBE_NAME="akspot"
+KUBE_GROUP="akssimple"
+KUBE_NAME="aksrouter"
 LOCATION="westeurope"
-KUBE_VERSION="1.19.3"
+KUBE_VERSION="$(az aks get-versions -l $LOCATION --query 'orchestrators[?default == `true`].orchestratorVersion' -o tsv)"
 REGISTRY_NAME=""
 APPINSIGHTS_KEY=""
 
@@ -42,6 +42,9 @@ az aks get-versions -l $LOCATION -o table
 
 2. Create the aks cluster
 ```
+
+KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_VNET_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT_SUBNET_NAME"
+
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3 --generate-ssh-keys --kubernetes-version $KUBE_VERSION
 
 az aks create -g $KUBE_GROUP -n $KUBE_NAME --kubernetes-version $KUBE_VERSION --node-count 1 --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION
@@ -49,13 +52,16 @@ az aks create -g $KUBE_GROUP -n $KUBE_NAME --kubernetes-version $KUBE_VERSION --
 az aks create -g $KUBE_GROUP -n $KUBE_NAME --kubernetes-version $KUBE_VERSION --node-count 1 --enable-cluster-autoscaler --min-count 1 --max-count 3  --client-secret $SERVICE_PRINCIPAL_SECRET --service-principal $SERVICE_PRINCIPAL_ID --kubernetes-version $KUBE_VERSION  --enable-vmss
 
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --network-plugin azure --vm-set-type VirtualMachineScaleSets --load-balancer-sku standard --kubernetes-version $KUBE_VERSION \
-    --node-count 3 --enable-managed-identity --enable-node-public-ip --ssh-key-value ~/.ssh/id_rsa.pub --aks-custom-headers CustomizedUbuntu=aks-ubuntu-1804,ContainerRuntime=containerd
+    --node-count 1 --enable-managed-identity --enable-node-public-ip --ssh-key-value ~/.ssh/id_rsa.pub --aks-custom-headers CustomizedUbuntu=aks-ubuntu-1804,ContainerRuntime=containerd --node-resource-group $KUBE_GROUP"_"$KUBE_NAME"_nodes_"$LOCATION --vnet-subnet-id $KUBE_AGENT_SUBNET_ID  --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24
 
 az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --network-plugin azure --vm-set-type VirtualMachineScaleSets --load-balancer-sku standard --kubernetes-version $KUBE_VERSION \
     --node-count 3 --enable-managed-identity --enable-node-public-ip --ssh-key-value ~/.ssh/id_rsa.pub --aks-custom-headers EnableAzureDiskFileCSIDriver=true   --node-resource-group $KUBE_GROUP"_"$KUBE_NAME"_nodes_"$LOCATION --vnet-subnet-id $KUBE_AGENT_SUBNET_ID  --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24
 
-az aks nodepool add --name ubuntu1804 --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --aks-custom-headers CustomizedUbuntu=aks-ubuntu-1804,ContainerRuntime=containerd
+az aks nodepool add --name ubuntu1804 --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --enable-node-public-ip --aks-custom-headers CustomizedUbuntu=aks-ubuntu-1804,ContainerRuntime=containerd
 
+az aks nodepool add --name ubuntucsi --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --aks-custom-headers CustomizedUbuntu=aks-ubuntu-1804,ContainerRuntime=containerd,EnableAzureDiskFileCSIDriver=true
+
+az aks nodepool add --name ub1804pip --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --enable-node-public-ip --aks-custom-headers CustomizedUbuntu=aks-ubuntu-1804 --vnet-subnet-id $KUBE_AGENT_SUBNET_ID
 
 az aks update --enable-cluster-autoscaler --min-count 1 --max-count 5 -g $KUBE_GROUP -n $KUBE_NAME
 ```
@@ -123,6 +129,17 @@ az group deployment create \
         "kubernetesVersion=$KUBE_VERSION" \
         "servicePrincipalClientId=$SERVICE_PRINCIPAL_ID" \
         "servicePrincipalClientSecret=$SERVICE_PRINCIPAL_SECRET"
+
+az group deployment create \
+    --name spot \
+    --resource-group $KUBE_GROUP \
+    --template-file "arm/azurecni_template.json" \
+    --parameters "arm/azurecni_parameters.json" \
+    --parameters "resourceName=$KUBE_NAME" \
+        "location=$LOCATION" \
+        "dnsPrefix=$KUBE_NAME" \
+        "kubernetesVersion=$KUBE_VERSION" \
+        "vnetSubnetID=$KUBE_AGENT_SUBNET_ID"
 ```
 
 3. Export the kubectrl credentials files

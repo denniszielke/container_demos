@@ -41,6 +41,18 @@ az network nic update -g MC_* -n aks-nodepool1-*-nic-0
 kubectl cluster-info dump --namespace kube-system | grep authorization-mode
 ```
 
+## Get Image Version of nodes
+```
+
+az aks nodepool get-upgrades --nodepool-name default --cluster-name $KUBE_NAME --resource-group $KUBE_GROUP -o table
+
+az aks get-upgrades --resource-group $KUBE_GROUP --name $KUBE_NAME --output table
+
+kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.metadata.labels.kubernetes\.azure\.com\/node-image-version}{"\n"}{end}'
+
+az aks upgrade --resource-group $KUBE_GROUP --name $KUBE_NAME --node-image-only
+```
+
 ## Find out source ip
 
 ```

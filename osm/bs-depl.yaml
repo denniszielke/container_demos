@@ -1,0 +1,75 @@
+apiVersion: apps/v1 
+kind: Deployment 
+metadata: 
+  name: bookstore-v1 
+  namespace: bookstore 
+spec: 
+  replicas: 1 
+  selector: 
+    matchLabels: 
+      app: bookstore-v1 
+      version: v1 
+  template: 
+    metadata: 
+      labels: 
+        app: bookstore-v1 
+        version: v1 
+    spec: 
+      containers: 
+      - args: 
+        - --path 
+        - ./ 
+        - --port 
+        - "80" 
+        command: 
+        - /bookstore 
+        env: 
+        - name: IDENTITY 
+          value: bookstore-v1 
+        image: openservicemesh/bookstore:latest 
+        imagePullPolicy: Always 
+        name: bookstore-v1 
+        ports: 
+        - containerPort: 80 
+          name: web 
+          protocol: TCP 
+      serviceAccount: bookstore 
+      serviceAccountName: bookstore 
+---
+apiVersion: apps/v1 
+kind: Deployment 
+metadata: 
+  name: bookstore-v2 
+  namespace: bookstore 
+spec: 
+  replicas: 1 
+  selector: 
+    matchLabels: 
+      app: bookstore-v2 
+      version: v2 
+  template: 
+    metadata: 
+      labels: 
+        app: bookstore-v2 
+        version: v2 
+    spec: 
+      containers: 
+      - args: 
+        - --path 
+        - ./ 
+        - --port 
+        - "80" 
+        command: 
+        - /bookstore 
+        env: 
+        - name: IDENTITY 
+          value: bookstore-v2 
+        image: openservicemesh/bookstore:latest 
+        imagePullPolicy: Always 
+        name: bookstore-v2 
+        ports: 
+        - containerPort: 80 
+          name: web 
+          protocol: TCP 
+      serviceAccount: bookstore 
+      serviceAccountName: bookstore 

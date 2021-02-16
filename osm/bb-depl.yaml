@@ -1,0 +1,27 @@
+apiVersion: apps/v1 
+kind: Deployment 
+metadata: 
+  name: bookbuyer 
+  namespace: bookbuyer 
+spec: 
+  replicas: 1 
+  selector: 
+    matchLabels: 
+      app: bookbuyer 
+  template: 
+    metadata: 
+      labels: 
+        app: bookbuyer 
+        version: v1 
+    spec: 
+      containers: 
+      - name: bookbuyer 
+        image: openservicemesh/bookbuyer:latest 
+        imagePullPolicy: Always 
+        command: 
+        - /bookbuyer 
+        env: 
+        - name: BOOKSTORE_NAMESPACE 
+          value: bookstore 
+      serviceAccount: bookbuyer 
+      serviceAccountName: bookbuyer 

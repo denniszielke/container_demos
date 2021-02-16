@@ -1,0 +1,20 @@
+apiVersion: access.smi-spec.io/v1alpha2 
+kind: TrafficTarget 
+metadata: 
+  name: bookbuyer-access-bookstore-v1 
+  namespace: bookstore 
+spec: 
+  destination: 
+    kind: ServiceAccount 
+    name: bookstore 
+    namespace: bookstore 
+  rules: 
+  - kind: HTTPRouteGroup 
+    name: bookstore-service-routes 
+    matches: 
+    - buy-a-book 
+    - books-bought 
+  sources: 
+  - kind: ServiceAccount 
+    name: bookbuyer 
+    namespace: bookbuyer 
