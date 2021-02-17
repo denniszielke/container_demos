@@ -26,6 +26,9 @@ OUTBOUNDTYPE=""
 
 az account set --subscription $SUBSCRIPTION_ID
 
+az extension add --name aks-preview
+az extension update --name aks-preview 
+
 if [ $(az group exists --name $KUBE_GROUP) = false ]; then
     echo "creating resource group $KUBE_GROUP..."
     az group create -n $KUBE_GROUP -l $LOCATION -o none
