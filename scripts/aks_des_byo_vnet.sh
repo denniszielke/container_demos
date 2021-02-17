@@ -157,7 +157,7 @@ if [ "$AKS_ID" == "" ]; then
     AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
     echo "created AKS $AKS_ID"
 else
-    "AKS $AKS_ID already exists"
+    echo "AKS $AKS_ID already exists"
 fi
 
 echo "setting up azure monitor"
