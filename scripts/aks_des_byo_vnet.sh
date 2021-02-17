@@ -111,13 +111,14 @@ AKS_CONTROLLER_RESOURCE_ID="$(az identity list -g $KUBE_GROUP --query "[?contain
 if [ "$AKS_CLIENT_ID" == "" ]; then
     echo "creating controller identity $KUBE_NAME-id in $KUBE_GROUP"
     az identity create --name $KUBE_NAME-id --resource-group $KUBE_GROUP -o none
-    sleep 10
+    sleep 5 # wait for replication
     AKS_CLIENT_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-id  --query clientId -o tsv)"
-    sleep 5
+    sleep 5 # wait for replication
     AKS_CLIENT_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-id  --query clientId -o tsv)"
     AKS_CONTROLLER_RESOURCE_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-id  --query id -o tsv)"
     echo "created controller identity $AKS_CONTROLLER_RESOURCE_ID "
     echo "assigning permissions on network $KUBE_AGENT_SUBNET_ID"
+    sleep 5 # wait for replication
     az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $KUBE_AGENT_SUBNET_ID -o none
     if [ "$ROUTE_TABLE_ID" == "" ]; then
         echo "no route table used"
