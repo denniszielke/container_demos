@@ -116,13 +116,25 @@ if [ "$AKS_CLIENT_ID" == "" ]; then
     sleep 5
     AKS_CLIENT_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-id  --query clientId -o tsv)"
     AKS_CONTROLLER_RESOURCE_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-id  --query id -o tsv)"
-    az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $KUBE_AGENT_SUBNET_ID -o none
-    az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $ROUTE_TABLE_ID -o none
     echo "created controller identity $AKS_CONTROLLER_RESOURCE_ID "
-else
+    echo "assigning permissions on network $KUBE_AGENT_SUBNET_ID"
     az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $KUBE_AGENT_SUBNET_ID -o none
-    az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $ROUTE_TABLE_ID -o none
+    if [ "$ROUTE_TABLE_ID" == "" ]; then
+        echo "no route table used"
+    else
+        echo "assigning permissions on routetable $ROUTE_TABLE_ID"
+        az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $ROUTE_TABLE_ID -o none
+    fi
+else
     echo "controller identity $AKS_CONTROLLER_RESOURCE_ID already exists"
+    echo "assigning permissions on network $KUBE_AGENT_SUBNET_ID"
+    az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $KUBE_AGENT_SUBNET_ID -o none
+    if [ "$ROUTE_TABLE_ID" == "" ]; then
+        echo "no route table used"
+    else
+        echo "assigning permissions on routetable $ROUTE_TABLE_ID"
+        az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $ROUTE_TABLE_ID -o none
+    fi
 fi
 
 echo "setting up azure container registry"
