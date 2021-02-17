@@ -8,8 +8,7 @@ LOCATION="westeurope" # here enter the datacenter location
 KUBE_VNET_GROUP="networks" # here enter the vnet resource group
 KUBE_VNET_NAME="hub1-firewalvnet" # here enter the name of your AKS vnet
 KUBE_AGENT_SUBNET_NAME="AKS" # here enter the name of your AKS subnet
-ROUTE_TABLE_GROUP="networks" # here enter the name of the routetable resource group
-ROUTE_TABLE_NAME="aksaz" # here enter the name of the routeable
+IGNORE_FORCE_ROUTE="true" # only set to true if you have a routetable on the AKS subnet but that routetable does not contain  a route for '0.0.0.0/0' with target VirtualAppliance or VirtualNetworkGateway
 AAD_GROUP_ID="9329d38c-5296-4ecb-afa5-3e74f9abe09f" # here the AAD group that will be used to lock down AKS authentication
 KUBE_VERSION="$(az aks get-versions -l $LOCATION --query 'orchestrators[?default == `true`].orchestratorVersion' -o tsv)" # here enter the kubernetes version of your AKS or leave this and it will select the latest stable version
 TENANT_ID=$(az account show --query tenantId -o tsv) # azure tenant id
@@ -17,6 +16,7 @@ KUBE_GROUP=$DEPLOYMENT_NAME # here enter the resources group name of your AKS cl
 KUBE_NAME=$DEPLOYMENT_NAME # here enter the name of your kubernetes resource
 NODE_GROUP=$KUBE_GROUP"_"$KUBE_NAME"_nodes_"$LOCATION # name of the node resource group
 MY_OWN_OBJECT_ID=$(az ad signed-in-user show --query objectId --output tsv) # this will be your own aad object id
+OUTBOUNDTYPE=""
 
 az account set --subscription $SUBSCRIPTION_ID
 
@@ -28,15 +28,6 @@ else
     echo "resource group $KUBE_GROUP already exists"
 fi
 
-ROUTE_TABLE_ID=$(az network route-table show -g $ROUTE_TABLE_GROUP --name $ROUTE_TABLE_NAME --query id -o tsv)
-
-if [ "$ROUTE_TABLE_ID" == "" ]; then
-    echo "could not find routetable $ROUTE_TABLE_NAME in $ROUTE_TABLE_GROUP"
-    exit 
-else
-    echo "using routetable $ROUTE_TABLE_ID"
-fi
-
 KUBE_AGENT_SUBNET_ID=$(az network vnet subnet show -g $KUBE_VNET_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --query id -o tsv)
 
 if [ "$KUBE_AGENT_SUBNET_ID" == "" ]; then
@@ -44,6 +35,27 @@ if [ "$KUBE_AGENT_SUBNET_ID" == "" ]; then
     exit 
 else
     echo "using subnet $KUBE_AGENT_SUBNET_ID"
+fi
+
+ROUTE_TABLE_ID=$(az network vnet subnet show -g $KUBE_VNET_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --query routeTable.id -o tsv)
+
+if [ "$ROUTE_TABLE_ID" == "" ]; then
+    echo "could not find routetable on AKS subnet $KUBE_AGENT_SUBNET_ID"
+    exit 
+else
+    echo "using routetable $ROUTE_TABLE_ID with the following entries"
+    ROUTE_TABLE_GROUP=$(az network route-table show --ids $ROUTE_TABLE_ID --query "[resourceGroup]" -o tsv)
+    ROUTE_TABLE_NAME=$(az network route-table show --ids $ROUTE_TABLE_ID --query "[name]" -o tsv)
+    echo "if this routetable does not contain a route for '0.0.0.0/0' with target VirtualAppliance or VirtualNetworkGateway then we will not need the outbound type parameter"
+    az network route-table route list --resource-group $ROUTE_TABLE_GROUP --route-table-name $ROUTE_TABLE_NAME -o table
+    echo "if it does not contain a '0.0.0.0/0' route then you should set the parameter IGNORE_FORCE_ROUTE=true"
+    if [ "$IGNORE_FORCE_ROUTE" == "true" ]; then
+        echo "ignoring forced tunneling route information"
+        OUTBOUNDTYPE=""
+    else
+        echo "using forced tunneling route information"
+        OUTBOUNDTYPE=" --outbound-type userDefinedRouting "
+    fi
 fi
 
 echo "setting up keyvault"
@@ -116,7 +128,7 @@ echo "setting up aks"
 AKS_ID=$(az aks list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME')].id" -o tsv)
 if [ "$AKS_ID" == "" ]; then
     echo "creating AKS $KUBE_NAME in $KUBE_GROUP"
-    az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3 --min-count 3 --max-count 5 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --enable-vmss  --network-plugin kubenet --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --no-ssh-key --assign-identity $AKS_CONTROLLER_RESOURCE_ID --outbound-type userDefinedRouting --node-osdisk-size 300 --node-osdisk-diskencryptionset-id $DES_ID --enable-managed-identity  --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID --uptime-sla --attach-acr $ACR_ID -o none
+    az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3 --min-count 3 --max-count 5 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --enable-vmss  --network-plugin kubenet --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --no-ssh-key --assign-identity $AKS_CONTROLLER_RESOURCE_ID --node-osdisk-size 300 --node-osdisk-diskencryptionset-id $DES_ID --enable-managed-identity  --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID --uptime-sla --attach-acr $ACR_ID $OUTBOUNDTYPE -o none
     AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
     echo "created AKS $AKS_ID"
 else
