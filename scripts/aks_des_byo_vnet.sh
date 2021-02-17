@@ -9,11 +9,11 @@
 set -e
 
 SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
-DEPLOYMENT_NAME="dzciti37" # here enter unique deployment name (ideally short and with letters for global uniqueness)
+DEPLOYMENT_NAME="dzciti38" # here enter unique deployment name (ideally short and with letters for global uniqueness)
 LOCATION="westeurope" # here enter the datacenter location
 KUBE_VNET_GROUP="networks" # here enter the vnet resource group
 KUBE_VNET_NAME="hub1-firewalvnet" # here enter the name of your AKS vnet
-KUBE_AGENT_SUBNET_NAME="AKS" # here enter the name of your AKS subnet
+KUBE_AGENT_SUBNET_NAME="jumpbox-subnet" # here enter the name of your AKS subnet
 IGNORE_FORCE_ROUTE="false" # only set to true if you have a routetable on the AKS subnet but that routetable does not contain  a route for '0.0.0.0/0' with target VirtualAppliance or VirtualNetworkGateway
 AAD_GROUP_ID="9329d38c-5296-4ecb-afa5-3e74f9abe09f" # here the AAD group that will be used to lock down AKS authentication
 KUBE_VERSION="$(az aks get-versions -l $LOCATION --query 'orchestrators[?default == `true`].orchestratorVersion' -o tsv)" # here enter the kubernetes version of your AKS or leave this and it will select the latest stable version
@@ -50,7 +50,6 @@ ROUTE_TABLE_ID=$(az network vnet subnet show -g $KUBE_VNET_GROUP --vnet-name $KU
 
 if [ "$ROUTE_TABLE_ID" == "" ]; then
     echo "could not find routetable on AKS subnet $KUBE_AGENT_SUBNET_ID"
-    exit 
 else
     echo "using routetable $ROUTE_TABLE_ID with the following entries"
     ROUTE_TABLE_GROUP=$(az network route-table show --ids $ROUTE_TABLE_ID --query "[resourceGroup]" -o tsv)
