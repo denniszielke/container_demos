@@ -1,14 +1,20 @@
 #!/bin/sh
 
+#
+# wget https://raw.githubusercontent.com/denniszielke/container_demos/master/scripts/aks_des_byo_vnet.sh
+# chmod +x ./aks_des_byo_vnet.sh
+# bash ./aks_des_byo_vnet.sh
+#
+
 set -e
 
 SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
-DEPLOYMENT_NAME="dzciti27" # here enter unique deployment name (ideally short and with letters for global uniqueness)
+DEPLOYMENT_NAME="dzciti37" # here enter unique deployment name (ideally short and with letters for global uniqueness)
 LOCATION="westeurope" # here enter the datacenter location
 KUBE_VNET_GROUP="networks" # here enter the vnet resource group
 KUBE_VNET_NAME="hub1-firewalvnet" # here enter the name of your AKS vnet
 KUBE_AGENT_SUBNET_NAME="AKS" # here enter the name of your AKS subnet
-IGNORE_FORCE_ROUTE="true" # only set to true if you have a routetable on the AKS subnet but that routetable does not contain  a route for '0.0.0.0/0' with target VirtualAppliance or VirtualNetworkGateway
+IGNORE_FORCE_ROUTE="false" # only set to true if you have a routetable on the AKS subnet but that routetable does not contain  a route for '0.0.0.0/0' with target VirtualAppliance or VirtualNetworkGateway
 AAD_GROUP_ID="9329d38c-5296-4ecb-afa5-3e74f9abe09f" # here the AAD group that will be used to lock down AKS authentication
 KUBE_VERSION="$(az aks get-versions -l $LOCATION --query 'orchestrators[?default == `true`].orchestratorVersion' -o tsv)" # here enter the kubernetes version of your AKS or leave this and it will select the latest stable version
 TENANT_ID=$(az account show --query tenantId -o tsv) # azure tenant id
@@ -105,11 +111,15 @@ if [ "$AKS_CLIENT_ID" == "" ]; then
     az identity create --name $KUBE_NAME-id --resource-group $KUBE_GROUP -o none
     sleep 10
     AKS_CLIENT_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-id  --query clientId -o tsv)"
+    sleep 5
+    AKS_CLIENT_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-id  --query clientId -o tsv)"
     AKS_CONTROLLER_RESOURCE_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-id  --query id -o tsv)"
     az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $KUBE_AGENT_SUBNET_ID -o none
     az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $ROUTE_TABLE_ID -o none
     echo "created controller identity $AKS_CONTROLLER_RESOURCE_ID "
 else
+    az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $KUBE_AGENT_SUBNET_ID -o none
+    az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $ROUTE_TABLE_ID -o none
     echo "controller identity $AKS_CONTROLLER_RESOURCE_ID already exists"
 fi
 
@@ -141,8 +151,8 @@ WORKSPACE_RESOURCE_ID=$(az monitor log-analytics workspace list --resource-group
 if [ "$WORKSPACE_RESOURCE_ID" == "" ]; then
     echo "creating workspace $KUBE_NAME in $KUBE_GROUP"
     az monitor log-analytics workspace create --resource-group $KUBE_GROUP --workspace-name $KUBE_NAME --location $LOCATION -o none
-    WORKSPACE_ID=$(az monitor log-analytics workspace show --resource-group $KUBE_GROUP --workspace-name $KUBE_NAME -o json | jq '.id' -r)
-    az aks enable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME --addons monitoring --workspace-resource-id $WORKSPACE_ID
+    WORKSPACE_RESOURCE_ID=$(az monitor log-analytics workspace show --resource-group $KUBE_GROUP --workspace-name $KUBE_NAME -o json | jq '.id' -r)
+    az aks enable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME --addons monitoring --workspace-resource-id $WORKSPACE_RESOURCE_ID
 fi
 
 az aks get-credentials --resource-group=$KUBE_GROUP --name=$KUBE_NAME
