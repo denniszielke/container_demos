@@ -5,6 +5,7 @@
 aad/*
 scripts/*lima*.sh
 todos.md
+SECURITY_FD.md
 GRPC.md
 ingress/*
 Ingress_EasyAuth.md

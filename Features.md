@@ -62,11 +62,17 @@ az feature register --namespace "Microsoft.ContainerService" --name "AKS-OpenSer
 az feature register --namespace "Microsoft.ContainerService" --name "EnablePodIdentityPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "AKS-OMSAppMonitoring"
 az feature register --namespace "Microsoft.ContainerService" --name "MigrateToMSIClusterPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "EnableAzureKeyvaultSecretsProvider"
 
 az feature register --name OSABypassMarketplace --namespace Microsoft.ContainerService
 az feature register --name AROGA --namespace Microsoft.ContainerService
 
 az feature register --namespace "Microsoft.Network" --name "AllowPrivateEndpoints"
+az feature register --namespace "Microsoft.Network" --name "AllowAppGwPublicAndPrivateIpOnSamePort"
+az feature register --namespace "Microsoft.Network" --name "AllowApplicationGatewayV2UrlRewrite"
+az feature register --namespace "Microsoft.Network" --name "AllowApplicationGatewayPrivateLink"
+
+
 
 az feature register --namespace "microsoft.storage" --name "AllowNFSV3"
 az feature register --namespace "microsoft.storage" --name "PremiumHns"

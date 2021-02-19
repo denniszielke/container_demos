@@ -14,7 +14,8 @@ LOCATION="westeurope" # here enter the datacenter location
 KUBE_VNET_GROUP="networks" # here enter the vnet resource group
 KUBE_VNET_NAME="hub1-firewalvnet" # here enter the name of your AKS vnet
 KUBE_AGENT_SUBNET_NAME="jumpbox-subnet" # here enter the name of your AKS subnet
-IGNORE_FORCE_ROUTE="false" # only set to true if you have a routetable on the AKS subnet but that routetable does not contain  a route for '0.0.0.0/0' with target VirtualAppliance or VirtualNetworkGateway
+IGNORE_FORCE_ROUTE="true" # only set to true if you have a routetable on the AKS subnet but that routetable does not contain  a route for '0.0.0.0/0' with target VirtualAppliance or VirtualNetworkGateway
+USE_PRIVATE_LINK="false" # use to deploy private master endpoint
 AAD_GROUP_ID="9329d38c-5296-4ecb-afa5-3e74f9abe09f" # here the AAD group that will be used to lock down AKS authentication
 KUBE_VERSION="$(az aks get-versions -l $LOCATION --query 'orchestrators[?default == `true`].orchestratorVersion' -o tsv)" # here enter the kubernetes version of your AKS or leave this and it will select the latest stable version
 TENANT_ID=$(az account show --query tenantId -o tsv) # azure tenant id
@@ -71,7 +72,7 @@ echo "setting up keyvault"
 KEYVAULT_ID=$(az keyvault list --query "[?contains(name, '$KUBE_NAME')].id" -o tsv)
 if [ "$KEYVAULT_ID" == "" ]; then
     echo "creating keyvault $KUBE_NAME in resource group $KUBE_GROUP..."
-    az keyvault create -n $KUBE_NAME -g $KUBE_GROUP -l $LOCATION  --enable-purge-protection true -o none
+    az keyvault create -n $KUBE_NAME -g $KUBE_GROUP -l $LOCATION  --enable-purge-protection true --enable-soft-delete true -o none
     KEYVAULT_ID=$(az keyvault show --name $KUBE_NAME --query "[id]" -o tsv)
     echo "created keyvault $KEYVAULT_ID"
 else   
@@ -151,9 +152,16 @@ fi
 
 echo "setting up aks"
 AKS_ID=$(az aks list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME')].id" -o tsv)
+
+if [ "$USE_PRIVATE_LINK" == "true" ]; then
+    ACTIVATE_PRIVATE_LINK=" --enable-private-cluster "
+else
+    ACTIVATE_PRIVATE_LINK=""
+fi
+
 if [ "$AKS_ID" == "" ]; then
     echo "creating AKS $KUBE_NAME in $KUBE_GROUP"
-    az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3 --min-count 3 --max-count 5 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --enable-vmss  --network-plugin kubenet --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --no-ssh-key --assign-identity $AKS_CONTROLLER_RESOURCE_ID --node-osdisk-size 300 --node-osdisk-diskencryptionset-id $DES_ID --enable-managed-identity  --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID --uptime-sla --attach-acr $ACR_ID $OUTBOUNDTYPE -o none
+    az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-count 3 --min-count 3 --max-count 5 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --enable-vmss  --network-plugin kubenet --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --no-ssh-key --assign-identity $AKS_CONTROLLER_RESOURCE_ID --node-osdisk-size 300 --node-osdisk-diskencryptionset-id $DES_ID --enable-managed-identity  --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID --uptime-sla --attach-acr $ACR_ID $OUTBOUNDTYPE $ACTIVATE_PRIVATE_LINK -o none
     AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
     echo "created AKS $AKS_ID"
 else

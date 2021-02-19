@@ -64,6 +64,9 @@ az aks nodepool add --name ubuntucsi --resource-group $KUBE_GROUP --cluster-name
 az aks nodepool add --name ub1804pip --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --enable-node-public-ip --aks-custom-headers CustomizedUbuntu=aks-ubuntu-1804 --vnet-subnet-id $KUBE_AGENT_SUBNET_ID
 
 az aks update --enable-cluster-autoscaler --min-count 1 --max-count 5 -g $KUBE_GROUP -n $KUBE_NAME
+
+az aks update -g $KUBE_GROUP -n $KUBE_NAME --auto-upgrade-channel rapid
+
 ```
 
 with existing keys and latest version

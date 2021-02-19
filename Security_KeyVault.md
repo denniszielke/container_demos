@@ -30,6 +30,8 @@ SECRET_NAME="mySecret"
 SECRET_VERSION=""
 KEY_NAME="mykey"
 STORAGE_NAME="dzbyokdemo"
+
+az aks enable-addons --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --addons="azure-keyvault-secrets-provider"
 ```
 
 1. create key vault
