@@ -294,7 +294,7 @@ az role assignment create --role "Azure Kubernetes Service RBAC Admin" --assigne
 
 az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee "d@microsoft.com" --scope $AKS_ID/namespaces/default
 
-az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee "d@microsoft.com" --scope $AKS_ID/namespaces/aadsecured
+az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee "dzielke@microsoft.com" --scope $AKS_ID/namespaces/aadsecured
 
 az aks update --resource-group $KUBE_GROUP --name $KUBE_NAME --aad-admin-group-object-ids $AAD_GROUP_ID
 

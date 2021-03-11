@@ -15,9 +15,10 @@ cat <<EOF | kubectl apply -f -
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: pubsub-azure-service-bus
+  name: dzpubsub
 spec:
   type: pubsub.azure.servicebus
+  version: v1
   metadata:
   - name: connectionString
     value: '$SB_CONNECTIONSTRING'

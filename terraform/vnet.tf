@@ -89,6 +89,14 @@ resource "azurerm_subnet" "basnet" {
   virtual_network_name      = azurerm_virtual_network.kubevnet.name
 }
 
+resource "azurerm_subnet" "podnet" {
+  name                      = "pod-8-subnet"
+  resource_group_name       = azurerm_resource_group.aksrg.name
+  #network_security_group_id = "${azurerm_network_security_group.aksnsg.id}"
+  address_prefixes            = ["10.0.8.0/22"]
+  virtual_network_name      = azurerm_virtual_network.kubevnet.name
+}
+
 resource "azurerm_public_ip" "bastion_ip" {
   name                         = "bastion-pip"
   location                     = azurerm_kubernetes_cluster.akstf.location

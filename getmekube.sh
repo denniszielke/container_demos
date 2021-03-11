@@ -42,7 +42,7 @@ fi
 SUBSCRIPTION_FILE=$CONFIG_PATH/variables_$subscription.tf
 
 if [ "$cluster_region" == "" ]; then
-echo "Region [we]westeurope, [ea]eastus, [ne]northeurope?, [as]australiaeast: "
+echo "Region [we]westeurope, [ea]eastus, [ne]northeurope?, [as]australiaeast, [wc] westcentralus "
 read -n 2 cluster_region
 echo
 fi
@@ -53,6 +53,8 @@ elif [ "$cluster_region" == "ea" ]; then
 cluster_region="EastUs"
 elif [ "$cluster_region" == "as" ]; then
 cluster_region="australiaeast"
+elif [ "$cluster_region" == "wc" ]; then
+cluster_region="westcentralus"
 else
 cluster_region="WestEurope"
 fi

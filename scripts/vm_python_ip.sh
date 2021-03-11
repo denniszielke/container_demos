@@ -10,4 +10,8 @@ wget https://raw.githubusercontent.com/denniszielke/container_demos/master/loggi
 
 pip install -r requirements.txt
 
+chmod +x echo.py
+
 python echo.py
+
+#nohup python /home/azureuser/echo.py &

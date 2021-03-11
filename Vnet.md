@@ -141,6 +141,11 @@ az aks nodepool add --name router --resource-group $KUBE_GROUP --cluster-name $K
 
 ```
 
+AKS_CONTROLLER_RESOURCE_ID="$(az identity list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME')].id" -o tsv)"
+
+az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --location $LOCATION --max-pods 250 --node-count 2 --network-plugin azure  --vnet-subnet-id $HOST_VNET_ID  --pod-subnet-id $POD_VNET_ID --kubernetes-version $KUBE_VERSION --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24  --no-ssh-key --assign-identity $AKS_CONTROLLER_RESOURCE_ID --enable-managed-identity
+
+
 --node-vm-size "Standard_B2s"
 --node-vm-size "Standard_D2s_v3"
 

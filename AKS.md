@@ -65,8 +65,6 @@ az aks nodepool add --name ub1804pip --resource-group $KUBE_GROUP --cluster-name
 
 az aks update --enable-cluster-autoscaler --min-count 1 --max-count 5 -g $KUBE_GROUP -n $KUBE_NAME
 
-az aks update -g $KUBE_GROUP -n $KUBE_NAME --auto-upgrade-channel rapid
-
 ```
 
 with existing keys and latest version

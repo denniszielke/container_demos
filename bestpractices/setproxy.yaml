@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: check-reboot
+  name: set-proxy
   labels:
-    app: check-reboot
+    app: set-proxy
 spec:
   selector:
     matchLabels:
-      name: check-reboot
+      name: set-proxy
   template:
     metadata:
       labels:
-        name: check-reboot
+        name: set-proxy
     spec:
       nodeSelector:
         beta.kubernetes.io/os: linux
       containers:
-        - name: check-reboot
+        - name: set-proxy
           securityContext:
             privileged: true
           image: busybox
@@ -29,7 +29,11 @@ spec:
           command: [ "sh", "-c"]
           args:
           - while true; do
-              [ -f /host/reboot/reboot-required ] && echo "check-reboot status - $MY_NODE_NAME reboot required" || echo "check-reboot status - $MY_NODE_NAME no action required";
+              echo "proxy contents"
+              cat /host/etc/environment           
+              if grep -q SomeString "/host/etc/environment"; then
+                echo -e "http_proxy=http://192.168.43.100:3128/\nhttps_proxy=https://192.168.43.100:3128/" | sudo tee -a /host/etc/environment
+              fi
               sleep 100;
             done;
           resources:
@@ -37,11 +41,11 @@ spec:
               cpu: 5m
               memory: 50Mi
           volumeMounts:
-            - name: host-reboot
-              mountPath: /host/reboot
+            - name: host-etc
+              mountPath: /host/etc
               readOnly: true
       volumes:
-      - name: host-reboot
+      - name: host-etc
         hostPath:
-          path: /var/run/
+          path: /etc
           type: Directory
