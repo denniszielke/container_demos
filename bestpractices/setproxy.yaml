@@ -29,12 +29,9 @@ spec:
           command: [ "sh", "-c"]
           args:
           - while true; do
-              echo "proxy contents"
-              cat /host/etc/environment           
-              if grep -q SomeString "/host/etc/environment"; then
-                echo -e "http_proxy=http://192.168.43.100:3128/\nhttps_proxy=https://192.168.43.100:3128/" | sudo tee -a /host/etc/environment
-              fi
-              sleep 100;
+              echo "proxy contents";
+              cat /host/etc/environment;
+              sleep 1000;
             done;
           resources:
             requests:
