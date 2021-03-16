@@ -20,7 +20,7 @@ fi
 
 APPGW_RESOURCE_ID=$(az network application-gateway list --resource-group=$KUBE_GROUP -o json | jq -r ".[0].id")
 
-if [ "$APPGW_PUBLIC_IP" == "" ]; then
+if [ "$APPGW_RESOURCE_ID" == "" ]; then
 echo "creating application gateway $KUBE_NAME-appgw..."
 az network application-gateway create --name $KUBE_NAME-appgw --resource-group $KUBE_GROUP --location $LOCATION --http2 Enabled --min-capacity 0 --max-capacity 10 --sku WAF_v2  --subnet $APPGW_SUBNET_ID --http-settings-cookie-based-affinity Disabled --frontend-port 80 --http-settings-port 80 --http-settings-protocol Http --public-ip-address appgw-pip --private-ip-address "10.0.1.100"
 APPGW_NAME=$(az network application-gateway list --resource-group=$KUBE_GROUP -o json | jq -r ".[0].name")

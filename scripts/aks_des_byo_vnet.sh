@@ -7,6 +7,9 @@
 #
 
 set -e
+# sudo nano /etc/environment
+# http_proxy=http://192.168.43.100:3128/\nhttps_proxy=https://192.168.43.100:3128/
+# sudo nano /etc/ntp.conf
 
 SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
 DEPLOYMENT_NAME="dzciti38" # here enter unique deployment name (ideally short and with letters for global uniqueness)

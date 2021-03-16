@@ -55,12 +55,13 @@ AZURE_CONTAINER_REGISTRY_NAME=charts
 KUBERNETES_NAMESPACE=calculator
 BUILD_BUILDNUMBER=latest
 AZURE_CONTAINER_REGISTRY_URL=denniszielke
+APPINSIGHTY_KEY=
 
 kubectl create namespace $KUBERNETES_NAMESPACE
 
 osm namespace add calculator --mesh-name osm --enable-sidecar-injection 
 
-helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=true --set ingress.enabled=false --set service.type=LoadBalancer --set noProbes=true --wait --timeout 45s
+helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=true --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --set ingress.enabled=false --set service.type=LoadBalancer --set noProbes=true --wait --timeout 45s
 
 helm delete calculator -n $KUBERNETES_NAMESPACE
 ```
