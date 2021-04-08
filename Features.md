@@ -63,6 +63,7 @@ az feature register --namespace "Microsoft.ContainerService" --name "EnablePodId
 az feature register --namespace "Microsoft.ContainerService" --name "AKS-OMSAppMonitoring"
 az feature register --namespace "Microsoft.ContainerService" --name "MigrateToMSIClusterPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "EnableAzureKeyvaultSecretsProvider"
+az feature register --namespace "Microsoft.ContainerService" --name "RunCommandPreview"
 
 az feature register --name OSABypassMarketplace --namespace Microsoft.ContainerService
 az feature register --name AROGA --namespace Microsoft.ContainerService

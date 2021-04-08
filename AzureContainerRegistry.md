@@ -116,8 +116,6 @@ az acr helm delete -n $ACR_NAME multicalculatorv3 --version 0.1.0
 
 ## Security Scanning
 
-
-
 ```
 ACR_NAME=
 
@@ -130,3 +128,6 @@ docker pull mcr.microsoft.com/dotnet/core/sdk:2.2.105
 docker tag mcr.microsoft.com/dotnet/core/sdk:2.2.105 $ACR_NAME.azurecr.io/vulnerables/core/sdk:2.2.105
 docker push $ACR_NAME.azurecr.io/vulnerables/core/sdk:2.2.105
 ```
+
+## Teleport
+

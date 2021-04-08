@@ -1,6 +1,7 @@
 ## Addon
 https://github.com/openservicemesh/osm
 
+
 az aks enable-addons --addons "open-service-mesh" --name $KUBE_NAME --resource-group $KUBE_GROUP 
 
 kubectl get configmap -n kube-system osm-config -o JSON
@@ -25,6 +26,9 @@ osm namespace add bookstore --mesh-name osm --enable-sidecar-injection
 
 https://blog.nillsf.com/index.php/2020/08/11/taking-the-open-service-mesh-for-a-test-drive/
 
+OSM_VERSION=v0.8.0
+
+curl -sL "https://github.com/openservicemesh/osm/releases/download/$OSM_VERSION/osm-$OSM_VERSION-linux-amd64.tar.gz" | tar -vxzf -
 
 wget https://github.com/openservicemesh/osm/releases/download/v0.4.0/osm-v0.4.0-darwin-amd64.tar.gz
 tar -xvzf osm-v0.3.0-darwin-amd64.tar.gz
@@ -195,3 +199,7 @@ kubectl edit TrafficTarget bookbuyer-access-bookstore-v1 -n bookstore
 
 kubectl edit trafficsplits bookstore-split -n bookstore
 
+## Tracing
+
+
+osm mesh upgrade --enable-tracing --tracing-address  otel-collector.default.svc.cluster.local --tracing-port 9411 --tracing-endpoint /api/v2/spans

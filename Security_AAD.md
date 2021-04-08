@@ -290,11 +290,11 @@ kubectl run --generator=run-pod/v1 --image=nginx nginx --port=80 -n aadsecured
 kubectl create secret generic azure-secret --from-literal accountname=dzpremium1 --from-literal accountkey="QmJPk8fBkpLbK1wCjrNvYSVFFIb9sCT9GI7QeAkURJZEIjKecMYA4HC0saEJmj9u6jRiB+Tp6hNhuoBOYnDVLQ==" --type=Opaque -n aadsecured
 
 
-az role assignment create --role "Azure Kubernetes Service RBAC Admin" --assignee "d@microsoft.com" --scope $AKS_ID
+az role assignment create --role "Azure Kubernetes Service RBAC Admin" --assignee $MY_USER_ID --scope $AKS_ID
 
-az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee "d@microsoft.com" --scope $AKS_ID/namespaces/default
+az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee $MY_USER_ID --scope $AKS_ID/namespaces/default
 
-az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee "dzielke@microsoft.com" --scope $AKS_ID/namespaces/aadsecured
+az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee $MY_USER_ID --scope $AKS_ID/namespaces/aadsecured
 
 az aks update --resource-group $KUBE_GROUP --name $KUBE_NAME --aad-admin-group-object-ids $AAD_GROUP_ID
 
@@ -306,10 +306,10 @@ AKS_ID=$(az aks show -g MyResourceGroup -n MyManagedCluster --query id -o tsv)
 
 az aks get-credentials -g MyResourceGroup -n MyManagedCluster --admin
 
-az role assignment create --role "Azure Kubernetes Service RBAC Viewer" --assignee "dzielke@microsoft.com" --scope $AKS_ID/namespaces/aadsecured
+az role assignment create --role "Azure Kubernetes Service RBAC Viewer" --assignee $MY_USER_ID --scope $AKS_ID/namespaces/aadsecured
 
 
-az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee "dzielke@microsoft.com" --scope $AKS_ID/namespaces/aadsecured
+az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee $MY_USER_ID --scope $AKS_ID/namespaces/aadsecured
 
 az aks update --enable-pod-identity --resource-group $KUBE_GROUP --name $KUBE_NAME
 
@@ -371,7 +371,7 @@ az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --node-resource-gro
 
 AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
 
-az role assignment create --role "Azure Kubernetes Service RBAC Admin" --assignee "dzielke@microsoft.com" --scope $AKS_ID
+az role assignment create --role "Azure Kubernetes Service RBAC Admin" --assignee $MY_USER_ID --scope $AKS_ID
 
 
 ## AAD Pod Identity

@@ -89,6 +89,7 @@ brew upgrade kubernetes-helm
 ### install the preview cli
 ```
 az extension add --name aks-preview
+az extension update --name aks-preview
 ```
 
 remove existing installation of preview cli

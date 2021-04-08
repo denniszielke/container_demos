@@ -6,9 +6,9 @@ https://docs.microsoft.com/en-us/azure/aks/networking-overview
 ```
 SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 TENANT_ID=$(az account show --query tenantId -o tsv)
-KUBE_GROUP="kub_ter_a_m_osm45"
-KUBE_NAME="osm45"
-LOCATION="westeurope"
+KUBE_NAME="podsub2"
+KUBE_GROUP="kub_ter_a_m_$KUBE_NAME"
+LOCATION="westcentralus"
 NODE_GROUP=$KUBE_GROUP"_"$KUBE_NAME"_nodes_"$LOCATION
 KUBE_VNET_NAME=$KUBE_NAME"-vnet"
 KUBE_GW_SUBNET_NAME="gw-1-subnet"
@@ -342,3 +342,30 @@ spec:
   type: LoadBalancer
 EOF
 ```
+
+
+## Pod Subnet
+
+https://ms.portal.azure.com/#@microsoft.onmicrosoft.com/resource/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourceGroups/kubes_fw_knet/overview
+
+KUBE_NAME=dzkubekube-3
+LOCATION=westcentralus
+KUBE_GROUP=kubes_fw_knet
+KUBE_VERSION=1.18.14
+NODE_GROUP=kubes_fw_knet_dzkubek
+
+az aks get-credentials -g $KUBE_GROUP -n $KUBE_NAME --admin
+
+ssh dennis@52.161.97.26
+
+
+az aks command invoke -g $KUBE_GROUP -n $KUBE_NAME$AKS_POSTFIX -c "kubectl get pods -n kube-system"
+
+
+az aks command invoke -g $KUBE_GROUP -n $KUBE_NAME$AKS_POSTFIX -c "kubectl apply -f deployment.yaml -n default" -f deployment.yaml
+
+
+az aks command invoke -g $KUBE_GROUP -n $KUBE_NAME$AKS_POSTFIX -c "kubectl apply -f deployment.yaml -n default" -f .
+
+
+az aks command invoke -g $KUBE_GROUP -n $KUBE_NAME$AKS_POSTFIX -c "helm repo add bitnami https://charts.bitnami.com/bitnami && helm repo update && helm install my-release -f values.yaml bitnami/nginx" -f values.yaml

@@ -566,9 +566,166 @@ spec:
   backoffLimit: 4
 EOF
 
+
+
 kubectl logs -f job/dbench
 
 
+## Storage NFS 3
+
+https://github.com/kubernetes-sigs/blob-csi-driver/tree/master/deploy/example/nfs
+
+```
+curl -skSL https://raw.githubusercontent.com/kubernetes-sigs/blob-csi-driver/master/deploy/install-driver.sh | bash -s master --
+
+kubectl -n kube-system get pod -o wide -l app=csi-blob-controller
+kubectl -n kube-system get pod -o wide -l app=csi-blob-node
+
+curl -skSL https://raw.githubusercontent.com/kubernetes-sigs/blob-csi-driver/master/deploy/uninstall-driver.sh | bash -s master --
+
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/blob-csi-driver/master/deploy/v1.0.0/rbac-csi-blob-node.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/blob-csi-driver/master/deploy/v1.0.0/rbac-csi-blob-controller.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/blob-csi-driver/master/deploy/v1.0.0/csi-blob-node.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/blob-csi-driver/master/deploy/v1.0.0/csi-blob-controller.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/blob-csi-driver/master/deploy/v1.0.0/csi-blob-driver.yaml
+
+cat <<EOF | kubectl apply -f -
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: blob-nfs
+provisioner: blob.csi.azure.com
+parameters:
+  resourceGroup: kub_ter_a_s_store3  # optional, only set this when storage account is not in the same resource group as agent node
+  storageAccount: dzstore3
+  protocol: nfs
+EOF
+
+cat <<EOF | kubectl apply -f -
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: statefulset-blob
+  labels:
+    app: dbench
+spec:
+  serviceName: dbench
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: dbench
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+        - name: dbench
+          image: denniszielke/dbench:latest
+          env:
+            - name: DBENCH_MOUNTPOINT
+              value: /mnt/blob
+          volumeMounts:
+            - name: persistent-storage
+              mountPath: /mnt/blob
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: dbench
+  volumeClaimTemplates:
+    - metadata:
+        name: persistent-storage
+        annotations:
+          volume.beta.kubernetes.io/storage-class: blob-nfs
+      spec:
+        accessModes: ["ReadWriteMany"]
+        resources:
+          requests:
+            storage: 100Gi
+EOF
+
+cat <<EOF | kubectl apply -f -
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: statefulset-blob
+  labels:
+    app: nginx
+spec:
+  serviceName: statefulset-blob
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+        - name: statefulset-blob
+          image: mcr.microsoft.com/oss/nginx/nginx:1.17.3-alpine
+          command:
+            - "/bin/sh"
+            - "-c"
+            - while true; do echo $(date) >> /mnt/blob/outfile; sleep 1; done
+          volumeMounts:
+            - name: persistent-storage
+              mountPath: /mnt/blob
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: nginx
+  volumeClaimTemplates:
+    - metadata:
+        name: persistent-storage
+        annotations:
+          volume.beta.kubernetes.io/storage-class: blob-nfs
+      spec:
+        accessModes: ["ReadWriteMany"]
+        resources:
+          requests:
+            storage: 100Gi
+EOF
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dbench
+spec:
+  template:
+    spec:
+      containers:
+      - name: dbench
+        image: logdna/dbench:latest
+        imagePullPolicy: Always
+        env:
+          - name: DBENCH_MOUNTPOINT
+            value: /data
+          # - name: DBENCH_QUICK
+          #   value: "yes"
+          # - name: FIO_SIZE
+          #   value: 1G
+          # - name: FIO_OFFSET_INCREMENT
+          #   value: 256M
+          # - name: FIO_DIRECT
+          #   value: "0"
+      volumeClaimTemplates:
+      - metadata:
+          name: persistent-storage
+          annotations:
+            volume.beta.kubernetes.io/storage-class: blob-nfs
+        spec:
+          accessModes: ["ReadWriteMany"]
+          resources:
+            requests:
+              storage: 100Gi
+  backoffLimit: 4
+EOF
+```
 
 # Results - 1.17.X
 

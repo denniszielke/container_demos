@@ -67,9 +67,48 @@ helm repo add promtail https://grafana.github.io/loki/charts
 helm repo update
 helm upgrade --install po  prometheus-operator/prometheus-operator -n=monitoring
 
-helm upgrade --install loki -n=monitoring loki/loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=true,prometheus.server.persistentVolume.enabled=true
+helm upgrade --install loki -n=monitoring loki/loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=true,prometheus.server.persistentVolume.enabled=true,persistence.enabled=true
 
 helm upgrade --install promtail -n=monitoring promtail/promtail
 
 kubectl get secret --namespace monitoring loki-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
 kubectl port-forward --namespace monitoring service/loki-grafana 3000:80
+
+```
+
+## Loki
+https://github.com/grafana/helm-charts/blob/main/charts/grafana/README.md
+
+
+```
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+```
+
+
+## Troubleshooting Logs
+
+```
+KUBE_NAME=
+LOCATION=westeurope
+KUBE_GROUP=kub_ter_a_m_$KUBE_NAME
+KUBE_VERSION=1.19.7
+
+az rest --method get --url "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.OperationalInsights/workspaces/$KUBE_NAME-lga/tables/ContainerLog?api-version=2020-10-01"
+
+{
+
+  "name": "ContainerLog",
+  "properties": {
+    "isTroubleshootingAllowed": true,
+    "isTroubleshootEnabled": true,
+    "retentionInDays": 30
+  },
+}
+
+az rest --method put --url "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.OperationalInsights/workspaces/$KUBE_NAME-lga/tables/ContainerLog?api-version=2020-10-01" --body @tsl.json
+
+
+wget https://raw.githubusercontent.com/microsoft/Docker-Provider/ci_prod/kubernetes/container-azm-ms-agentconfig.yaml
+
+```

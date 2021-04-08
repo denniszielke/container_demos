@@ -492,6 +492,7 @@ kubectl exec -it nginx-secrets-store-inline-pod-identity cat /kvmnt/testsecret
 
 # new CSI
 
+```
 helm repo add csi-secrets-store-provider-azure https://raw.githubusercontent.com/Azure/secrets-store-csi-driver-provider-azure/master/charts
 kubectl create ns csi-secrets-store
 
@@ -591,3 +592,86 @@ spec:
         volumeAttributes:
           secretProviderClass: azure-kvname
 EOF
+```
+
+## Managed KV
+
+```
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+TENANT_ID=$(az account show --query tenantId -o tsv)
+AZURE_MYOWN_OBJECT_ID=$(az ad signed-in-user show --query objectId --output tsv)
+KUBE_NAME=
+LOCATION=northeurope
+KUBE_GROUP=kub_ter_a_s_$KUBE_NAME
+KUBE_VERSION=1.20.2
+NODE_GROUP=kub_ter_a_s_$KUBE_NAME_nodes_northeurope
+SERVICE_PRINCIPAL_ID=msi
+SERVICE_PRINCIPAL_ID=
+KEYVAULT_NAME=$KUBE_NAME-vault
+
+
+az aks enable-addons --addons azure-keyvault-secrets-provider --enable-secret-rotation --resource-group=$KUBE_GROUP --name=$KUBE_NAME
+
+
+KUBELET_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query identityProfile.kubeletidentity.clientId -o tsv)
+
+
+az keyvault set-policy -n $KEYVAULT_NAME --secret-permissions get set list --object-id $AZURE_MYOWN_OBJECT_ID
+az keyvault set-policy -n $KEYVAULT_NAME --secret-permissions get --spn $KUBELET_ID
+az keyvault secret set -n supersecret1 --vault-name $KEYVAULT_NAME --value MySuperSecretThatIDontWantToShareWithYou!
+
+
+cat <<EOF | kubectl apply -f -
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+  name: azure-kvname-user-msi
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    useVMManagedIdentity: "true"
+    userAssignedIdentityID: "$KUBELET_ID"
+    keyvaultName: "$KEYVAULT_NAME"
+    cloudName: ""                   # [OPTIONAL for Azure] if not provided, azure environment will default to AzurePublicCloud
+    objects:  |
+      array:
+        - |
+          objectName: supersecret1
+          objectType: secret        # object types: secret, key or cert
+          objectVersion: ""         # [OPTIONAL] object versions, default to latest if empty
+    tenantId: "$TENANT_ID"                 # the tenant ID of the KeyVault  
+EOF
+
+
+cat <<EOF | kubectl apply -f -
+kind: Pod
+apiVersion: v1
+metadata:
+  name: busybox-secrets-store-inline-user-msi
+spec:
+  containers:
+    - name: busybox
+      image: k8s.gcr.io/e2e-test-images/busybox:1.29
+      command:
+        - "/bin/sleep"
+        - "10000"
+      volumeMounts:
+      - name: secrets-store01-inline
+        mountPath: "/mnt/secrets-store"
+        readOnly: true
+  volumes:
+    - name: secrets-store01-inline
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: "azure-kvname-user-msi"
+EOF
+
+kubectl exec -it  busybox-secrets-store-inline-user-msi -- /bin/sh
+
+ls -l /mnt/secrets-store/
+
+cat supersecret1
+```

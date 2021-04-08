@@ -1,4 +1,6 @@
 # Nginx
+https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
+https://github.com/kubernetes/ingress-nginx/blob/master/charts/ingress-nginx/values.yaml
 
 ## Install nginx
 ```
@@ -17,6 +19,9 @@ helm search repo nginx-ingress
 
 
 kubectl create ns nginx
+
+helm upgrade my-ingress-controller nginx/nginx-ingress --install --set controller.stats.enabled=true --set controller.replicaCount=2 --set controller.service.externalTrafficPolicy=Local --namespace=nginx
+
 helm upgrade my-ingress-controller nginx/nginx-ingress --install --set controller.service.loadBalancerIP="$IP" --set controller.stats.enabled=true --set controller.replicaCount=2 --set controller.service.externalTrafficPolicy=Local --namespace=nginx
 
 helm install nginx nginx/nginx-ingress \

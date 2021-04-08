@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: dummy-logger
 spec:
-  replicas: 5 
+  replicas: 2 
   minReadySeconds: 10
   strategy:
     type: RollingUpdate
@@ -30,7 +30,7 @@ spec:
             port: 80
         readinessProbe:
           httpGet:
-            path: ping
+            path: /ping
             port: 80
           initialDelaySeconds: 10
           periodSeconds: 5

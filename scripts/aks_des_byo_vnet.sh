@@ -61,6 +61,14 @@ else
     echo "if this routetable does not contain a route for '0.0.0.0/0' with target VirtualAppliance or VirtualNetworkGateway then we will not need the outbound type parameter"
     az network route-table route list --resource-group $ROUTE_TABLE_GROUP --route-table-name $ROUTE_TABLE_NAME -o table
     echo "if it does not contain a '0.0.0.0/0' route then you should set the parameter IGNORE_FORCE_ROUTE=true"
+
+    echo "adding routes for active directory"
+    az network route-table route create --resource-group $ROUTE_TABLE_GROUP --name "aad" --route-table-name $ROUTE_TABLE_NAME --address-prefix AzureActiveDirectory --next-hop-type Internet
+    echo "adding routes for azure monitor"
+    az network route-table route create --resource-group $ROUTE_TABLE_GROUP --name "monitor" --route-table-name $ROUTE_TABLE_NAME --address-prefix AzureMonitor --next-hop-type Internet
+    echo "adding routes for azure region $LOCATION"
+    az network route-table route create --resource-group $ROUTE_TABLE_GROUP --name "azure" --route-table-name $ROUTE_TABLE_NAME --address-prefix AzureCloud.$LOCATION --next-hop-type Internet
+
     if [ "$IGNORE_FORCE_ROUTE" == "true" ]; then
         echo "ignoring forced tunneling route information"
         OUTBOUNDTYPE=""

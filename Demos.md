@@ -25,6 +25,22 @@ curl -X POST http://$DUMMY_LOGGER_IP/api/log -H "message: hi"
 ```
 kubectl run hello-world --quiet --image=busybox --restart=OnFailure -- echo "Hello Kubernetes!"
 
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: centos
+spec:
+  containers:
+  - name: centos
+    image: centos
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+
 ```
 
 ## emojivoto
@@ -56,12 +72,17 @@ KUBERNETES_NAMESPACE=calculator
 BUILD_BUILDNUMBER=latest
 AZURE_CONTAINER_REGISTRY_URL=denniszielke
 APPINSIGHTY_KEY=
+AZURE_REDIS_HOST=.redis.cache.windows.net
+AZURE_REDIS_KEY=
+DNS=dzobs21
 
 kubectl create namespace $KUBERNETES_NAMESPACE
 
 osm namespace add calculator --mesh-name osm --enable-sidecar-injection 
 
-helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=true --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --set ingress.enabled=false --set service.type=LoadBalancer --set noProbes=true --wait --timeout 45s
+helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=true --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --set ingress.enabled=false --set service.type=LoadBalancer --set noProbes=true --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2 --wait --timeout 45s
+
+helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$AZURE_REDIS_HOST --set dependencies.redisKeyValue=$AZURE_REDIS_KEY --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --set dependencies.useIngress=true --set ingress.enabled=true --set ingress.host=$DNS --set service.type=ClusterIP --set noProbes=true --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=3 --wait --timeout 45s
 
 helm delete calculator -n $KUBERNETES_NAMESPACE
 ```
@@ -74,6 +95,14 @@ export CRASHING_APP_IP=$(kubectl get svc --namespace $DEMO_NS crashing-app -o js
 curl -X GET http://$CRASHING_APP_IP/crash
 
 ```
+
+## color
+
+kubectl create namespace colors
+osm namespace add colors
+kubectl apply -f https://raw.githubusercontent.com/DanielMeixner/DebugContainer/master/yamls/red-green-yellow.yaml -n colors
+
+kubectl port-forward -n colors deploy/appa 8009:80
 
 ## vm logger
 ```
