@@ -62,6 +62,8 @@ else
     az network route-table route list --resource-group $ROUTE_TABLE_GROUP --route-table-name $ROUTE_TABLE_NAME -o table
     echo "if it does not contain a '0.0.0.0/0' route then you should set the parameter IGNORE_FORCE_ROUTE=true"
 
+    echo "adding routes for microsoft container registry"
+    az network route-table route create --resource-group $ROUTE_TABLE_GROUP --name "mcr" --route-table-name $ROUTE_TABLE_NAME --address-prefix MicrosoftContainerRegistry --next-hop-type Internet
     echo "adding routes for active directory"
     az network route-table route create --resource-group $ROUTE_TABLE_GROUP --name "aad" --route-table-name $ROUTE_TABLE_NAME --address-prefix AzureActiveDirectory --next-hop-type Internet
     echo "adding routes for azure monitor"
