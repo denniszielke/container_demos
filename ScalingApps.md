@@ -234,7 +234,7 @@ wget -b https://raw.githubusercontent.com/tomkerkhove/promitor/master/charts/pro
 
 https://github.com/tomkerkhove/promitor/blob/master/docs/configuration/v2.x/metrics/blob-storage.md
 
-helm repo add promitor https://promitor.azurecr.io/helm/v1/repo
+helm repo add promitor https://charts.promitor.io/
 
 helm upgrade promitor-agent-scraper promitor/promitor-agent-scraper \
                --set azureAuthentication.appId="$AKS_METRICS_PRINCIPAL_ID" \
