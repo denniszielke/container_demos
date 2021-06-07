@@ -80,7 +80,7 @@ https://raw.githubusercontent.com/kubernetes-sigs/azuredisk-csi-driver/master/de
 https://kubernetes-csi.github.io/docs/topology.html
 
 # Storage Account
-
+```
 STORAGE_ACCOUNT=$KUBE_NAME
 
 NODE_GROUP=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query nodeResourceGroup -o tsv)
@@ -92,7 +92,7 @@ STORAGE_KEY=$(az storage account keys list --account-name $STORAGE_ACCOUNT --res
 az storage share create -n job --quota 10 --account-name $STORAGE_ACCOUNT --account-key $STORAGE_KEY
 
 kubectl create secret generic azurefile-secret --from-literal=azurestorageaccountname=$STORAGE_ACCOUNT --from-literal=azurestorageaccountkey=$STORAGE_KEY 
-
+```
 
 ## Storage Classes
 
@@ -267,7 +267,7 @@ EOF
 ```
 
 ### Files CSI
-
+```
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -315,9 +315,9 @@ spec:
           claimName: dbench-pv-claim-csi-files
   backoffLimit: 4
 EOF
-
+```
 ### Files 
-
+```
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -365,9 +365,9 @@ spec:
           claimName: dbench-pv-claim-files
   backoffLimit: 4
 EOF
-
+```
 ### Files CSI Premium
-
+```
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -415,9 +415,9 @@ spec:
           claimName: dbench-pv-claim-csi-prem-files
   backoffLimit: 4
 EOF
-
+```
 ### Premium Files
-
+```
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -465,9 +465,9 @@ spec:
           claimName: dbench-pv-claim-prem-files
   backoffLimit: 4
 EOF
-
+```
 ### Managed Premium Disk CSI
-
+```
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -515,9 +515,9 @@ spec:
           claimName: dbench-pv-claim-premium-csi-disk
   backoffLimit: 4
 EOF
-
+```
 ### Managed Premium
-
+```
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -569,7 +569,7 @@ EOF
 
 
 kubectl logs -f job/dbench
-
+```
 
 ## Storage NFS 3
 
