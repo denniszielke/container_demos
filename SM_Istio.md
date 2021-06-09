@@ -2,7 +2,7 @@
 
 
 ## Install istioctl
-
+```
 https://istio.io/latest/docs/setup/getting-started/#download
 
 curl -L https://istio.io/downloadIstio | sh -
@@ -32,10 +32,11 @@ kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.7/sampl
 
 istioctl x uninstall --purge
 kubectl delete namespace istio-system
-
+```
 ## Example
 https://istio.io/latest/docs/examples/bookinfo/
 
+```
 kubectl label namespace default istio-injection=enabled
 kubectl label namespace default istio-injection=disabled
 
@@ -48,12 +49,12 @@ kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.7/sampl
 kubectl get svc istio-ingressgateway -n istio-system
 export INGRESS_HOST=$(kubectl get po -l istio=ingressgateway -n istio-system -o jsonpath='{.items[0].status.hostIP}')
 echo $INGRESS_HOST
-
+```
 
 ## ingress
 
 https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/
-
+```
 kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.7/samples/httpbin/httpbin.yaml
 
 
@@ -96,12 +97,13 @@ spec:
           number: 8000
         host: httpbin
 EOF
+```
 
 ## GRPC 
 
 https://github.com/mhamrah/grpc-example
 https://github.com/grpc-ecosystem/grpc-gateway
-
+```
 kubectl apply -f https://raw.githubusercontent.com/mhamrah/grpc-example/master/k8s/setup/namespace.yaml
 
 kubectl label namespace todos istio-injection=enabled
@@ -246,10 +248,10 @@ ISTIO_GW=52.236.17.171
 grpcurl -plaintext $ISTIO_GW:50052 describe
 grpcurl -plaintext -d '{ "id": "01E4Q00M7YPD06TX3YW8DMFF8B" }' $ISTIO_GW:50052 todos.Todos/GetTodo
 curl  -X POST http://$ISTIO_GW:51052/todos -H 'Content-Type: application/json' -d '{ "id":  "01E4Q00M7YPD06TX3YW8DMFF8B" }'
-
+```
 
 # Authorization
-
+```
 kubectl create ns foo
 kubectl apply -f <(istioctl kube-inject -f https://raw.githubusercontent.com/istio/istio/release-1.7/samples/httpbin/httpbin.yaml) -n foo
 kubectl apply -f <(istioctl kube-inject -f https://raw.githubusercontent.com/istio/istio/release-1.7/samples/sleep/sleep.yaml) -n foo
@@ -299,3 +301,4 @@ spec:
    - source:
        notNamespaces: ["foo"]
 EOF
+```
