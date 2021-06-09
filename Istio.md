@@ -1,6 +1,6 @@
 # Install istio
 https://istio.io/latest/docs/setup/getting-started/#download
-
+```
 curl -L https://git.io/getLatestIstio | sh -
 
 export PATH="$PATH:/Users/dennis/lib/istio-1.8.0/bin"
@@ -23,11 +23,11 @@ kubernetes.azure.com/mode=system
 
 kubectl patch deployment istio-egressgateway -n istio-system -p \
   '{"spec":{"template":{"spec":{"nodeSelector":[{"kubernetes.azure.com/mode":"system"}]}}}}'
-
+```
 ## Install grafana dashboard
 https://istio.io/docs/tasks/telemetry/using-istio-dashboard/
 
-
+```
 kubectl -n default port-forward $(kubectl -n default get pod -l app=vistio-api -o jsonpath='{.items[0].metadata.name}') 9091:9091 &
 
 http://localhost:9091/graph
@@ -163,10 +163,10 @@ kubectl apply -f https://raw.githubusercontent.com/CSA-OCP-GER/unicorn/master/hi
 kubectl apply -f https://raw.githubusercontent.com/CSA-OCP-GER/unicorn/master/hints/yaml/challenge-istio/faultinjection/c2-ingress-rr-faulty-error.yaml
 
 kubectl delete -f https://raw.githubusercontent.com/CSA-OCP-GER/unicorn/master/hints/yaml/challenge-istio/faultinjection/c2-ingress-rr-faulty-error.yaml
-
+```
 
 ## Istio 1.4.3
-
+```
 mkdir istio-1.4.3
 ISTIO_VERSION=1.4.3
 cd istio-1.4.3
@@ -258,10 +258,10 @@ curl -s http://${GATEWAY_URL}/productpage | grep -o "<title>.*</title>"
 set destination rules
 
 kubectl apply -f samples/bookinfo/networking/destination-rule-all.yaml
-
+```
 
 ## Egress gateway
-
+```
 meshConfig.outboundTrafficPolicy.mode 
 
 istioctl install <flags-you-used-to-install-Istio> \
@@ -455,7 +455,7 @@ spec:
 EOF
 
 kubectl logs -l istio=egressgateway -c istio-proxy -n istio-system | tail
-
+```
 ➜  ~ (⎈ |dzvnets:default) kubectl exec -ti centos -- /bin/bash
 Defaulting container name to centos.
 Use 'kubectl describe pod/centos -n default' to see all of the containers in this pod.
