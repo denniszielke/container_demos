@@ -135,6 +135,7 @@ if [ "$ROUTE_TABLE_RESOURCE_ID" == "" ]; then
     az network route-table route create --resource-group $KUBE_GROUP --name $FW_NAME --route-table-name $FW_NAME-rt --address-prefix 0.0.0.0/0 --next-hop-type None
     fi
     az network route-table route create --resource-group $KUBE_GROUP --name "mcr" --route-table-name $FW_NAME-rt --address-prefix MicrosoftContainerRegistry --next-hop-type Internet
+    az network route-table route create --resource-group $KUBE_GROUP --name "fd" --route-table-name $FW_NAME-rt --address-prefix AzureFrontDoor.FirstParty --next-hop-type Internet
     az network route-table route create --resource-group $KUBE_GROUP --name "aad" --route-table-name $FW_NAME-rt --address-prefix AzureActiveDirectory --next-hop-type Internet
     az network route-table route create --resource-group $KUBE_GROUP --name "monitor" --route-table-name $FW_NAME-rt --address-prefix AzureMonitor --next-hop-type Internet
     az network route-table route create --resource-group $KUBE_GROUP --name "azure" --route-table-name $FW_NAME-rt --address-prefix AzureCloud.$LOCATION --next-hop-type Internet
