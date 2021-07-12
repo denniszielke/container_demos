@@ -248,9 +248,6 @@ kubectl cp ~/.ssh/id_rsa $(kubectl get pod -l run=aks-ssh -o jsonpath='{.items[0
 # Delete everything
 ```
 az group delete -n $KUBE_GROUP
-```
-
-
 
 
 echo "retrieving login credentials"
@@ -261,11 +258,13 @@ export CLIENT_SECRET=$(cat /host/azure.json | jq -r ".[0].aadClientSecret" )
 az login --service-principal --username $CLIENT_ID --password $CLIENT_SECRET --tenant $TENANT_ID
 
 az role assignment list --assignee CLIENT_ID
-
+```
 
 ## Kubernetes AAD RBAC
 
 https://docs.microsoft.com/en-us/azure/aks/manage-azure-rbac
+
+```
 KUBE_GROUP="dzaksaadv2"
 KUBE_NAME="aksaad"
 LOCATION="westus2"
@@ -278,6 +277,11 @@ az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --vm-set-type Virtu
     --load-balancer-sku standard \
     --node-count 1 --enable-managed-identity \
     --enable-aad --enable-azure-rbac
+
+az aks update  --resource-group $KUBE_GROUP --name $KUBE_NAME --enable-azure-rbac
+
+az aks update  --resource-group $KUBE_GROUP --name $KUBE_NAME --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID
+
 
 AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
 
@@ -352,7 +356,6 @@ export AAD_SERVICE_PRINCIPAL_CLIENT_SECRET=
 export AAD_USER_PRINCIPAL_PASSWORD=
 
 kubectl get no
-``` 
 
 
 SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
@@ -374,8 +377,39 @@ AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
 az role assignment create --role "Azure Kubernetes Service RBAC Admin" --assignee $MY_USER_ID --scope $AKS_ID
 
 
-## AAD Pod Identity
+```
 
+## No Pod Identity
+```
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: centos
+spec:
+  containers:
+  - name: centos
+    image: centos
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+
+kubectl exec -it centos -- /bin/bash
+
+yum install jq -y
+
+curl  --silent -H Metadata:True --noproxy "*" "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/"
+
+curl  --silent -H Metadata:True --noproxy "*" "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/&client_id=6d579b6d-f7ec-4b82-b78a-11efbb22a829" | jq
+
+```
+
+## AAD Pod Identity
+```
 SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 IDENTITY_NAME=podidentity1
 POD_IDENTITY_NAME="my-pod-identity"
@@ -433,3 +467,207 @@ spec:
 EOF
 
 kubectl logs demo --follow --namespace my-app
+```
+
+
+# Service Process
+https://appscode.com/products/guard/v0.6.1/guides/authenticator/azure/
+
+```
+KUBE_NAME=dzaadauth
+LOCATION=westeurope
+KUBE_GROUP=dzaadauth
+KUBE_VERSION=1.20.7
+NODE_GROUP=dzaadauth_dzaadauth_nodes_westeurope
+SERVICE_PRINCIPAL_ID=msi
+SERVICE_PRINCIPAL_ID=msi
+AAD_GROUP_ID="9329d38c-5296-4ecb-afa5-3e74f9abe09f" 
+SUBSCRIPTION_ID="5abd8123-18f8-427f-a4ae-30bfb82617e5"
+TENANT_ID="72f988bf-86f1-41af-91ab-2d7cd011db47"
+AKS_ID="/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourcegroups/dzaadauth/providers/Microsoft.ContainerService/managedClusters/dzaadauth"
+AKS_SERVER_ID="6dae42f8-4368-4678-94ff-3960e28e3630"
+
+KUBE_NAME=dzvault   
+KUBE_GROUP="dzvault"
+APP_NAME=$KUBE_NAME-runner
+SERVICE_PRINCIPAL_ID=8713c417-8949-4d8f-a571-79db2a5cc3e8
+SERVICE_PRINCIPAL_SECRET=zqO6MHv.kFtew3VCIG7Sb5rBVq57V~kWO0
+SUBSCRIPTION_ID="5abd8123-18f8-427f-a4ae-30bfb82617e5"
+TENANT_ID="72f988bf-86f1-41af-91ab-2d7cd011db47"
+
+USER_NAME=admin1@denniszielkehotmail.onmicrosoft.com
+USER_PASSWORD=Zofu1733
+USER_PASSWORD=AR3.Zofu1733
+
+CI_NAME=$KUBE_NAME-github
+CI_PRINCIPAL_ID=6148c636-5f13-4eb0-9f44-73ac25af9421
+{
+  "clientId": "6148c636-5f13-4eb0-9f44-73ac25af9421",
+  "clientSecret": "9hLtJ-_nI99FDcNWpfn_XZ0uZ4RF5MT_u8",
+  "subscriptionId": "5abd8123-18f8-427f-a4ae-30bfb82617e5",
+  "tenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+  "activeDirectoryEndpointUrl": "https://login.microsoftonline.com",
+  "resourceManagerEndpointUrl": "https://management.azure.com/",
+  "activeDirectoryGraphResourceId": "https://graph.windows.net/",
+  "sqlManagementEndpointUrl": "https://management.core.windows.net:8443/",
+  "galleryEndpointUrl": "https://gallery.azure.com/",
+  "managementEndpointUrl": "https://management.core.windows.net/"
+}
+
+CI_K8S_AKS
+CI_AKS_NAME=dzaadauth
+CI_AKS_GROUP=dzaadauth
+
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+TENANT_ID=$(az account show --query tenantId -o tsv)
+
+az aks update -g $KUBE_GROUP -n $KUBE_NAME --disable-local-accounts
+
+AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
+APP_NAME=$KUBE_NAME-runner
+CI_NAME=$KUBE_NAME-github
+az ad sp create-for-rbac --name $CI_NAME --sdk-auth --role "Azure Kubernetes Service Cluster User Role" --scopes $AKS_ID
+
+--disable-local-accounts
+--enable-local-accounts
+
+SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $APP_NAME-sp -o json | jq -r '.appId')
+echo $SERVICE_PRINCIPAL_ID
+
+SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
+echo $SERVICE_PRINCIPAL_SECRET
+
+az role assignment create --assignee $SERVICE_PRINCIPAL_ID --scope $AKS_ID --role "Azure Kubernetes Service Cluster User Role"
+az role assignment create --assignee $SERVICE_PRINCIPAL_ID --scope /subscriptions/$SUBSCRIPTION_ID --role "Azure Kubernetes Service Cluster User Role"
+
+az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee $SERVICE_PRINCIPAL_ID --scope /subscriptions/$SUBSCRIPTION_ID
+
+APPDEV_ID=$(az ad group create --display-name appdev --mail-nickname appdev --query objectId -o tsv)
+az role assignment create --assignee $APPDEV_ID --scope /subscriptions/$SUBSCRIPTION_ID --role "Azure Kubernetes Service Cluster User Role"
+az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee $APPDEV_ID --scope /subscriptions/$SUBSCRIPTION_ID
+
+
+kubectl create ns application1  # full
+kubectl run --image=nginx nginx --port=80 -n application1
+kubectl create secret generic azure-secret --from-literal accountname=dzpremium1 --from-literal accountkey="QmJPk8fBkpLbK1wCjrNvYSVFFIb9sCT9GI7QeAkURJZEIjKecMYA4HC0saEJmj9u6jRiB+Tp6hNhuoBOYnDVLQ==" --type=Opaque -n application1
+
+az role assignment create --role "Azure Kubernetes Service RBAC Writer" --assignee $SERVICE_PRINCIPAL_ID --scope $AKS_ID/namespaces/application1
+az role assignment create --role "Azure Kubernetes Service RBAC Writer" --assignee $CI_PRINCIPAL_ID --scope $AKS_ID/namespaces/application1
+
+kubectl create ns application2 # read
+
+kubectl run --image=nginx nginx --port=80 -n application2
+kubectl create secret generic azure-secret --from-literal accountname=dzpremium1 --from-literal accountkey="QmJPk8fBkpLbK1wCjrNvYSVFFIb9sCT9GI7QeAkURJZEIjKecMYA4HC0saEJmj9u6jRiB+Tp6hNhuoBOYnDVLQ==" --type=Opaque -n application2
+
+az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee $SERVICE_PRINCIPAL_ID --scope $AKS_ID/namespaces/application2
+az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee $CI_PRINCIPAL_ID --scope $AKS_ID/namespaces/application2
+
+kubectl create ns aadsecured
+
+kubectl get pod -n aadsecured
+
+az login --service-principal -u $SERVICE_PRINCIPAL_ID -p $SERVICE_PRINCIPAL_SECRET --tenant $TENANT_ID
+
+https://github.com/azure/kubelogin
+
+wget https://github.com/Azure/kubelogin/releases/download/v0.0.9/kubelogin-linux-amd64.zip
+unzip kubelogin-linux-amd64.zip -d kubetools
+
+export KUBECONFIG=`pwd`/kubeconfig
+
+az aks get-credentials -g $KUBE_GROUP -n $KUBE_NAME --file `pwd`/kubeconfig --overwrite-existing
+
+echo "using spn flow"
+./kubetools/bin/linux_amd64/kubelogin convert-kubeconfig -l spn
+
+export AAD_SERVICE_PRINCIPAL_CLIENT_ID=$SERVICE_PRINCIPAL_ID
+export AAD_SERVICE_PRINCIPAL_CLIENT_SECRET=$SERVICE_PRINCIPAL_SECRET
+
+echo "using msi flow"
+
+./kubetools/bin/linux_amd64/kubelogin convert-kubeconfig -l msi
+./kubetools/bin/linux_amd64/kubelogin convert-kubeconfig -l msi --client-id msi-client-id
+
+echo "using azure cli login"
+
+./kubetools/bin/linux_amd64/kubelogin convert-kubeconfig -l azurecli
+
+#./kubetools/bin/linux_amd64/kubelogin remove-tokens
+
+kubectl get pod -n application1
+kubectl get secret -n application1
+kubectl get pod -n application2
+kubectl get secret -n application2
+kubectl get pod -n aadsecured
+
+yum install jq -y
+
+curl  --silent -H Metadata:True --noproxy "*" "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/" | jq
+
+curl  --silent -H Metadata:True --noproxy "*" "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/&client_id=6d579b6d-f7ec-4b82-b78a-11efbb22a829" | jq
+
+curl 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fmanagement.azure.com%2F' -H Metadata:true -s
+
+curl 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fmanagement.azure.com%2F&client_id=4329deb8-c65b-497a-b528-8e07082b8115' -H Metadata:true -s
+
+
+
+```
+
+https://docs.microsoft.com/en-us/azure/developer/java/sdk/identity-azure-hosted-auth
+
+
+## Pod Identity V2
+
+```
+SECRET_NAME=supersecret1
+SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $KUBE_NAME-sp -o json | jq -r '.appId')
+echo $SERVICE_PRINCIPAL_ID
+
+SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
+echo $SERVICE_PRINCIPAL_SECRET
+
+az keyvault set-policy -n ${KEYVAULT_NAME} --secret-permissions get --spn ${SERVICE_PRINCIPAL_ID}
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+data:
+  AZURE_ENVIRONMENT: "AzurePublicCloud"
+  AZURE_TENANT_ID: "72f988bf-86f1-41af-91ab-2d7cd011db47"
+kind: ConfigMap
+metadata:
+  name: aad-pi-webhook-config
+  namespace: aad-pi-webhook-system
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    azure.pod.identity/client-id: ${SERVICE_PRINCIPAL_ID}
+  labels:
+    azure.pod.identity/use: "true"
+  name: pod-identity-sa
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo
+spec:
+  serviceAccountName: pod-identity-sa
+  containers:
+    - image: denniszielke/dotnet:v0.4
+      imagePullPolicy: IfNotPresent
+      name: oidc
+      env:
+      - name: KEYVAULT_NAME
+        value: ${KEYVAULT_NAME}
+      - name: SECRET_NAME
+        value: ${KEYVAULT_SECRET_NAME}
+  nodeSelector:
+    kubernetes.io/os: linux
+EOF
+```

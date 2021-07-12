@@ -4,6 +4,7 @@
 
 aad/*
 scripts/*lima*.sh
+scripts/*_wa*.sh
 todos.md
 SECURITY_FD.md
 GRPC.md
@@ -40,3 +41,4 @@ AzureARC.md
 todos.md
 table.json
 Security_Private_Env.md
+workerapps.md

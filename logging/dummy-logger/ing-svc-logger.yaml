@@ -7,10 +7,10 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   rules:
-  - host: 52.189.239.10.xip.io
+  - host: 13.70.120.200.xip.io
     http:
       paths:
-      - path: /dummy-logger(/|$)(.*)
+      - path: /
         backend:
           serviceName: dummy-logger
           servicePort: 80

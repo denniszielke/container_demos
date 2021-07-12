@@ -1,0 +1,217 @@
+---
+# dummy config map for demo use with "Bridge to Kubenernetes"
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: game-demo
+data:
+  # property-like keys; each key maps to a simple value
+  player_initial_lives: "3"
+  ui_properties_file_name: "user-interface.properties"
+  #
+  # file-like keys
+  game.properties: |
+    enemy.types=aliens,monsters
+    player.maximum-lives=5
+  user-interface.properties: |
+    color.good=purple
+    color.bad=yellow
+    allow.textmode=true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svca
+  labels:
+    name: svca    
+spec:
+  selector:
+    app: appa
+  type: LoadBalancer
+  ports:
+   - port: 80
+     name: http
+     targetPort: 80
+     protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svcb
+  labels:
+    name: svcb
+spec:
+  selector:
+    app: appb
+  type: ClusterIP
+  ports:
+   - port: 80
+     name: http
+     targetPort: 80
+     protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svcc
+  labels:
+    name: svcc    
+spec:
+  selector:
+    app: appc
+  type: ClusterIP
+  ports:
+   - port: 80
+     name: http
+     targetPort: 80
+     protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appa
+  labels:
+    app: appa    
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: appa
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: appa        
+    spec:
+      containers:
+      - name: appa
+        # this image contains setup for application insights. Set the APPINSIGHTS_INSTRUMENTATIONKEY correctly.
+        # also make sure you use the image from your private registry
+        image: danielmeixner/debugcontainer:ai
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 80
+            name: http         
+            protocol: TCP
+        env: 
+          - name: "SERVICEENDPOINTHOST"
+            value: "svcb"
+          - name: "SERVICEENDPOINTPATH"
+            value: "/api/cascade"              
+          - name: "COLOR"
+            value: "red"
+          - name: "SERVICEENDPOINTPORT"
+            value: "80"
+          - name: "APPINSIGHTS_INSTRUMENTATIONKEY"
+            value: "YOUR-APP-INSIGHTS-KEY"   
+          - name: "DISABLEAPPINSIGHTS"
+            value: "1"   
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appb
+  labels:
+    app: appb 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: appb
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: appb        
+    spec:
+      containers:
+      - name: appb
+         # this image contains setup for application insights. Set the APPINSIGHTS_INSTRUMENTATIONKEY correctly.
+        image: danielmeixner/debugcontainer:ai
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 80
+            name: http         
+            protocol: TCP
+        env: 
+          - name: "SERVICEENDPOINTHOST"
+            value: "svcc"
+          - name: "SERVICEENDPOINTPATH"
+            value: "/api/whoareu"              
+          - name: "COLOR"
+            value: "green"
+          - name: "SERVICEENDPOINTPORT"
+            value: "80"
+          - name: "APPINSIGHTS_INSTRUMENTATIONKEY"
+            value: "YOUR-APP-INSIGHTS-KEY"
+          - name: "DISABLEAPPINSIGHTS"
+            value: "1"
+        volumeMounts:
+              - name: config
+                mountPath: "/config"
+                readOnly: true
+      volumes:        
+        - name: config
+          configMap:            
+            name: game-demo            
+            items:
+            - key: "game.properties"
+              path: "game.properties"
+            - key: "user-interface.properties"
+              path: "user-interface.properties"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appc  
+  labels:
+    app: appc    
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: appc
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: appc
+    spec:
+      containers:
+      - name: appc
+         # this image contains setup for application insights. Set the APPINSIGHTS_INSTRUMENTATIONKEY correctly.
+        image: danielmeixner/debugcontainer:ai
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 80
+            name: http         
+            protocol: TCP
+        env: 
+          - name: "SERVICEENDPOINTHOST"
+            value: "svcc"
+          - name: "SERVICEENDPOINTPATH"
+            value: "/api/whoareu"              
+          - name: "COLOR"
+            value: "yellow"
+          - name: "SERVICEENDPOINTPORT"
+            value: "80"
+          - name: "APPINSIGHTS_INSTRUMENTATIONKEY"
+            value: "YOUR-APP-INSIGHTS-KEY"
+          - name: "DISABLEAPPINSIGHTS"
+            value: "1"

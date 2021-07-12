@@ -14,10 +14,29 @@ kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/
 
 
 export DUMMY_LOGGER_IP=$(kubectl get svc --namespace $DEMO_NS dummy-logger-svc-lb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+export DUMMY_LOGGER_IP=$(kubectl get svc dummy-logger-pub-lb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
 
 curl -X POST http://$DUMMY_LOGGER_IP/api/log -H "message: {more: content}" 
 curl -X POST http://$DUMMY_LOGGER_IP/api/log -H "message: hi" 
+
+cat <<EOF | kubectl apply -f -
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: dummy-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: $DNS
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: dummy-logger-int-lb
+          servicePort: 80
+EOF
 
 ```
 ## echo
@@ -145,3 +164,5 @@ https://linkderdsmi.westeurope.cloudapp.azure.com/
 https://aka.ms/ci-privatepreview
 
 http://aka.ms/AMPMonitoring 
+
+

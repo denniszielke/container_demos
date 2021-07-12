@@ -102,6 +102,7 @@ kubectl create secret generic azurefile-secret --from-literal=azurestorageaccoun
 https://raw.githubusercontent.com/logdna/dbench/master/dbench.yaml
 
 ### NFS
+
 ```
 $KUBE_NAME-sp
 STORAGE_ACCOUNT=$KUBE_NAME"2"
@@ -112,6 +113,44 @@ az storage account create --resource-group $NODE_GROUP --name $STORAGE_ACCOUNT -
 STORAGE_KEY=$(az storage account keys list --account-name $STORAGE_ACCOUNT --resource-group $NODE_GROUP --query "[0].value")
 
 kubectl create secret generic azure-secret --from-literal accountname=$STORAGE_ACCOUNT --from-literal accountkey="$STORAGE_KEY" --type=Opaque
+
+cat <<EOF | kubectl apply -f -
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: azurefiledemo
+provisioner: kubernetes.io/azure-file
+parameters:
+  skuName: Standard_LRS
+  storageAccount: dzprivate1
+EOF
+
+cat <<EOF | kubectl apply -f -
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: dbench-pv-claim-net1
+spec:
+  storageClassName: azurefiledemo
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: azurefile-csi-net
+provisioner: file.csi.azure.com
+parameters:
+  storageAccount: $STORAGE_ACCOUNT
+  resourceGroup: $KUBE_GROUP 
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+EOF
 
 cat <<EOF | kubectl apply -f -
 apiVersion: storage.k8s.io/v1
@@ -156,6 +195,54 @@ parameters:
   csi.storage.k8s.io/node-stage-secret-namespace: default
   csi.storage.k8s.io/controller-expand-secret-name: azure-secret
   csi.storage.k8s.io/controller-expand-secret-namespace: default
+EOF
+
+cat <<EOF | kubectl apply -f -
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: dbench-pv-claim-net1
+spec:
+  storageClassName: azurefile-csi-net
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dbench
+spec:
+  template:
+    spec:
+      containers:
+      - name: dbench
+        image: denniszielke/dbench:latest
+        imagePullPolicy: Always
+        env:
+          - name: DBENCH_MOUNTPOINT
+            value: /data
+          # - name: DBENCH_QUICK
+          #   value: "yes"
+          # - name: FIO_SIZE
+          #   value: 1G
+          # - name: FIO_OFFSET_INCREMENT
+          #   value: 256M
+          # - name: FIO_DIRECT
+          #   value: "0"
+        volumeMounts:
+        - name: dbench-pv
+          mountPath: /data
+      restartPolicy: Never
+      volumes:
+      - name: dbench-pv
+        persistentVolumeClaim:
+          claimName: dbench-pv-claim-nfs
+  backoffLimit: 4
 EOF
 
 cat <<EOF | kubectl apply -f -
@@ -267,6 +354,7 @@ EOF
 ```
 
 ### Files CSI
+
 ```
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -316,7 +404,10 @@ spec:
   backoffLimit: 4
 EOF
 ```
+
 ### Files 
+
+
 ```
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -366,7 +457,9 @@ spec:
   backoffLimit: 4
 EOF
 ```
+
 ### Files CSI Premium
+
 ```
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -378,7 +471,7 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 10000Gi
+      storage: 100Gi
   storageClassName: azurefile-csi-premium
 EOF
 
@@ -417,6 +510,7 @@ spec:
 EOF
 ```
 ### Premium Files
+
 ```
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -467,6 +561,7 @@ spec:
 EOF
 ```
 ### Managed Premium Disk CSI
+
 ```
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -517,6 +612,7 @@ spec:
 EOF
 ```
 ### Managed Premium
+
 ```
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -565,8 +661,6 @@ spec:
           claimName: dbench-pv-claim-premium-disk
   backoffLimit: 4
 EOF
-
-
 
 kubectl logs -f job/dbench
 ```
@@ -835,9 +929,6 @@ Sequential Read/Write: 232MiB/s / 184MiB/s
 Mixed Random Read/Write IOPS: 11.7k/3849
 
 # eastus premium files
-
-
-
 
 https://docs.microsoft.com/en-us/azure/storage/files/storage-troubleshooting-files-nfs
 

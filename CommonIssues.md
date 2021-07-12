@@ -255,3 +255,5 @@ spec:
     - sleep
     - "3600"
 EOF
+
+kubectl get events --sort-by='{.lastTimestamp}'

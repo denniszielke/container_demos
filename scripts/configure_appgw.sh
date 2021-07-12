@@ -18,22 +18,22 @@ az network public-ip create --resource-group $KUBE_GROUP --name appgw-pip --allo
 APPGW_PUBLIC_IP=$(az network public-ip show -g $KUBE_GROUP -n appgw-pip --query ipAddress -o tsv)
 fi
 
-APPGW_RESOURCE_ID=$(az network application-gateway list --resource-group=$KUBE_GROUP -o json | jq -r ".[0].id")
+APPGW_RESOURCE_ID=""#$(az network application-gateway list --resource-group=$KUBE_GROUP -o json | jq -r ".[0].id")
 
-if [ "$APPGW_RESOURCE_ID" == "" ]; then
+#if [ "$APPGW_RESOURCE_ID" == "" ]; then
 echo "creating application gateway $KUBE_NAME-appgw..."
-az network application-gateway create --name $KUBE_NAME-appgw --resource-group $KUBE_GROUP --location $LOCATION --http2 Enabled --min-capacity 0 --max-capacity 10 --sku WAF_v2  --subnet $APPGW_SUBNET_ID --http-settings-cookie-based-affinity Disabled --frontend-port 80 --http-settings-port 80 --http-settings-protocol Http --public-ip-address appgw-pip --private-ip-address "10.0.1.100"
+az network application-gateway create --name $KUBE_NAME-appgw --resource-group $KUBE_GROUP --location $LOCATION --http2 Enabled --min-capacity 0 --max-capacity 10 --sku WAF_v2  --subnet $APPGW_SUBNET_ID --http-settings-cookie-based-affinity Disabled --frontend-port 80 --http-settings-port 80 --http-settings-protocol Http --public-ip-address appgw-pip --private-ip-address "10.0.2.100"
 APPGW_NAME=$(az network application-gateway list --resource-group=$KUBE_GROUP -o json | jq -r ".[0].name")
 APPGW_RESOURCE_ID=$(az network application-gateway list --resource-group=$KUBE_GROUP -o json | jq -r ".[0].id")
 APPGW_SUBNET_ID=$(az network application-gateway list --resource-group=$KUBE_GROUP -o json | jq -r ".[0].gatewayIpConfigurations[0].subnet.id")
-fi
+#fi
 
 APPGW_ADDON_ENABLED=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query addonProfiles.ingressApplicationGateway.enabled --output tsv)
 if [ "$APPGW_ADDON_ENABLED" == "" ]; then
 echo "enabling ingress-appgw addon for $APPGW_RESOURCE_ID"
 az aks enable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME -a ingress-appgw --appgw-id $APPGW_RESOURCE_ID
 fi
-
+exit
 APPGW_DNS=$(az network public-ip show --resource-group $KUBE_GROUP --name appgw-pip --query dnsSettings.fqdn --output tsv)
 
 kubectl apply -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.13/deploy/manifests/00-crds.yaml --validate=false
@@ -87,6 +87,23 @@ spec:
   - hosts:
     - $APPGW_DNS
     secretName: dummy-secret-name
+  rules:
+  - host: $APPGW_DNS
+    http:
+      paths:
+      - backend:
+          serviceName: dummy-logger-cluster
+          servicePort: 80
+EOF
+
+kubectl apply -f - <<EOF
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: appgw-dummy-ingress
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+spec:
   rules:
   - host: $APPGW_DNS
     http:

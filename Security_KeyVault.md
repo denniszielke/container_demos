@@ -21,7 +21,7 @@ MY_OBJECT_ID=
 KUBE_ADMIN_ID=
 READER_USER_ID=
 
-VAULT_GROUP="MC_aksv2_aksv2_westus2"
+VAULT_GROUP="dzcsi"
 VAULT_NAME="dzbyokdemo"
 MSA_NAME="mykvidentity"
 MSA_CLIENT_ID=""
@@ -600,15 +600,14 @@ EOF
 SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 TENANT_ID=$(az account show --query tenantId -o tsv)
 AZURE_MYOWN_OBJECT_ID=$(az ad signed-in-user show --query objectId --output tsv)
-KUBE_NAME=
-LOCATION=northeurope
-KUBE_GROUP=kub_ter_a_s_$KUBE_NAME
-KUBE_VERSION=1.20.2
-NODE_GROUP=kub_ter_a_s_$KUBE_NAME_nodes_northeurope
+KEYVAULT_NAME=dvadzvault
+KUBE_NAME=dzvault
+LOCATION=westeurope
+KUBE_GROUP=dzvault
+KUBE_VERSION=1.20.7
+NODE_GROUP=dzvault_dzvault_nodes_westeurope
 SERVICE_PRINCIPAL_ID=msi
-SERVICE_PRINCIPAL_ID=
-KEYVAULT_NAME=$KUBE_NAME-vault
-
+AKV_NS=akv-demo
 
 az aks enable-addons --addons azure-keyvault-secrets-provider --enable-secret-rotation --resource-group=$KUBE_GROUP --name=$KUBE_NAME
 
@@ -621,11 +620,14 @@ az keyvault set-policy -n $KEYVAULT_NAME --secret-permissions get --spn $KUBELET
 az keyvault secret set -n supersecret1 --vault-name $KEYVAULT_NAME --value MySuperSecretThatIDontWantToShareWithYou!
 
 
+kubectl create ns $AKV_NS
+
 cat <<EOF | kubectl apply -f -
 apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
 kind: SecretProviderClass
 metadata:
   name: azure-kvname-user-msi
+  namespace: $AKV_NS
 spec:
   provider: azure
   parameters:
@@ -643,12 +645,43 @@ spec:
     tenantId: "$TENANT_ID"                 # the tenant ID of the KeyVault  
 EOF
 
+cat <<EOF | kubectl apply -f -
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+  name: azure-sync
+  namespace: $AKV_NS
+spec:
+  provider: azure
+  secretObjects:                                 # [OPTIONAL] SecretObject defines the desired state of synced K8s secret objects
+  - secretName: foosecret
+    type: Opaque
+    labels:                                   
+      environment: "test"
+    data: 
+    - objectName: secretalias                    # name of the mounted content to sync. this could be the object name or object alias 
+      key: username
+  parameters:
+    usePodIdentity: "false"
+    useVMManagedIdentity: "true"
+    userAssignedIdentityID: "$KUBELET_ID"
+    keyvaultName: "$KEYVAULT_NAME"
+    objects: |
+      array:
+        - |
+          objectName: supersecret1
+          objectType: secret                     # object types: secret, key or cert
+          objectAlias: secretalias
+          objectVersion: ""         # [OPTIONAL] object versions, default to latest if empty
+    tenantId: "$TENANT_ID"    
+EOF
 
 cat <<EOF | kubectl apply -f -
 kind: Pod
 apiVersion: v1
 metadata:
   name: busybox-secrets-store-inline-user-msi
+  namespace: $AKV_NS
 spec:
   containers:
     - name: busybox
@@ -669,9 +702,9 @@ spec:
           secretProviderClass: "azure-kvname-user-msi"
 EOF
 
-kubectl exec -it  busybox-secrets-store-inline-user-msi -- /bin/sh
+kubectl exec -it  busybox-secrets-store-inline-user-msi -n akv-demo -- /bin/sh
 
 ls -l /mnt/secrets-store/
 
-cat supersecret1
+cat /mnt/secrets-store/supersecret1
 ```

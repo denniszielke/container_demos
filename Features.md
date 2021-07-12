@@ -12,6 +12,9 @@ az feature list --namespace Microsoft.Web -o table
 az feature list --namespace Microsoft.Compute -o table
 az feature list --namespace Microsoft.Kubernetes -o table
 az feature list --namespace Microsoft.KubernetesConfiguration -o table
+az feature list --namespace Microsoft.EventGrid -o table
+az feature list --namespace Microsoft.OperationalInsights -o table
+
 ```
 
 Register a feature and reregister the provider
@@ -64,6 +67,13 @@ az feature register --namespace "Microsoft.ContainerService" --name "AKS-OMSAppM
 az feature register --namespace "Microsoft.ContainerService" --name "MigrateToMSIClusterPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "EnableAzureKeyvaultSecretsProvider"
 az feature register --namespace "Microsoft.ContainerService" --name "RunCommandPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "AKS-AzureDefenderAddon"
+az feature register --namespace "Microsoft.ContainerService" --name "EventgridPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "EnablePrivateClusterPublicFQDN"
+az feature register --namespace "Microsoft.ContainerService" --name "HTTPProxyConfigPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "DisableLocalAccountsPreview"
+
+
 
 az feature register --name OSABypassMarketplace --namespace Microsoft.ContainerService
 az feature register --name AROGA --namespace Microsoft.ContainerService

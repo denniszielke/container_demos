@@ -8,7 +8,7 @@ export CRASHING_APP_IP=$(kubectl get svc --namespace $DEMO_NS crashing-app -o js
 
 
 export DUMMY_LOGGER_IP=$(kubectl get svc --namespace $DEMO_NS dummy-logger-svc-lb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-
+export DUMMY_LOGGER_IP=$(kubectl get svc dummy-logger-pub-lb  -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
 curl -X POST http://$DUMMY_LOGGER_IP/api/log -H "message: {more: content}" 
 curl -X POST http://$DUMMY_LOGGER_IP/api/log -H "message: hi" 
@@ -94,7 +94,10 @@ LOCATION=westeurope
 KUBE_GROUP=kub_ter_a_m_$KUBE_NAME
 KUBE_VERSION=1.19.7
 
-az rest --method get --url "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.OperationalInsights/workspaces/$KUBE_NAME-lga/tables/ContainerLog?api-version=2020-10-01"
+az rest --method get --url "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.
+OperationalInsights/workspaces/$KUBE_NAME-lga/tables/ContainerLog?api-version=2020-10-01"
+
+az rest --method get --url "https://management.azure.com/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourceGroups/dzcheapobs/providers/Microsoft.OperationalInsights/workspaces/dzcheapobs/tables/ContainerLog?api-version=2020-10-01"
 
 {
 
@@ -106,9 +109,69 @@ az rest --method get --url "https://management.azure.com/subscriptions/$SUBSCRIP
   },
 }
 
-az rest --method put --url "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.OperationalInsights/workspaces/$KUBE_NAME-lga/tables/ContainerLog?api-version=2020-10-01" --body @tsl.json
+az rest --method put --url "https://management.azure.com/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourceGroups/dzcheapobs/providers/Microsoft.OperationalInsights/workspaces/dzcheapobs/tables/ContainerLog?api-version=2020-10-01" --body @container_log.json
 
 
 wget https://raw.githubusercontent.com/microsoft/Docker-Provider/ci_prod/kubernetes/container-azm-ms-agentconfig.yaml
 
 ```
+
+## API Server Statistics
+
+Requests per minute by VERB
+
+| where PreciseTimeStamp >= datetime({startTime}) and PreciseTimeStamp < datetime({endTime}) | where resourceID == 
+
+| where category == 'kube-audit'
+
+| extend event=parse_json(tostring(parse_json(properties).log))
+
+| where event.stage == "ResponseComplete"
+
+| where event.verb != "watch"
+
+| where event.objectRef.subresource !in ("proxy", "exec")
+
+| extend verb=tostring(event.verb)
+
+| extend subresource=tostring(event.objectRef.subresource)
+
+| summarize count() by bin(PreciseTimeStamp, 1m), verb
+
+
+Request latency per VERB
+
+| where PreciseTimeStamp >= datetime({startTime}) and PreciseTimeStamp < datetime({endTime})
+
+| where resourceID == <<Customer cluster resourceID >>
+
+
+AzureDiagnostics
+| where category == 'kube-audit'
+| extend event=parse_json(tostring(parse_json(properties).log))
+| where event.stage == "ResponseComplete"
+| where event.verb != "watch"
+| where event.objectRef.subresource !in ("proxy", "exec")
+| extend verb=tostring(event.verb)
+| extend subresource=tostring(event.objectRef.subresource)
+| extend latency=datetime_diff('Millisecond', todatetime(event.stageTimestamp), todatetime(event.requestReceivedTimestamp))
+| summarize max(latency), avg(latency) by bin(PreciseTimeStamp, 1m), verb
+
+
+Number of watchers
+
+| where PreciseTimeStamp >= datetime({startTime}) and PreciseTimeStamp < datetime({endTime})
+
+| where resourceID == <<Customer cluster resourceID >>
+
+AzureDiagnostics
+| where category == 'kube-audit'
+| extend event=parse_json(tostring(parse_json(properties).log))
+| where event.stage == "ResponseComplete"
+| where event.verb != "watch"
+| where event.objectRef.subresource !in ("proxy", "exec")
+| extend verb=tostring(event.verb)
+| extend code=tostring(event.responseStatus.code)
+| extend subresource=tostring(event.objectRef.subresource)
+| extend lat=datetime_diff('Millisecond', todatetime(event.stageTimestamp), todatetime(event.requestReceivedTimestamp))
+| summarize count() by bin(PreciseTimeStamp, 1m), code

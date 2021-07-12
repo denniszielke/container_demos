@@ -78,6 +78,12 @@ app.get('/headers', function(req, res) {
     res.send(req.headers);
 });
 
+app.post('/headers', function(req, res) {
+    console.log('received headers');
+    console.log(req.headers);
+    res.send(req.headers);
+});
+
 app.get('/ping', function(req, res) {
     console.log('received ping');
     var startDate = new Date();

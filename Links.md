@@ -59,7 +59,7 @@ Preview CLI release history:
 https://github.com/Azure/azure-cli-extensions/blob/master/src/aks-preview/HISTORY.md
 
 Azure Load Balancer annotations:
-https://github.com/kubernetes/cloud-provider-azure/blob/master/docs/services/README.md
+https://kubernetes-sigs.github.io/cloud-provider-azure/topics/loadbalancer/
 
 Azure troubleshooting:
 https://github.com/feiskyer/kubernetes-handbook/blob/master/en/troubleshooting/azure.md

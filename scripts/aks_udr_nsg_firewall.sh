@@ -10,10 +10,10 @@ set -e
 
 # https://docs.microsoft.com/en-us/azure/virtual-network/virtual-networks-udr-overview#service-tags-for-user-defined-routes-preview
 
-KUBE_GROUP="kubes_fw_knet" # here enter the resources group name of your AKS cluster
-KUBE_NAME="dzkubekube" # here enter the name of your kubernetes resource
+KUBE_GROUP="dzprivate1" # here enter the resources group name of your AKS cluster
+KUBE_NAME="dzprivaks2" # here enter the name of your kubernetes resource
 LOCATION="westcentralus" # here enter the datacenter location
-AKS_POSTFIX="-3"
+AKS_POSTFIX="-1"
 NODE_GROUP=$KUBE_GROUP"_"$KUBE_NAME"_"$AKS_POSTFIX"_nodes_"$LOCATION # name of the node resource group
 KUBE_VNET_NAME="knets" # here enter the name of your vnet
 KUBE_FW_SUBNET_NAME="AzureFirewallSubnet" # this you cannot change
@@ -30,7 +30,7 @@ SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscript
 TENANT_ID=$(az account show --query tenantId -o tsv)
 
 USE_PRIVATE_LINK="true" # use to deploy private master endpoint
-USE_FW="false"
+USE_FW="FALSE"
 USE_POD_SUBNET="true"
 
 az account set --subscription $SUBSCRIPTION_ID
@@ -66,6 +66,20 @@ if [ "$VNET_RESOURCE_ID" == "" ]; then
     echo "created $VNET_RESOURCE_ID"
 else
     echo "vnet $VNET_RESOURCE_ID already exists"
+fi
+
+echo "setting up dns zone"
+
+if [ "$USE_PRIVATE_LINK" == "true" ]; then
+    DNS_ZONE_ID=$(az network private-dns zone list -g $KUBE_GROUP --query "[?contains(name, 'privatelink.$LOCATION.azmk8s.io')].id" -o tsv)
+    if [ "$DNS_ZONE_ID" == "" ]; then
+        az network private-dns zone create -g $KUBE_GROUP -n privatelink.$LOCATION.azmk8s.io -o none
+        az network private-dns link vnet create -g $KUBE_GROUP -n privatezone -z privatelink.$LOCATION.azmk8s.io -v $KUBE_VNET_NAME -e true  -o none
+        DNS_ZONE_ID=$(az network private-dns zone show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
+        echo "created $DNS_ZONE_ID"
+    else
+        echo "dns zone $DNS_ZONE_ID already exists"
+    fi
 fi
 
 echo "setting up azure firewall"
@@ -131,12 +145,14 @@ if [ "$ROUTE_TABLE_RESOURCE_ID" == "" ]; then
     az network route-table create -g $KUBE_GROUP --name $FW_NAME-rt
     if [ "$USE_FW" == "true" ]; then
     az network route-table route create --resource-group $KUBE_GROUP --name $FW_NAME --route-table-name $FW_NAME-rt --address-prefix 0.0.0.0/0 --next-hop-type VirtualAppliance --next-hop-ip-address $FW_PRIVATE_IP
-    else
-    az network route-table route create --resource-group $KUBE_GROUP --name $FW_NAME --route-table-name $FW_NAME-rt --address-prefix 0.0.0.0/0 --next-hop-type None
+    #else
+    # az network route-table route create --resource-group $KUBE_GROUP --name $FW_NAME --route-table-name $FW_NAME-rt --address-prefix 0.0.0.0/0 --next-hop-type None
     fi
     az network route-table route create --resource-group $KUBE_GROUP --name "mcr" --route-table-name $FW_NAME-rt --address-prefix MicrosoftContainerRegistry --next-hop-type Internet
     az network route-table route create --resource-group $KUBE_GROUP --name "fd" --route-table-name $FW_NAME-rt --address-prefix AzureFrontDoor.FirstParty --next-hop-type Internet
     az network route-table route create --resource-group $KUBE_GROUP --name "aad" --route-table-name $FW_NAME-rt --address-prefix AzureActiveDirectory --next-hop-type Internet
+    az network route-table route create --resource-group $KUBE_GROUP --name "adf" --route-table-name $FW_NAME-rt --address-prefix AzureFrontDoor.FirstParty --next-hop-type Internet
+    az network route-table route create --resource-group $KUBE_GROUP --name "arm" --route-table-name $FW_NAME-rt --address-prefix AzureResourceManager --next-hop-type Internet
     az network route-table route create --resource-group $KUBE_GROUP --name "monitor" --route-table-name $FW_NAME-rt --address-prefix AzureMonitor --next-hop-type Internet
     az network route-table route create --resource-group $KUBE_GROUP --name "azure" --route-table-name $FW_NAME-rt --address-prefix AzureCloud.$LOCATION --next-hop-type Internet
     az network vnet subnet update --route-table $FW_NAME-rt --ids $KUBE_AGENT_SUBNET_ID
@@ -153,8 +169,8 @@ if [ "$POD_ROUTE_TABLE_RESOURCE_ID" == "" ]; then
     az network route-table create -g $KUBE_GROUP --name $FW_NAME-pod-rt
     if [ "$USE_FW" == "true" ]; then
     az network route-table route create --resource-group $KUBE_GROUP --name $FW_NAME --route-table-name $FW_NAME-pod-rt --address-prefix 0.0.0.0/0 --next-hop-type VirtualAppliance --next-hop-ip-address $FW_PRIVATE_IP
-    else
-    az network route-table route create --resource-group $KUBE_GROUP --name $FW_NAME --route-table-name $FW_NAME-pod-rt --address-prefix 0.0.0.0/0 --next-hop-type None
+    # else
+    # az network route-table route create --resource-group $KUBE_GROUP --name $FW_NAME --route-table-name $FW_NAME-pod-rt --address-prefix 0.0.0.0/0 --next-hop-type None
     fi
     az network route-table route create --resource-group $KUBE_GROUP --name "aad" --route-table-name $FW_NAME-pod-rt --address-prefix AzureActiveDirectory --next-hop-type Internet
     az network route-table route create --resource-group $KUBE_GROUP --name "monitor" --route-table-name $FW_NAME-pod-rt --address-prefix AzureMonitor --next-hop-type Internet
@@ -179,7 +195,6 @@ else
     az network route-table route list --resource-group $ROUTE_TABLE_GROUP --route-table-name $ROUTE_TABLE_NAME -o table
     echo "if it does not contain a '0.0.0.0/0' route then you should set the parameter IGNORE_FORCE_ROUTE=true"
 fi
-
 
 echo "setting up controller identity"
 AKS_CLIENT_ID="$(az identity list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME-id')].clientId" -o tsv)"
@@ -210,6 +225,10 @@ if [ "$AKS_CLIENT_ID" == "" ]; then
         echo "assigning permissions on routetable $ROUTE_TABLE_ID"
         az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $ROUTE_TABLE_ID -o none
     fi
+    if [ "$USE_PRIVATE_LINK" == "true" ]; then
+        az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $DNS_ZONE_ID -o none
+        az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $VNET_RESOURCE_ID -o none
+    fi
 else
     echo "controller identity $AKS_CONTROLLER_RESOURCE_ID already exists"
     echo "assigning permissions on network $KUBE_AGENT_SUBNET_ID"
@@ -221,15 +240,19 @@ else
         echo "assigning permissions on routetable $ROUTE_TABLE_ID"
         az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $ROUTE_TABLE_ID -o none
     fi
+    if [ "$USE_PRIVATE_LINK" == "true" ]; then
+        az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $DNS_ZONE_ID -o none
+        az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $VNET_RESOURCE_ID -o none
+    fi
 fi
 
 echo "setting up aks"
 AKS_ID=$(az aks list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME$AKS_POSTFIX')].id" -o tsv)
-KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$KUBE_AGENT_SUBNET_NAME"
+KUBE_AGENT_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$APPGW_SUBNET_NAME"
 KUBE_POD_SUBNET_ID="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.Network/virtualNetworks/$KUBE_VNET_NAME/subnets/$POD_AGENT_SUBNET_NAME"
 
 if [ "$USE_PRIVATE_LINK" == "true" ]; then
-    ACTIVATE_PRIVATE_LINK=" --enable-private-cluster "
+    ACTIVATE_PRIVATE_LINK=" --enable-private-cluster --private-dns-zone none --enable-public-fqdn" #--private-dns-zone none" # $DNS_ZONE_ID --fqdn-subdomain dzcorp1"
 else
     ACTIVATE_PRIVATE_LINK=""
     #-outbound-type userDefinedRouting
@@ -252,8 +275,11 @@ else
     echo "AKS $AKS_ID already exists"
 fi
 
-az aks get-credentials -g $KUBE_GROUP -n $KUBE_NAME$AKS_POSTFIX --admin
-
+if [ "$USE_PRIVATE_LINK" == "true" ]; then
+    echo " no credentials"
+else
+    az aks get-credentials -g $KUBE_GROUP -n $KUBE_NAME$AKS_POSTFIX --admin
+fi
 echo "setting up azure monitor"
 
 WORKSPACE_RESOURCE_ID=$(az monitor log-analytics workspace list --resource-group $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME')].id" -o tsv)
@@ -262,8 +288,12 @@ if [ "$WORKSPACE_RESOURCE_ID" == "" ]; then
     az monitor log-analytics workspace create --resource-group $KUBE_GROUP --workspace-name $KUBE_NAME --location $LOCATION -o none
     WORKSPACE_RESOURCE_ID=$(az monitor log-analytics workspace show --resource-group $KUBE_GROUP --workspace-name $KUBE_NAME -o json | jq '.id' -r)
     az aks enable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --addons monitoring --workspace-resource-id $WORKSPACE_RESOURCE_ID -o none
+    OMS_CLIENT_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query addonProfiles.omsagent.identity.clientId -o tsv)
+    az role assignment create --assignee $OMS_CLIENT_ID --scope $AKS_ID --role "Monitoring Metrics Publisher"
 else
     az aks enable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --addons monitoring --workspace-resource-id $WORKSPACE_RESOURCE_ID -o none
+    OMS_CLIENT_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query addonProfiles.omsagent.identity.clientId -o tsv)
+    az role assignment create --assignee $OMS_CLIENT_ID --scope $AKS_ID --role "Monitoring Metrics Publisher"
 fi
 
 
@@ -276,16 +306,16 @@ else
     #az network route-table route delete --resource-group $KUBE_GROUP --name "azure" --route-table-name $FW_NAME-rt
 fi
 
-az aks command invoke -g $KUBE_GROUP -n $KUBE_NAME$AKS_POSTFIX -c "kubectl get pods -n kube-system"
+# az aks command invoke -g $KUBE_GROUP -n $KUBE_NAME$AKS_POSTFIX -c "kubectl get pods -n kube-system"
 
 
-az aks command invoke -g <resourceGroup> -n <clusterName> -c "kubectl apply -f deployment.yaml -n default" -f deployment.yaml
+# az aks command invoke -g <resourceGroup> -n <clusterName> -c "kubectl apply -f deployment.yaml -n default" -f deployment.yaml
 
 
-az aks command invoke -g <resourceGroup> -n <clusterName> -c "kubectl apply -f deployment.yaml -n default" -f .
+# az aks command invoke -g <resourceGroup> -n <clusterName> -c "kubectl apply -f deployment.yaml -n default" -f .
 
 
-az aks command invoke -g <resourceGroup> -n <clusterName> -c "helm repo add bitnami https://charts.bitnami.com/bitnami && helm repo update && helm install my-release -f values.yaml bitnami/nginx" -f values.yaml
+# az aks command invoke -g <resourceGroup> -n <clusterName> -c "helm repo add bitnami https://charts.bitnami.com/bitnami && helm repo update && helm install my-release -f values.yaml bitnami/nginx" -f values.yaml
 
 # REGISTRY_NAME=dzprivate
 

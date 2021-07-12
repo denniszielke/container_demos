@@ -9,7 +9,8 @@ az aks get-upgrades --resource-group=$KUBE_GROUP --name=$KUBE_NAME --output tabl
 Perform upgrade
 ```
 az aks upgrade --resource-group=$KUBE_GROUP --name=$KUBE_NAME --kubernetes-version 1.10.6
-az aks update -g $KUBE_GROUP -n $KUBE_NAME --auto-upgrade-channel stable # patch	stable rapid
+az aks update -g $KUBE_GROUP -n $KUBE_NAME --auto-upgrade-channel stable # patch	stable rapid node-image
+az aks update -g $KUBE_GROUP -n $KUBE_NAME --auto-upgrade-channel node-image
 ```
 
 

@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: dummy-logger
 spec:
-  replicas: 2 
+  replicas: 4 
   minReadySeconds: 10
   strategy:
     type: RollingUpdate
@@ -17,6 +17,11 @@ spec:
     metadata:
       labels:
         app: dummy-logger
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "80"
+        prometheus.io/scheme: "http"
     spec:
       containers:
       - name: dummy-logger

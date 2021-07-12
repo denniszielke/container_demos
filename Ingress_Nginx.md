@@ -12,6 +12,7 @@ IP_NAME=nginx-ingress-pip
 az network public-ip create --resource-group $NODE_GROUP --name $IP_NAME --sku Standard --allocation-method static --dns-name dznginx
 
 IP=$(az network public-ip show --resource-group $NODE_GROUP --name $IP_NAME --query ipAddress --output tsv)
+DNS=$(az network public-ip show --resource-group $NODE_GROUP --name $IP_NAME --query dnsSettings.fqdn --output tsv)
 
 helm repo add nginx https://helm.nginx.com/stable
 helm repo update
@@ -66,158 +67,78 @@ spec:
 ```
 ## Lets encrypt
 
-### via yaml
-
 ```
-kubectl create --edit -f https://cert-manager.io/docs/tutorials/acme/example/production-issuer.yaml
-```
+kubectl label namespace nginx cert-manager.io/disable-validation=true
 
-### via helm chart
-```
-
-kubectl create namespace cert-manager
-
-kubectl label namespace cert-manager cert-manager.io/disable-validation=true
 
 helm repo add jetstack https://charts.jetstack.io
 
 helm repo update
 
-helm install \
-  cert-manager \
-  --namespace cert-manager \
-  --version v0.16.1 \
+helm upgrade \
+  cert-manager --install \
+  --namespace nginx \
+  --version v1.3.1 \
   --set installCRDs=true \
   --set nodeSelector."beta\.kubernetes\.io/os"=linux \
   jetstack/cert-manager
 
-helm install cert-manager --namespace ingress-basic --version v0.12.0 jetstack/cert-manager --set ingressShim.defaultIssuerName=letsencrypt --set ingressShim.defaultIssuerKind=ClusterIssuer
-
-
-helm upgrade cert-manager --namespace cert-manager --install jetstack/cert-manager --set ingressShim.defaultIssuerName=letsencrypt-prod --set ingressShim.defaultIssuerKind=ClusterIssuer
-
-
-
-deploy dumms
 ```
-kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/pod-logger.yaml
+## Non HTTP Ingress
 
-kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/svc-int-logger.yaml
+https://www.nginx.com/blog/announcing-nginx-ingress-controller-for-kubernetes-release-1-7-0/
+https://docs.nginx.com/nginx-ingress-controller/configuration/global-configuration/globalconfiguration-resource/
 
 ```
+apiVersion: k8s.nginx.org/v1alpha1
+kind: GlobalConfiguration 
+metadata:
+  name: nginx-configuration
+  namespace: nginx-ingress
+spec:
+  listeners:
+  - name: dns-udp
+    port: 5353
+    protocol: UDP
+  - name: dns-tcp
+    port: 5353
+    protocol: TCP
 
-create cert manager cluster issuer for stage or prod
+
+apiVersion: k8s.nginx.org/v1alpha1
+kind: TransportServer
+metadata:
+  name: dns-tcp
+spec:
+  listener:
+    name: dns-tcp 
+    protocol: TCP
+  upstreams:
+  - name: dns-app
+    service: coredns
+    port: 5353
+  action:
+    pass: dns-app
+
+apiVersion: k8s.nginx.org/v1alpha1
+kind: TransportServer
+metadata:
+  name: secure-app
+spec:
+  listener:
+    name: tls-passthrough
+    protocol: TLS_PASSTHROUGH
+  host: app.example.com
+  upstreams:
+    - name: secure-app
+      service: secure-app
+      port: 8443
+  action:
+    pass: secure-app
+
 ```
-DNS=demo71.westeurope.cloudapp.azure.com
+    https://github.com/nginxinc/kubernetes-ingress/tree/v1.7.0-rc1/examples-of-custom-resources/basic-tcp-udp
 
-cat <<EOF | kubectl apply -f -
-apiVersion: cert-manager.io/v1alpha2
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt
-  namespace: cert-manager
-spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: dummy@email.com
-    privateKeySecretRef:
-      name: letsencrypt
-    solvers:
-    - http01:
-        ingress:
-          class: nginx
-EOF
-
-cat <<EOF | kubectl apply -f -
-apiVersion: cert-manager.io/v1alpha2
-kind: Issuer
-metadata:
-  name: letsencrypt-prod
-spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: $MY_USER_ID
-    privateKeySecretRef:
-      name: letsencrypt-prod
-    solvers:
-    - selector: {}
-      http01:
-        ingress:
-          class: nginx
-EOF
-
-cat <<EOF | kubectl apply -f -
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: calculator-ingress
-  namespace: calculator
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    cert-manager.io/cluster-issuer: letsencrypt
-spec:
-  tls:
-  - hosts:
-    - dtdevtool.westeurope.cloudapp.azure.com
-    secretName: tls-secret
-  rules:
-  - host: dtdevtool.westeurope.cloudapp.azure.com
-    http:
-      paths:
-      - backend:
-          serviceName: calc1-multicalculatorv3-frontend-svc
-          servicePort: 80
-        path: /
-EOF
-
-
-cat <<EOF | kubectl apply -f -
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: hello-world-ingress
-  namespace: ingress-basic
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    cert-manager.io/cluster-issuer: letsencrypt
-spec:
-  tls:
-  - hosts:
-    - 51.124.57.228.xip.io
-    secretName: tls-secret
-  rules:
-  - host: 51.124.57.228.xip.io
-    http:
-      paths:
-      - backend:
-          serviceName: dummy-logger
-          servicePort: 80
-        path: /
-EOF
-
-cat <<EOF | kubectl apply -f -
-apiVersion: networking.k8s.io/v1beta1
-kind: Ingress
-metadata:
-  name: dummy-ingress
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    cert-manager.io/issuer: "letsencrypt-prod"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-spec:
-  tls:
-  - hosts:
-    - $DNS
-    secretName: dns-tls
-  rules:
-  - host: $DNS
-    http:
-      paths:
-      - path: /
-        backend:
-          serviceName: dummy-logger-int-lb
-          servicePort: 80
-EOF
-
+```
+docker run -p 8080:8080 hashicorp/http-echo -listen=:8080 -text="hello world"
 ```

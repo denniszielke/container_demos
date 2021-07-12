@@ -1,6 +1,6 @@
 
 
-
+```
 echo 'installing nginx....'
 
 
@@ -107,3 +107,57 @@ spec:
           servicePort: 80
         path: /
 EOF
+
+
+kubectl apply -f - <<EOF
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: bookbuyer-ingress
+  namespace: bookbuyer
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    - host: dzapps.westcentralus.cloudapp.azure.com
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: bookbuyer
+            servicePort: 14001
+  backend:
+    serviceName: bookbuyer
+    servicePort: 14001
+EOF
+
+kubectl apply -f - <<EOF
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: bookbuyer-ingress
+  namespace: bookbuyer
+  annotations:
+    kubernetes.io/ingress.class: nginx
+
+spec:
+
+  rules:
+    - host: bookbuyer.contoso.com
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: bookbuyer
+            servicePort: 14001
+
+  backend:
+    serviceName: bookbuyer
+    servicePort: 14001
+EOF
+
+
+curl -H 'Host: bookbuyer.contoso.com' http://dzapps.westcentralus.cloudapp.azure.com/
+```
