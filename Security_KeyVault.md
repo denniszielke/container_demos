@@ -375,6 +375,7 @@ kubectl exec -it nginx-secrets-store-inline -n dummy -- /bin/sh
 
 ## df
 
+```
 cat <<EOF | kubectl apply -f -
 kind: Pod
 apiVersion: v1
