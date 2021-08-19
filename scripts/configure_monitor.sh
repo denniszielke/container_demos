@@ -23,6 +23,9 @@ echo -e "\n\n"
 
 az role assignment create --role "Reader" --assignee $SERVICE_PRINCIPAL_ID -g $KUBE_GROUP -o none
 
+#az role assignment create --role "Monitoring Reader" --assignee $SERVICE_PRINCIPAL_ID --scope /subscriptions/$SUBSCRIPTION_ID -o none
+#az role assignment create --role "Reader" --assignee $SERVICE_PRINCIPAL_ID --scope /subscriptions/$SUBSCRIPTION_ID -o none
+
 WORKSPACE_RESOURCE_ID=$(az monitor log-analytics workspace list --resource-group $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME')].id" -o tsv)
 
 az role assignment create --role "Log Analytics Reader" --assignee $SERVICE_PRINCIPAL_ID --scope $WORKSPACE_RESOURCE_ID -o none

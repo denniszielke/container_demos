@@ -11,6 +11,16 @@ APPGW_SUBNET_ID=$(echo ${AKS_SUBNET_ID%$AKS_SUBNET_NAME*}gw-1-subnet)
 
 echo "creating appgw in subnet $APPGW_SUBNET_ID ..."
 
+az eventhubs namespace create --location $LOCATION --name $KUBE_NAME -g $KUBE_GROUP
+az eventhubs eventhub create --name kubehub --namespace-name $KUBE_NAME -g $KUBE_GROUP
+
+SOURCE_RESOURCE_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id --output tsv)
+ENDPOINT=$(az eventhubs eventhub show -g $KUBE_GROUP -n kubehub --namespace-name $KUBE_NAME --query id --output tsv)
+az eventgrid event-subscription create --name kubesubscription --source-resource-id $SOURCE_RESOURCE_ID --endpoint-type eventhub --endpoint $ENDPOINT
+
+az eventgrid event-subscription list --source-resource-id $SOURCE_RESOURCE_ID
+
+
 APPGW_PUBLIC_IP=$(az network public-ip show -g $KUBE_GROUP -n appgw-pip --query ipAddress -o tsv)
 if [ "$APPGW_PUBLIC_IP" == "" ]; then
 echo "creating public ip appgw-pip ..."
@@ -27,8 +37,6 @@ APPGW_NAME=$(az network application-gateway list --resource-group=$KUBE_GROUP -o
 APPGW_RESOURCE_ID=$(az network application-gateway list --resource-group=$KUBE_GROUP -o json | jq -r ".[0].id")
 APPGW_SUBNET_ID=$(az network application-gateway list --resource-group=$KUBE_GROUP -o json | jq -r ".[0].gatewayIpConfigurations[0].subnet.id")
 #fi
-
-exit
 
 APPGW_ADDON_ENABLED=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query addonProfiles.ingressApplicationGateway.enabled --output tsv)
 if [ "$APPGW_ADDON_ENABLED" == "" ]; then

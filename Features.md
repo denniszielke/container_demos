@@ -67,12 +67,11 @@ az feature register --namespace "Microsoft.ContainerService" --name "AKS-OMSAppM
 az feature register --namespace "Microsoft.ContainerService" --name "MigrateToMSIClusterPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "EnableAzureKeyvaultSecretsProvider"
 az feature register --namespace "Microsoft.ContainerService" --name "RunCommandPreview"
-az feature register --namespace "Microsoft.ContainerService" --name "AKS-AzureDefenderAddon"
+az feature register --namespace "Microsoft.ContainerService" --name "AKS-AzureDefender"
 az feature register --namespace "Microsoft.ContainerService" --name "EventgridPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "EnablePrivateClusterPublicFQDN"
 az feature register --namespace "Microsoft.ContainerService" --name "HTTPProxyConfigPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "DisableLocalAccountsPreview"
-
 
 
 az feature register --name OSABypassMarketplace --namespace Microsoft.ContainerService
@@ -100,7 +99,7 @@ az feature register --namespace "Microsoft.Compute" --name "SharedDisksForPremiu
 
 Check if the feature is active
 ```
-az feature list -o table --query "[?contains(name, 'Microsoft.ContainerService/AKS-OpenServiceMesh')].{Name:name,State:properties.state}"
+az feature list -o table --query "[?contains(name, 'Microsoft.ContainerService/EnablePrivateClusterPublicFQDNh')].{Name:name,State:properties.state}"
 ```
 
 Re-register the provider

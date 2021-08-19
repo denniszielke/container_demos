@@ -12,7 +12,11 @@ kubectl edit ConfigMap osm-config -n kube-system
 move to permissive mode
 
 
-kubectl patch ConfigMap osm-config -n kube-system -p '{"data":"permissive_traffic_policy_mode":"false"}}' --type=merge  
+kubectl patch ConfigMap -n kube-system osm-config --type merge --patch '{"data":{"permissive_traffic_policy_mode":"false"}}'
+kubectl patch ConfigMap -n kube-system osm-config --type merge --patch '{"data":{"permissive_traffic_policy_mode":"true"}}'
+
+kubectl patch ConfigMap osm-config -n kube-system -p '{"data":"permissive_traffic_policy_mode":"true"}}' --type=merge  
+
 
 kubectl patch ConfigMap osm-config -n osm-system -p '{"data":{"use_https_ingress":"true"}}' --type=merge
 
@@ -111,9 +115,9 @@ kubectl rollout status deployment --timeout 300s -n bookthief bookthief
 kubectl rollout status deployment --timeout 300s -n bookwarehouse bookwarehouse
 kubectl rollout status deployment --timeout 300s -n bookbuyer bookbuyer
 
-kubectl port-forward -n bookthief deploy/bookthief 8080:80
+kubectl port-forward -n bookthief deploy/bookthief 8081:14001
 
-kubectl port-forward -n bookbuyer deploy/bookbuyer 8081:80
+kubectl port-forward -n bookbuyer deploy/bookbuyer 8080:14001
 
 kubectl port-forward -n bookstore deploy/bookstore-v1 8085:80
 
@@ -252,8 +256,76 @@ kubectl edit TrafficTarget bookbuyer-access-bookstore-v1 -n bookstore
 kubectl edit trafficsplits bookstore-split -n bookstore
 ```
 
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: bookbuyer
+  namespace: bookbuyer
+  labels:
+    app: bookbuyer
+spec:
+  ports:
+  - port: 14001
+    name: inbound-port
+  selector:
+    app: bookbuyer
+EOF
+
+kubectl apply -f - <<EOF
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: bookbuyer-ingress
+  namespace: bookbuyer
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+spec:
+  rules:
+    - host: $APPGW_DNS
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: bookbuyer
+            servicePort: 14001
+  backend:
+    serviceName: bookbuyer
+    servicePort: 14001
+EOF
+
 ## Tracing
 
 ```
 osm mesh upgrade --enable-tracing --tracing-address  otel-collector.default.svc.cluster.local --tracing-port 9411 --tracing-endpoint /api/v2/spans
 ```
+
+## cleanup
+
+kubectl delete service bookstore-v2 -n bookstore
+kubectl delete deployment bookstore-v2 -n bookstore
+kubectl delete traffictarget bookbuyer-access-bookstore-v2 -n bookstore
+
+
+kubectl delete traffictarget bookbuyer-access-bookstore -n bookstore
+kubectl delete HTTPRouteGroup bookstore-service-routes  -n bookstore
+kubectl delete TrafficTarget bookstore-access-bookwarehouse -n bookwarehouse
+kubectl delete HTTPRouteGroup bookwarehouse-service-routes -n bookwarehouse
+
+kubectl delete TrafficSplit bookstore-split -n bookstore
+
+kubectl apply -f - <<EOF
+apiVersion: split.smi-spec.io/v1alpha2
+kind: TrafficSplit
+metadata:
+  name: bookstore-split
+  namespace: bookstore
+spec:
+  service: bookstore.bookstore
+  backends:
+  - service: bookstore
+    weight: 25
+  - service: bookstore-v2
+    weight: 75
+EOF

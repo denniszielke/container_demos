@@ -12,7 +12,7 @@ API_APP_SECRET=
 
 ```
 INGRESS_NAMESPACE="nginx"
-DNS="dzapps.westcentralus.cloudapp.azure.com"
+DNS="dzapps1.westeurope.cloudapp.azure.com"
 APP_NAMESPACE="loggers"
 
 kubectl create ns $INGRESS_NAMESPACE
@@ -248,6 +248,8 @@ metadata:
 spec:
   tracing:
     samplingRate: "1"
+    zipkin:
+      endpointAddress: "http://otel-collector.default.svc.cluster.local:9411/api/v2/spans"
 EOF
 
 helm upgrade nginx-controller  nginx/nginx-ingress --install --set controller.stats.enabled=true --set controller.replicaCount=1 --set controller.service.externalTrafficPolicy=Local --set-string controller.pod.annotations.'dapr\.io/enabled'="true" --set-string controller.pod.annotations.'dapr\.io/app-id'="nginx" --set-string controller.pod.annotations.'dapr\.io/app-protocol'="http" --set-string controller.pod.annotations.'dapr\.io/app-port'="80" --set-string controller.pod.annotations.'dapr\.io/port'="80" --set-string controller.pod.annotations.'dapr\.io/api-token-secret'="dapr-api-token" --set-string controller.pod.annotations.'dapr\.io/config'="ingress-config" --set-string controller.pod.annotations.'dapr\.io/log-as-json'="true" --namespace=$INGRESS_NAMESPACE 

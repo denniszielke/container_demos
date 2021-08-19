@@ -361,3 +361,87 @@ az storage share create -n job --quota 10 --account-name $STORAGE_ACCOUNT --acco
  
 
 kubectl create secret generic azurefilev1-secret --from-literal=azurestorageaccountname=$STORAGE_ACCOUNT --from-literal=azurestorageaccountkey=$STORAGE_KEY
+
+```
+
+##  AGIC
+
+```
+
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aci-helloworld-blue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aci-helloworld
+  template:
+    metadata:
+      labels:
+        app: aci-helloworld
+    spec:
+      containers:
+      - name: aci-helloworld
+        image: denniszielke/blue
+        ports:
+        - containerPort: 80
+      nodeSelector:
+        kubernetes.io/role: agent
+        beta.kubernetes.io/os: linux
+        type: virtual-kubelet
+      tolerations:
+      - key: virtual-kubelet.io/provider
+        operator: Exists
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aci-helloworld-green
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aci-helloworld
+  template:
+    metadata:
+      labels:
+        app: aci-helloworld
+    spec:
+      containers:
+      - name: aci-helloworld
+        image: denniszielke/green
+        ports:
+        - containerPort: 80
+      nodeSelector:
+        kubernetes.io/role: agent
+        beta.kubernetes.io/os: linux
+        type: virtual-kubelet
+      tolerations:
+      - key: virtual-kubelet.io/provider
+        operator: Exists
+EOF
+
+kubectl expose deployment aci-helloworld-green --type=LoadBalancer --port=80
+
+cat <<EOF | kubectl apply -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: aci-helloworld-green
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          serviceName: aci-helloworld-green
+          servicePort: 80
+EOF
+
+```

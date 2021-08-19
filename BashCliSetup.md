@@ -99,6 +99,10 @@ az extension remove --name aks-preview
 
 ### install 
 ```
+
+https://github.com/ohmyzsh/ohmyzsh
+https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/kube-ps1
+
 #https://github.com/robbyrussell/oh-my-zsh/tree/master/plugins/kube-ps1
 #https://github.com/jonmosco/kube-ps1
 PROMPT=$PROMPT'$(kube_ps1) ' 

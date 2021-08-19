@@ -153,6 +153,7 @@ if [ "$ROUTE_TABLE_RESOURCE_ID" == "" ]; then
     az network route-table route create --resource-group $KUBE_GROUP --name "aad" --route-table-name $FW_NAME-rt --address-prefix AzureActiveDirectory --next-hop-type Internet
     az network route-table route create --resource-group $KUBE_GROUP --name "adf" --route-table-name $FW_NAME-rt --address-prefix AzureFrontDoor.FirstParty --next-hop-type Internet
     az network route-table route create --resource-group $KUBE_GROUP --name "arm" --route-table-name $FW_NAME-rt --address-prefix AzureResourceManager --next-hop-type Internet
+    az network route-table route create --resource-group $KUBE_GROUP --name "lb" --route-table-name $FW_NAME-rt --address-prefix GatewayManager --next-hop-type Internet
     az network route-table route create --resource-group $KUBE_GROUP --name "monitor" --route-table-name $FW_NAME-rt --address-prefix AzureMonitor --next-hop-type Internet
     az network route-table route create --resource-group $KUBE_GROUP --name "azure" --route-table-name $FW_NAME-rt --address-prefix AzureCloud.$LOCATION --next-hop-type Internet
     az network vnet subnet update --route-table $FW_NAME-rt --ids $KUBE_AGENT_SUBNET_ID

@@ -33,7 +33,7 @@ data:
         loglevel: debug
       azuremonitor:
         endpoint: "https://dc.services.visualstudio.com/v2/track"
-        instrumentation_key: "7f6f73a4-4df0"
+        instrumentation_key: ""
         maxbatchsize: 100
         maxbatchinterval: 10s
     service:

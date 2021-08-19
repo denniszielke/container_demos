@@ -128,3 +128,91 @@ spec:
     probes: ["readinessProbe", "livenessProbe"]
     probeTypes: ["tcpSocket", "httpGet", "exec"]
 EOF
+
+# policy addon
+
+policy evaluation every 15 minutes
+
+
+```
+
+
+az aks show --query addonProfiles.azurepolicy -g $KUBE_GROUP -n $KUBE_NAME
+
+```
+
+kubectl get constrainttemplates.templates.gatekeeper.sh 
+
+
+kubectl get constrainttemplates.templates.gatekeeper.sh k8sazureloadbalancernopublicips -o yaml
+https://store.policy.core.windows.net/kubernetes/load-balancer-no-public-ips/v1/template.yaml
+
+kubectl get constrainttemplates.templates.gatekeeper.sh k8sazurecontainerallowedimages -o yaml    
+
+https://store.policy.core.windows.net/kubernetes/container-allowed-images/v1/template.yaml
+
+kubectl create namespace special
+kubectl label namespace special admission.policy.azure.com/ignore=true
+kubectl label namespace special control-plane=true
+
+kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/svc-lb-logger.yaml -n special
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: centos
+  namespace: special
+spec:
+  containers:
+  - name: centos
+    image: centos
+    securityContext:
+      privileged: true
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+
+
+kubectl create namespace ordinary
+
+kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/svc-lb-logger.yaml -n ordinary
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: centos
+  namespace: ordinary
+spec:
+  containers:
+  - name: centos
+    image: centos
+    securityContext:
+      privileged: true
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+
+kubectl get k8sazurecontainerallowedimages.constraints.gatekeeper.sh -o yaml     
+
+labels will not deny violations, compliance still available
+
+kubectl label namespace control-plane
+
+admission.policy.azure.com/ignore
+
+see violations
+
+kubectl get k8sazurecontainernoprivilege.constraints.gatekeeper.sh  -o yaml
+
+kubectl describe deployment dummy-logger
+kubectl describe replicasets.apps dummy-logger
+
+```
