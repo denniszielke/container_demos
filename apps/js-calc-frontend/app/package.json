@@ -11,10 +11,10 @@
   },
   "dependencies": {
     "express": "^4.17.1",
-    "morgan": "^1.9.1",
-    "applicationinsights": "^1.6.0",
-    "dotenv-extended": "^2.7.1",
-    "redis": "^2.8.0",
+    "morgan": "^1.10.0",
+    "applicationinsights": "^2.1.9",
+    "dotenv-extended": "^2.9.0",
+    "redis": "^3.1.2",
     "request": "^2.88.0"
   }
 }
