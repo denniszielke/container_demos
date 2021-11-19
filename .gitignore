@@ -5,6 +5,7 @@
 aad/*
 wa
 scripts/*_wa*.sh
+scripts/*pod*.sh
 todos.md
 SECURITY_FD.md
 GRPC.md

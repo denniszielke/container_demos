@@ -8,12 +8,12 @@
 
 set -e
 
-DEPLOYMENT_NAME="dznets" # here enter unique deployment name (ideally short and with letters for global uniqueness)
+DEPLOYMENT_NAME="dzaadpodv2" # here enter unique deployment name (ideally short and with letters for global uniqueness)
 USE_PRIVATE_LINK="false" # use to deploy private master endpoint
-USE_POD_SUBNET="true"
+USE_POD_SUBNET="false"
 
 AAD_GROUP_ID="9329d38c-5296-4ecb-afa5-3e74f9abe09f --enable-azure-rbac" # here the AAD group that will be used to lock down AKS authentication
-LOCATION="westeurope" #"eastus2euap" #"westeurope" # here enter the datacenter location can be eastus or westeurope
+LOCATION="westeurope" #"centralus" #"southcentralus" #"eastus2euap" #"westeurope" # here enter the datacenter location can be eastus or westeurope
 KUBE_GROUP=$DEPLOYMENT_NAME # here enter the resources group name of your AKS cluster
 KUBE_NAME=$DEPLOYMENT_NAME # here enter the name of your kubernetes resource
 NODE_GROUP=$KUBE_GROUP"_"$KUBE_NAME"_nodes_"$LOCATION # name of the node resource group
@@ -22,7 +22,8 @@ KUBE_FW_SUBNET_NAME="AzureFirewallSubnet" # this you cannot change
 APPGW_SUBNET_NAME="gw-1-subnet"
 KUBE_ING_SUBNET_NAME="ing-4-subnet" # here enter the name of your ingress subnet
 KUBE_AGENT_SUBNET_NAME="aks-5-subnet" # here enter the name of your AKS subnet
-POD_AGENT_SUBNET_NAME="pod-8-subnet" 
+POD_AGENT_SUBNET_NAME="pod-8-subnet"
+VAULT_NAME=dzkv$KUBE_NAME 
 SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
 TENANT_ID=$(az account show --query tenantId -o tsv)
 KUBE_VERSION=$(az aks get-versions -l $LOCATION --query 'orchestrators[?default == `true`].orchestratorVersion' -o tsv) # here enter the kubernetes version of your AKS
@@ -41,6 +42,21 @@ if [ $(az group exists --name $KUBE_GROUP) = false ]; then
 else   
     echo "resource group $KUBE_GROUP already exists"
 fi
+
+
+SECRET_NAME="mySecret"
+VAULT_ID=$(az keyvault list -g $KUBE_GROUP --query "[?contains(name, '$VAULT_NAME')].id" -o tsv)
+if [ "$VAULT_ID" == "" ]; then
+    echo "creating keyvault $VAULT_NAME"
+    az keyvault create -g $KUBE_GROUP -n $VAULT_NAME -l $LOCATION -o none
+    az keyvault secret set -n $SECRET_NAME --vault-name $VAULT_NAME --value MySuperSecretThatIDontWantToShareWithYou! -o none
+    VAULT_ID=$(az keyvault show -g $KUBE_GROUP -n $VAULT_NAME -o tsv --query id)
+    echo "created keyvault $VAULT_ID"
+else
+    echo "keyvault $VAULT_ID already exists"
+    VAULT_ID=$(az keyvault show -g $KUBE_GROUP -n $VAULT_NAME -o tsv --query name)
+fi
+
 
 echo "setting up vnet"
 
@@ -82,44 +98,63 @@ else
     fi
 fi
 
+
 echo "setting up controller identity"
-AKS_CLIENT_ID="$(az identity list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME-id')].clientId" -o tsv)"
-AKS_CONTROLLER_RESOURCE_ID="$(az identity list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME-id')].id" -o tsv)"
-if [ "$AKS_CLIENT_ID" == "" ]; then
-    echo "creating controller identity $KUBE_NAME-id in $KUBE_GROUP"
-    az identity create --name $KUBE_NAME-id --resource-group $KUBE_GROUP -o none
+AKS_CONTROLLER_CLIENT_ID="$(az identity list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME-ctl-id')].clientId" -o tsv)"
+AKS_CONTROLLER_RESOURCE_ID="$(az identity list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME-clt-id')].id" -o tsv)"
+if [ "$AKS_CONTROLLER_RESOURCE_ID" == "" ]; then
+    echo "creating controller identity $KUBE_NAME-ctl-id in $KUBE_GROUP"
+    az identity create --name $KUBE_NAME-ctl-id --resource-group $KUBE_GROUP -o none
     sleep 5 # wait for replication
-    AKS_CLIENT_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-id  --query clientId -o tsv)"
-    sleep 5 # wait for replication
-    AKS_CLIENT_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-id  --query clientId -o tsv)"
-    AKS_CONTROLLER_RESOURCE_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-id  --query id -o tsv)"
+    AKS_CONTROLLER_CLIENT_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-ctl-id --query clientId -o tsv)"
+    AKS_CONTROLLER_RESOURCE_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-ctl-id --query id -o tsv)"
     echo "created controller identity $AKS_CONTROLLER_RESOURCE_ID "
     echo "assigning permissions on network $KUBE_AGENT_SUBNET_ID"
     sleep 25 # wait for replication
-    AKS_CLIENT_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-id  --query clientId -o tsv)"
-    sleep 5 # wait for replication
-    AKS_CLIENT_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-id  --query clientId -o tsv)"
-    AKS_CONTROLLER_RESOURCE_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-id  --query id -o tsv)"
+    AKS_CONTROLLER_CLIENT_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-ctl-id --query clientId -o tsv)"
+    AKS_CONTROLLER_RESOURCE_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-ctl-id --query id -o tsv)"
     echo "created controller identity $AKS_CONTROLLER_RESOURCE_ID "
     echo "assigning permissions on network $KUBE_AGENT_SUBNET_ID"
     sleep 5 # wait for replication
-    az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $KUBE_AGENT_SUBNET_ID -o none
+    az role assignment create --role "Contributor" --assignee $AKS_CONTROLLER_CLIENT_ID --scope $KUBE_AGENT_SUBNET_ID -o none
     if [ "$ROUTE_TABLE_ID" == "" ]; then
         echo "no route table used"
     else
         echo "assigning permissions on routetable $ROUTE_TABLE_ID"
-        az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $ROUTE_TABLE_ID -o none
+        az role assignment create --role "Contributor" --assignee $AKS_CONTROLLER_CLIENT_ID --scope $ROUTE_TABLE_ID -o none
     fi
 else
     echo "controller identity $AKS_CONTROLLER_RESOURCE_ID already exists"
     echo "assigning permissions on network $KUBE_AGENT_SUBNET_ID"
-    az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $KUBE_AGENT_SUBNET_ID -o none
+    az role assignment create --role "Contributor" --assignee $AKS_CONTROLLER_CLIENT_ID --scope $KUBE_AGENT_SUBNET_ID -o none
     if [ "$ROUTE_TABLE_ID" == "" ]; then
         echo "no route table used"
     else
         echo "assigning permissions on routetable $ROUTE_TABLE_ID"
-        az role assignment create --role "Contributor" --assignee $AKS_CLIENT_ID --scope $ROUTE_TABLE_ID -o none
+        az role assignment create --role "Contributor" --assignee $AKS_CONTROLLER_CLIENT_ID --scope $ROUTE_TABLE_ID -o none
     fi
+fi
+
+echo "setting up kubelet identity"
+AKS_KUBELET_CLIENT_ID="$(az identity list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME-kbl-id')].clientId" -o tsv)"
+AKS_KUBELET_RESOURCE_ID="$(az identity list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME-kbl-id')].id" -o tsv)"
+if [ "$AKS_KUBELET_CLIENT_ID" == "" ]; then
+    echo "creating kubelet identity $KUBE_NAME-kbl-id in $KUBE_GROUP"
+    az identity create --name $KUBE_NAME-kbl-id --resource-group $KUBE_GROUP -o none
+    sleep 5 # wait for replication
+    AKS_KUBELET_CLIENT_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-kbl-id --query clientId -o tsv)"
+    AKS_KUBELET_RESOURCE_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-kbl-id --query id -o tsv)"
+    echo "created kubelet identity $AKS_KUBELET_RESOURCE_ID "
+    sleep 25 # wait for replication
+    AKS_KUBELET_CLIENT_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-kbl-id --query clientId -o tsv)"
+    AKS_KUBELET_RESOURCE_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-kbl-id --query id -o tsv)"
+    echo "created kubelet identity $AKS_KUBELET_RESOURCE_ID "
+    echo "assigning permissions on keyvault $VAULT_ID"
+    az keyvault set-policy -n $VAULT_NAME --object-id $AKS_KUBELET_CLIENT_ID --key-permissions get --certificate-permissions get -o none
+else
+    echo "kubelet identity $AKS_KUBELET_RESOURCE_ID already exists"
+    echo "assigning permissions on keyvault $VAULT_ID"
+    az keyvault set-policy -n $VAULT_NAME --object-id $AKS_KUBELET_CLIENT_ID --key-permissions get --certificate-permissions get -o none
 fi
 
 echo "setting up aks"
@@ -131,17 +166,18 @@ else
     ACTIVATE_PRIVATE_LINK=""
 fi
 
+echo "setting up aks"
+AKS_ID=$(az aks list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME')].id" -o tsv)
+
 if [ "$AKS_ID" == "" ]; then
     echo "creating AKS $KUBE_NAME in $KUBE_GROUP"
     echo "using host subnet $KUBE_AGENT_SUBNET_ID"
-    if [ "$USE_POD_SUBNET" == "true" ]; then
-        echo "using pod subnet $KUBE_POD_SUBNET_ID"
-        az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub  --max-pods 250 --node-count 3 --min-count 3 --max-count 5 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --enable-vmss  --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --pod-subnet-id $KUBE_POD_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --node-osdisk-size 300 --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID $ACTIVATE_PRIVATE_LINK --network-policy calico -o none
-    else
-        az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub  --node-count 3 --node-vm-size "Standard_B2s" --min-count 3 --max-count 5 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --enable-vmss  --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --node-osdisk-size 300 --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID $ACTIVATE_PRIVATE_LINK --network-policy calico -o none
-    fi
-    #az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME --ssh-key-value ~/.ssh/id_rsa.pub  --node-count 3 --min-count 3  --node-vm-size "Standard_D2s_v3" --max-count 5 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --enable-vmss --node-osdisk-type Ephemeral  --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --no-ssh-key --assign-identity $AKS_CONTROLLER_RESOURCE_ID --node-osdisk-size 30 --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID --uptime-sla $OUTBOUNDTYPE $ACTIVATE_PRIVATE_LINK -o none
-    az aks update --resource-group $KUBE_GROUP --name $KUBE_NAME --auto-upgrade-channel node-image
+    az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub  --node-count 3 --node-vm-size "Standard_B2s" --min-count 3 --max-count 5 --enable-cluster-autoscaler --auto-upgrade-channel patch  --node-resource-group $NODE_GROUP --load-balancer-sku standard --enable-vmss  --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --assign-kubelet-identity $AKS_KUBELET_RESOURCE_ID --node-osdisk-size 300 --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID --network-policy calico $ACTIVATE_PRIVATE_LINK -o none
+    az aks update --resource-group $KUBE_GROUP --name $KUBE_NAME --auto-upgrade-channel rapid --yes
+    az aks enable-addons --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --addons="azure-keyvault-secrets-provider"
+    az aks update --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --enable-secret-rotation --yes
+    # az aks enable-addons --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --addons="open-service-mesh"
+    #az aks upgrade -n $KUBE_NAME -g $KUBE_GROUP --aks-custom-headers EnableCloudControllerManager=True
     AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
     echo "created AKS $AKS_ID"
 else
@@ -158,37 +194,13 @@ if [ "$WORKSPACE_RESOURCE_ID" == "" ]; then
     az aks enable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME --addons monitoring --workspace-resource-id $WORKSPACE_RESOURCE_ID
     OMS_CLIENT_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query addonProfiles.omsagent.identity.clientId -o tsv)
     az role assignment create --assignee $OMS_CLIENT_ID --scope $AKS_ID --role "Monitoring Metrics Publisher"
+    az monitor app-insights component create --app $KUBE_NAME-ai --location $LOCATION --resource-group $KUBE_GROUP --application-type web --kind web --workspace $WORKSPACE_RESOURCE_ID
+    
 fi
 
-IP_ID=$(az network public-ip list -g $NODE_GROUP --query "[?contains(name, 'nginxingress')].id" -o tsv)
-if [ "$IP_ID" == "" ]; then
-    echo "creating ingress ip nginxingress"
-    az network public-ip create -g $NODE_GROUP -n nginxingress --sku STANDARD -o none
-    IP_ID=$(az network public-ip show -g $NODE_GROUP -n nginxingress -o tsv)
-    echo "created ip $IP_ID"
-    IP=$(az network public-ip show -g $NODE_GROUP -n nginxingress -o tsv --query ipAddress)
-else
-    echo "AKS $AKS_ID already exists"
-    IP=$(az network public-ip show -g $NODE_GROUP -n nginxingress -o tsv --query ipAddress)
-fi
+# az aks nodepool add --node-count 1 --scale-down-mode Deallocate --node-osdisk-type Managed --max-pods 30 --mode System --name nodepool2 --cluster-name $KUBE_NAME --resource-group $KUBE_GROUP
 
-VAULT_NAME=dva$KUBE_NAME
-SECRET_NAME="mySecret"
-VAULT_ID=$(az keyvault list -g $KUBE_GROUP --query "[?contains(name, '$VAULT_NAME')].id" -o tsv)
-if [ "$VAULT_ID" == "" ]; then
-    echo "creating keyvault $VAULT_NAME"
-    az keyvault create -g $KUBE_GROUP -n $VAULT_NAME -l $LOCATION -o none
-    az keyvault secret set -n $SECRET_NAME --vault-name $VAULT_NAME --value MySuperSecretThatIDontWantToShareWithYou! -o none
-    az aks enable-addons --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --addons="azure-keyvault-secrets-provider"
-    az aks update --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --enable-secret-rotation
-    VAULT_ID=$(az keyvault show -g $KUBE_GROUP -n $VAULT_NAME -o tsv --query id)
-    echo "created keyvault $VAULT_ID"
-else
-    echo "keyvault $VAULT_ID already exists"
-    VAULT_ID=$(az keyvault show -g $KUBE_GROUP -n $VAULT_NAME -o tsv --query name)
-fi
-
-az aks get-credentials --resource-group=$KUBE_GROUP --name=$KUBE_NAME --admin
+az aks get-credentials --resource-group=$KUBE_GROUP --name=$KUBE_NAME --admin --overwrite-existing 
 
 echo "created this AKS cluster:"
 

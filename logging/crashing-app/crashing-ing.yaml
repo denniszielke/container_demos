@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: https-crashing-app
+  namespace: crashing-app
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:  
+  tls:
+  - hosts:
+    - dzobsdemo4.westeurope.cloudapp.azure.com
+    secretName: dummy-cert-secret
+  ingressClassName: nginx
+  rules:
+  - host: dzobsdemo4.westeurope.cloudapp.azure.com
+    http:
+      paths:
+      - path: /crashing
+        pathType: Prefix
+        backend:
+          service:
+            name: crashing-app
+            port:
+              number: 80

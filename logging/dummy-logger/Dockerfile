@@ -1,4 +1,4 @@
-FROM node:8-alpine
+FROM node:alpine
 ARG basedir="app"
 ARG build_info="Docker container build"
 ENV NODE_ENV production

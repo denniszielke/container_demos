@@ -8,7 +8,7 @@
 
 set -e
 
-DEPLOYMENT_NAME="dzlima7" # here enter unique deployment name (ideally short and with letters for global uniqueness)
+DEPLOYMENT_NAME="dzlima9" # here enter unique deployment name (ideally short and with letters for global uniqueness)
 AAD_GROUP_ID="9329d38c-5296-4ecb-afa5-3e74f9abe09f" # here the AAD group that will be used to lock down AKS authentication
 LOCATION="eastus" # here enter the datacenter location can be eastus or westeurope
 KUBE_GROUP=$DEPLOYMENT_NAME # here enter the resources group name of your AKS cluster
@@ -184,7 +184,7 @@ if [ "$IP_ID" == "" ]; then
     echo "created ip $IP_ID"
     IP=$(az network public-ip show -g $NODE_GROUP -n limaingress -o tsv --query ipAddress)
 else
-    echo "AKS $IP_ID already exists"
+    echo "IP $IP_ID already exists"
     IP=$(az network public-ip show -g $NODE_GROUP -n limaingress -o tsv --query ipAddress)
 fi
 
@@ -215,6 +215,12 @@ else
 fi
 
 az resource wait --ids $ARC_CLUSTER_ID --custom "properties.connectivityStatus!='Connecting'" --api-version "2021-04-01-preview"
+
+az k8s-configuration flux create  \
+    -g $ARC_CLUSTER_GROUP -c $ARC_CLUSTER_NAME -t connectedClusters \
+    -n gitops-demo --namespace gitops-demo --scope cluster \
+    -u https://github.com/denniszielke/arc-k8s-demo --branch master --kustomization name=kustomization1 prune=true
+
 
 sleep 5
 
@@ -319,3 +325,4 @@ else
     dummyappUrl=$(az webapp show -g $ARC_CLUSTER_GROUP --name dzdummylogger --query defaultHostName -o tsv)
     echo "app service $dummyappId already exists with url $dummyappUrl"
 fi
+

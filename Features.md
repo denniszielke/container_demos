@@ -14,6 +14,7 @@ az feature list --namespace Microsoft.Kubernetes -o table
 az feature list --namespace Microsoft.KubernetesConfiguration -o table
 az feature list --namespace Microsoft.EventGrid -o table
 az feature list --namespace Microsoft.OperationalInsights -o table
+az feature list --namespace Microsoft.Dashboard -o table
 
 ```
 
@@ -72,10 +73,15 @@ az feature register --namespace "Microsoft.ContainerService" --name "EventgridPr
 az feature register --namespace "Microsoft.ContainerService" --name "EnablePrivateClusterPublicFQDN"
 az feature register --namespace "Microsoft.ContainerService" --name "HTTPProxyConfigPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "DisableLocalAccountsPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "AKS-ScaleDownModePreview"
+az feature register --namespace "Microsoft.ContainerService" --name "AKS-NATGatewayPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "AKS-Dapr"
+az feature register --namespace "Microsoft.ContainerService" --name "EnableMultipleStandardLoadBalancers"
+az feature register --namespace "Microsoft.ContainerService" --name "EnablePodIdentityPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "EnableOIDCIssuerPreview"
 
 
-az feature register --name OSABypassMarketplace --namespace Microsoft.ContainerService
-az feature register --name AROGA --namespace Microsoft.ContainerService
+az feature register --name PrivatePreview --namespace Microsoft.Dashboard
 
 az feature register --namespace "Microsoft.Network" --name "AllowPrivateEndpoints"
 az feature register --namespace "Microsoft.Network" --name "AllowAppGwPublicAndPrivateIpOnSamePort"

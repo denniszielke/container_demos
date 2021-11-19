@@ -8,18 +8,18 @@ NODE_GROUP=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query 
 AKS_SUBNET_ID=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query "agentPoolProfiles[0].vnetSubnetId" -o tsv)
 AKS_SUBNET_NAME="aks-5-subnet"
 APPGW_SUBNET_ID=$(echo ${AKS_SUBNET_ID%$AKS_SUBNET_NAME*}gw-1-subnet)
+EVENTHUB_NAME=$KUBE_NAME-evthb
 
-echo "creating appgw in subnet $APPGW_SUBNET_ID ..."
-
-az eventhubs namespace create --location $LOCATION --name $KUBE_NAME -g $KUBE_GROUP
-az eventhubs eventhub create --name kubehub --namespace-name $KUBE_NAME -g $KUBE_GROUP
+az eventhubs namespace create --location $LOCATION --name $EVENTHUB_NAME -g $KUBE_GROUP
+az eventhubs eventhub create --name kubehub --namespace-name $EVENTHUB_NAME -g $KUBE_GROUP
 
 SOURCE_RESOURCE_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id --output tsv)
-ENDPOINT=$(az eventhubs eventhub show -g $KUBE_GROUP -n kubehub --namespace-name $KUBE_NAME --query id --output tsv)
+ENDPOINT=$(az eventhubs eventhub show -g $KUBE_GROUP -n kubehub --namespace-name $EVENTHUB_NAME --query id --output tsv)
 az eventgrid event-subscription create --name kubesubscription --source-resource-id $SOURCE_RESOURCE_ID --endpoint-type eventhub --endpoint $ENDPOINT
 
 az eventgrid event-subscription list --source-resource-id $SOURCE_RESOURCE_ID
 
+exit
 
 APPGW_PUBLIC_IP=$(az network public-ip show -g $KUBE_GROUP -n appgw-pip --query ipAddress -o tsv)
 if [ "$APPGW_PUBLIC_IP" == "" ]; then

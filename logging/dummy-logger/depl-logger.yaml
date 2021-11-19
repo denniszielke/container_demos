@@ -28,7 +28,12 @@ spec:
         image: denniszielke/dummy-logger:latest  
         ports:
         - containerPort: 80
-        imagePullPolicy: Always   
+        imagePullPolicy: Always 
+        env: 
+          - name: "METRICRESET"
+            value: "5"
+          - name: "NAME"
+            value: "south" 
         livenessProbe:
           httpGet:
             path: /ping

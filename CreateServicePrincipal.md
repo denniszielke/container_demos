@@ -12,7 +12,7 @@ az ad sp create-for-rbac --skip-assignment --name "kubernetes_sp"
 az ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/${SUBSCRIPTION_ID}" --name "kubernetes_sp"
 
 KUBE_NAME=
-az ad sp create-for-rbac --role="Owner" --scopes="/subscriptions/${SUBSCRIPTION_ID}" --name $KUBE_NAME  --sdk-auth
+az ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/${SUBSCRIPTION_ID}" --name $KUBE_NAME  --sdk-auth
 ```
 4. The output will look similar to this
 ```

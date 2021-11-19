@@ -81,11 +81,12 @@ EOF
 
 
 ## Zone
+https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/master/deploy/example/e2e_usage.md
 
 ```
 curl -skSL https://raw.githubusercontent.com/kubernetes-sigs/azuredisk-csi-driver/master/deploy/install-driver.sh | bash -s master --
 
-
+kubectl describe nodes | grep -e "Name:" -e "failure-domain.beta.kubernetes.io/zone"
 kubectl get no --show-labels | grep topo
 
 cat <<EOF | kubectl apply -f -
@@ -97,7 +98,7 @@ provisioner: disk.csi.azure.com
 parameters:
   skuname: Premium_ZRS
 reclaimPolicy: Delete
-volumeBindingMode: WaitForFirstConsumer
+volumeBindingMode: Immediate
 EOF
 
 cat <<EOF | kubectl apply -f -

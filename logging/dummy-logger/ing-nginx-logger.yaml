@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: https-dummy-logger
+  namespace: dummy-logger
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:  
+  tls:
+  - hosts:
+    - $DNS
+    secretName: dummy-cert-secret
+  ingressClassName: nginx
+  rules:
+  - host: $DNS
+    http:
+      paths:
+      - path: /logger
+        pathType: Prefix
+        backend:
+          service:
+            name: dummy-logger
+            port:
+              number: 80

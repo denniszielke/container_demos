@@ -1,6 +1,7 @@
 # Gatekeeper V2
 https://docs.microsoft.com/en-us/azure/governance/policy/concepts/rego-for-aks
 https://docs.microsoft.com/en-us/azure/governance/policy/concepts/effects#enforceopaconstraint
+https://docs.microsoft.com/en-us/azure/aks/use-azure-policy#create-and-assign-a-custom-policy-definition-preview
 
 AKS-Engine
 https://github.com/Azure/azure-policy/tree/master/extensions/policy-addon-kubernetes/helm-charts/azure-policy-addon-aks-engine

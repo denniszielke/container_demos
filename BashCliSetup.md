@@ -54,6 +54,9 @@ ssh-keygen -t rsa -b 4096
 brew update && brew install azure-cli
 
 brew upgrade azure-cli
+
+wget https://raw.githubusercontent.com/Homebrew/homebrew-core/7607de411f8ac0ad926ff2caadf8a9abf713cec8/Formula/azure-cli.rb
+brew reinsall azure-cli.rb
 ```
 
 ### arm client for mac

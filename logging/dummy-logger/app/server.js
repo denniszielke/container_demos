@@ -31,7 +31,7 @@ app.get('/', function(req, res) {
     console.log('received request');
     requestStats.totalRequestNumber++;
     checkStats();
-    res.send('Hi!');
+    res.send('Hi from ' + OS.hostname() + ' running ' + config.name + ' !');
 });
 
 app.get('/metrics', function(req, res) {
@@ -51,7 +51,7 @@ app.get('/fail/500', function(req, res) {
     requestStats.totalRequestFailed++;
     checkStats();
     res.status(500);
-    res.send('Failed with internal error - 500');
+    res.send('Failed  with internal error - 500');
 });
 
 app.get('/rate/me', function(req, res) {
@@ -98,7 +98,7 @@ app.get('/ping', function(req, res) {
     
     var forwardedFrom = (req.headers['x-forwarded-for'] || '').split(',').pop();
         
-    var logObject = { timestamp: logDate, host: OS.hostname(), source: sourceIp, forwarded: forwardedFrom, message: "Pong!"};
+    var logObject = { timestamp: logDate, name: config.name, host: OS.hostname(), source: sourceIp, forwarded: forwardedFrom, message: "Pong!"};
     var serverResult = JSON.stringify(logObject );
     requestStats.totalRequestNumber++;
     checkStats();
@@ -126,7 +126,7 @@ app.post('/api/log', function(req, res) {
         req.connection.remoteAddress || 
         req.socket.remoteAddress || 
         req.connection.socket.remoteAddress;
-    var logObject = { timestamp: logDate, value: randomNumber, host: OS.hostname(), source: sourceIp, message: messageReceived};
+    var logObject = { timestamp: logDate, name: config.name, value: randomNumber, host: OS.hostname(), source: sourceIp, message: messageReceived};
     var serverResult = JSON.stringify(logObject );
     console.log("string:");
     console.log(serverResult.toString());

@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: js-calc-frontend
+  namespace: dapr-calc
+  labels:
+    app: js-calc-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: js-calc-frontend
+  template:
+    metadata:
+      labels:
+        app: js-calc-frontend
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "js-calc-frontend"
+        dapr.io/app-port: "8080"
+        dapr.io/config: "appconfig"
+    spec:
+      containers:
+      - name: js-calc-frontend
+        image: ghcr.io/denniszielke/container-apps/js-calc-frontend:1423319071
+        ports:
+        - containerPort: 8080
+        imagePullPolicy: Always
+        env: 
+          - name: "PORT"
+            value: "8080"
+          - name: "VERSION"
+            value: "k8s-blue"
+          - name: "ENDPOINT"
+            value: "http://localhost:3500/v1.0/invoke/js-calc-backend/method"

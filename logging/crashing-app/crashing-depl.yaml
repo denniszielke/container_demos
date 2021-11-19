@@ -1,0 +1,50 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: crashing-app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crashing-app
+  namespace: crashing-app
+spec:
+  replicas: 1
+  minReadySeconds: 5
+  selector:
+    matchLabels:
+      demo: logging
+      app: crashing-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        demo: logging
+        app: crashing-app
+    spec:
+      containers:
+      - name: crashing-app
+        image: denniszielke/crashing-app:latest
+        livenessProbe:
+          httpGet:
+            path: /ping
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 20
+          timeoutSeconds: 5
+        ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+        imagePullPolicy: Always   
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "500m"
+          limits:
+            memory: "256Mi"
+            cpu: "1000m"    
