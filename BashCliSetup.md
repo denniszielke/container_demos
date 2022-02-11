@@ -30,9 +30,7 @@ echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ wheezy ma
 4. Run the following sudo commands:
 
 ```bash
-sudo apt-key adv --keyserver packages.microsoft.com --recv-keys 417A0893
-sudo apt-get install apt-transport-https
-sudo apt-get update && sudo apt-get install azure-cli
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 ```
 
 5. Run the CLI from the command prompt with the `az` command.
