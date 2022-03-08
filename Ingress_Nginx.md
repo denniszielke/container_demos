@@ -35,6 +35,53 @@ helm upgrade my-ingress-controller nginx/nginx-ingress --install --set controlle
 
 ```
 
+## Metrics
+
+```
+InsightsMetrics
+| extend tags=parse_json(Tags)
+| where tostring(tags.controller_class) == "nginx" 
+
+Calculate requests per minute:
+
+
+InsightsMetrics
+| where Name == "nginx_ingress_controller_nginx_process_connections_total" 
+| summarize Val=any(Val) by TimeGenerated=bin(TimeGenerated, 1m)
+| sort by TimeGenerated asc 
+| extend RequestsPerMinute = Val - prev(Val) 
+| sort by TimeGenerated desc 
+
+bar chart
+
+
+ InsightsMetrics
+| where Name == "nginx_ingress_controller_nginx_process_connections_total" 
+| summarize Val=any(Val) by TimeGenerated=bin(TimeGenerated, 1m)
+| sort by TimeGenerated asc 
+| project RequestsPerMinute = Val - prev(Val), TimeGenerated 
+| render barchart  
+
+InsightsMetrics
+| extend tags=parse_json(Tags)
+| where Name == "nginx_connections_accepted"
+
+InsightsMetrics
+| where Name == "nginx_http_requests_total" 
+| summarize Val=any(Val) by TimeGenerated=bin(TimeGenerated, 1m)
+| sort by TimeGenerated asc 
+| extend RequestsPerMinute = Val - prev(Val) 
+| sort by TimeGenerated desc 
+
+ InsightsMetrics
+| where Name == "nginx_http_requests_total" 
+| summarize Val=any(Val) by TimeGenerated=bin(TimeGenerated, 1m)
+| sort by TimeGenerated asc 
+| project RequestsPerMinute = Val - prev(Val), TimeGenerated 
+| render barchart  
+
+```
+
 ## demo app
 
 ```

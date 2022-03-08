@@ -8,336 +8,339 @@ NODE_GROUP=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query 
 AKS_SUBNET_ID=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query "agentPoolProfiles[0].vnetSubnetId" -o tsv)
 AKS_SUBNET_NAME="aks-5-subnet"
 
-echo "creating appgw in subnet $APPGW_SUBNET_ID ..."
-
-APPGW_PUBLIC_IP=$(az network public-ip show -g $KUBE_GROUP -n appgw-pip --query ipAddress -o tsv)
-if [ "$APPGW_PUBLIC_IP" == "" ]; then
-echo "creating public ip appgw-pip ..."
-az network public-ip create --resource-group $KUBE_GROUP --name appgw-pip --allocation-method Static --sku Standard --dns-name $KUBE_NAME
-APPGW_PUBLIC_IP=$(az network public-ip show -g $KUBE_GROUP -n appgw-pip --query ipAddress -o tsv)
+OSM_ADDON_ENABLED=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query "addonProfiles.openServiceMesh.enabled" -o tsv)
+if [ "$OSM_ADDON_ENABLED" == "true" ]; then
+  echo "osm addon is already active"
+else
+  echo "enabling osm addon..."
+  az aks enable-addons --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --addons="open-service-mesh"
 fi
 
-APPGW_RESOURCE_ID=$(az network application-gateway list --resource-group=$KUBE_GROUP -o json | jq -r ".[0].id")
+https://release-v0-11.docs.openservicemesh.io/docs/demos/ingress_k8s_nginx/
 
-if [ "$APPGW_RESOURCE_ID" == "" ]; then
-echo "creating application gateway $KUBE_NAME-appgw..."
-az network application-gateway create --name $KUBE_NAME-appgw --resource-group $KUBE_GROUP --location $LOCATION --http2 Enabled --min-capacity 0 --max-capacity 10 --sku WAF_v2  --subnet $APPGW_SUBNET_ID --http-settings-cookie-based-affinity Disabled --frontend-port 80 --http-settings-port 80 --http-settings-protocol Http --public-ip-address appgw-pip --private-ip-address "10.0.1.100"
-APPGW_NAME=$(az network application-gateway list --resource-group=$KUBE_GROUP -o json | jq -r ".[0].name")
-APPGW_RESOURCE_ID=$(az network application-gateway list --resource-group=$KUBE_GROUP -o json | jq -r ".[0].id")
-APPGW_SUBNET_ID=$(az network application-gateway list --resource-group=$KUBE_GROUP -o json | jq -r ".[0].gatewayIpConfigurations[0].subnet.id")
-fi
+echo "cluster is running osm version:"
+kubectl get deployment -n kube-system osm-controller -o=jsonpath='{$.spec.template.spec.containers[:1].image}'
+echo "cluster is running osm config:"
+kubectl get meshconfig osm-mesh-config -n kube-system -o yaml
 
-APPGW_ADDON_ENABLED=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query addonProfiles.ingressApplicationGateway.enabled --output tsv)
-if [ "$APPGW_ADDON_ENABLED" == "" ]; then
-echo "enabling ingress-appgw addon for $APPGW_RESOURCE_ID"
-az aks enable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME -a ingress-appgw --appgw-id $APPGW_RESOURCE_ID
 
-#az aks enable-addons --resource-group dzlima8 --name dzlima8 --addons azure-defender --workspace-resource-id /subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourcegroups/dzlima8/providers/microsoft.operationalinsights/workspaces/dzlima8
-fi
+#kubectl patch meshconfig osm-mesh-config -n kube-system -p '{"spec":{"traffic":{"enablePermissiveTrafficPolicyMode":true}}}' --type=merge
 
-APPGW_DNS=$(az network public-ip show --resource-group $KUBE_GROUP --name appgw-pip --query dnsSettings.fqdn --output tsv)
+kubectl edit meshconfig osm-mesh-config -n kube-system
 
-kubectl apply -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.13/deploy/manifests/00-crds.yaml --validate=false
+kubectl patch meshconfig osm-mesh-config -n kube-system -p '{"spec":{"certificate:":{"ingressGateway": {"secret": {"name": "osm-nginx-client-cert","namespace": "kube-system"},"subjectAltNames": ["nginx-ingress-ingress-nginx-controller.ingress.cluster.local"],"validityDuration": "24h"}}}}'  --type=merge
+kubectl get meshconfig osm-mesh-config -n kube-system
 
-kubectl create namespace cert-manager
-kubectl label namespace cert-manager cert-manager.io/disable-validation=true
+certificate:
+    ingressGateway:
+      secret:
+        name: osm-nginx-client-cert
+        namespace: kube-system 
+      subjectAltNames:
+      - nginx-ingress-ingress-nginx.ingress.cluster.local
+      validityDuration: 24h
+
+
+osm namespace add dummy-logger
+
+osm_namespace=kube-system # replace <osm-namespace> with the namespace where OSM is installed
+osm_mesh_name=osm # replace <osm-mesh-name> with the mesh name (use `osm mesh list` command)
+
+nginx_ingress_namespace=ingress # replace <nginx-namespace> with the namespace where Nginx is installed
+nginx_ingress_service=nginx-ingress-ingress-nginx-controller # replace <nginx-ingress-controller-service> with the name of the nginx ingress controller service
+nginx_ingress_host="$(kubectl -n "$nginx_ingress_namespace" get service "$nginx_ingress_service" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')"
+nginx_ingress_port="$(kubectl -n "$nginx_ingress_namespace" get service "$nginx_ingress_service" -o jsonpath='{.spec.ports[?(@.name=="http")].port}')"
+
+kubectl label ns "$nginx_ingress_namespace" openservicemesh.io/monitored-by="$osm_mesh_name"
+
+kubectl apply -f - <<EOF
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: https-$APP_NAMESPACE
+  namespace: $APP_NAMESPACE
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_ssl_name "default.dummy-logger.cluster.local";
+    nginx.ingress.kubernetes.io/proxy-ssl-secret: "kube-system/osm-nginx-client-cert"
+    nginx.ingress.kubernetes.io/proxy-ssl-verify: "on"
+spec:  
+  tls:
+  - hosts:
+    - $DNS
+    secretName: $SECRET_NAME
+  ingressClassName: nginx
+  rules:
+  - host: $DNS
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dummy-logger
+            port:
+              number: 80
+---
+apiVersion: policy.openservicemesh.io/v1alpha1
+kind: IngressBackend
+metadata:
+  name: dummy-logger
+  namespace: $APP_NAMESPACE
+spec:
+  backends:
+  - name: dummy-logger
+    port:
+      number: 80
+      protocol: https
+    tls:
+      skipClientCertValidation: false
+  sources:
+  - kind: Service
+    name: "$nginx_ingress_service"
+    namespace: "$nginx_ingress_namespace"
+  - kind: AuthenticatedPrincipal
+    name: nginx-ingress-ingress-nginx.ingress.cluster.local
+EOF
+
+kubectl apply -f - <<EOF
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: http-dummy-logger
+  namespace: dummy-logger
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dummy-logger
+            port:
+              number: 80
+---
+kind: IngressBackend
+apiVersion: policy.openservicemesh.io/v1alpha1
+metadata:
+  name: http-dummy-logger
+  namespace: dummy-logger
+spec:
+  backends:
+  - name: dummy-logger
+    port:
+      number: 80
+      protocol: http
+  sources:
+  - kind: Service
+    namespace: "$nginx_ingress_namespace"
+    name: "$nginx_ingress_service"
+EOF
+
+
+curl -sI $DNS
+
+kubectl label namespace ingress-basic cert-manager.io/disable-validation=true
 helm repo add jetstack https://charts.jetstack.io
+
 helm repo update
-helm upgrade --install cert-manager \
-  --namespace cert-manager \
-  --version v0.13.0 \
-  jetstack/cert-manager --wait
 
-echo 'creating ingress objects'
+CERT_MANAGER_REGISTRY=quay.io
+CERT_MANAGER_TAG=v1.3.1
+CERT_MANAGER_IMAGE_CONTROLLER=jetstack/cert-manager-controller
+CERT_MANAGER_IMAGE_WEBHOOK=jetstack/cert-manager-webhook
+CERT_MANAGER_IMAGE_CAINJECTOR=jetstack/cert-manager-cainjector
 
-kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/depl-logger.yaml --wait true
-kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/svc-cluster-logger.yaml --wait true
+# Install the cert-manager Helm chart
+helm upgrade cert-manager jetstack/cert-manager \
+  --namespace ingress --install \
+  --version $CERT_MANAGER_TAG \
+  --set installCRDs=true \
+  --set image.repository=$CERT_MANAGER_REGISTRY/$CERT_MANAGER_IMAGE_CONTROLLER \
+  --set image.tag=$CERT_MANAGER_TAG \
+  --set webhook.image.repository=$CERT_MANAGER_REGISTRY/$CERT_MANAGER_IMAGE_WEBHOOK \
+  --set webhook.image.tag=$CERT_MANAGER_TAG \
+  --set cainjector.image.repository=$CERT_MANAGER_REGISTRY/$CERT_MANAGER_IMAGE_CAINJECTOR \
+  --set cainjector.image.tag=$CERT_MANAGER_TAG
 
-cat <<EOF | kubectl apply -f -
-apiVersion: cert-manager.io/v1alpha2
+kubectl apply -f - <<EOF
+apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: letsencryptappgw
+  name: letsencrypt
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: dummy1@email.com
+    email: mail@test.de
     privateKeySecretRef:
       name: letsencrypt
     solvers:
     - http01:
         ingress:
-          class: azure/application-gateway
+          class: nginx
 EOF
 
-
-kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/depl-logger.yaml
-kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/svc-cluster-logger.yaml
-
 kubectl apply -f - <<EOF
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: appgw-dummy-ingress
+  name: https-dummy-logger
+  namespace: dummy-logger
   annotations:
-    kubernetes.io/ingress.class: azure/application-gateway
-    certmanager.k8s.io/cluster-issuer: letsencryptappgw
-    cert-manager.io/acme-challenge-type: http01
-spec:
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:  
   tls:
   - hosts:
-    - $APPGW_DNS
-    secretName: dummy-secret-name
+    - $DNS
+    secretName: dummy-cert-secret
+  ingressClassName: nginx
   rules:
-  - host: $APPGW_DNS
+  - host: $DNS
     http:
       paths:
-      - backend:
-          serviceName: dummy-logger-cluster
-          servicePort: 80
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dummy-logger
+            port:
+              number: 80
 EOF
 
-
-kubectl create ns monitoring
-
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo add grafana https://grafana.github.io/helm-charts
-
-
-helm repo update
-
-helm upgrade prometheus --install prometheus-community/prometheus -n monitoring
-
-helm upgrade osm-grafana --install grafana/grafana -n monitoring
-helm install osm-grafana grafana/grafana
-
-
-kubectl get secret --namespace monitoring osm-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
-
-
-GRAF_POD_NAME=$(kubectl get pods -n monitoring -l "app.kubernetes.io/name=grafana" -o jsonpath="{.items[0].metadata.name}")
-kubectl port-forward -n monitoring $GRAF_POD_NAME 3000
-
-
-kubectl patch ConfigMap -n kube-system osm-config --type merge --patch '{"data":{"prometheus_scraping":"true"}}'
-
-
-kubectl get configmap prometheus-server -n monitoring -o yaml > cm-stable-prometheus-server.yml
-cp cm-stable-prometheus-server.yml cm-stable-prometheus-server.yml.copy
-
-code cm-stable-prometheus-server.yml
-
-kubectl apply -f cm-stable-prometheus-server.yml -n monitoring
-
-PROM_POD_NAME=$(kubectl get pods -l "app=prometheus,component=server" -o jsonpath="{.items[0].metadata.name}" -n monitoring)
-kubectl --namespace monitoring port-forward $PROM_POD_NAME 9090 
-
-http://prometheus-server.monitoring.svc.cluster.local:9090
-
-osm metrics enable --namespace "bookbuyer, bookstore, bookthief, bookwarehouse"
-
-
-kubectl port-forward -n bookbuyer deploy/bookbuyer 8081:14001
-
-kubectl port-forward -n bookthief deploy/bookthief -n bookthief 8080:14001
-
-
-kubectl patch ConfigMap -n kube-system osm-config --type merge --patch '{"data":{"permissive_traffic_policy_mode":"true"}}'
-
-kubectl patch ConfigMap -n kube-system osm-config --type merge --patch '{"data":{"permissive_traffic_policy_mode":"false"}}'
-
-kubectl get secret --namespace default osm-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
-
-
 kubectl apply -f - <<EOF
----
-apiVersion: access.smi-spec.io/v1alpha3
-kind: TrafficTarget
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: bookbuyer-access-bookstore
-  namespace: bookstore
+  name: https-dummy-logger
+  namespace: dummy-logger
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    # proxy_ssl_name for a service is of the form <service-account>.<namespace>.cluster.local
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_ssl_name "httpbin.httpbin.cluster.local";
+    nginx.ingress.kubernetes.io/proxy-ssl-secret: "osm-system/osm-nginx-client-cert"
+    nginx.ingress.kubernetes.io/proxy-ssl-verify: "on"
 spec:
-  destination:
-    kind: ServiceAccount
-    name: bookstore
-    namespace: bookstore
+  ingressClassName: nginx
   rules:
-  - kind: HTTPRouteGroup
-    name: bookstore-service-routes
-    matches:
-    - buy-a-book
-    - books-bought
-  sources:
-  - kind: ServiceAccount
-    name: bookbuyer
-    namespace: bookbuyer
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: httpbin
+            port:
+              number: 14001
 ---
-apiVersion: specs.smi-spec.io/v1alpha4
-kind: HTTPRouteGroup
+apiVersion: policy.openservicemesh.io/v1alpha1
+kind: IngressBackend
 metadata:
-  name: bookstore-service-routes
-  namespace: bookstore
+  name: httpbin
+  namespace: httpbin
 spec:
-  matches:
-  - name: books-bought
-    pathRegex: /books-bought
-    methods:
-    - GET
-    headers:
-    - "user-agent": ".*-http-client/*.*"
-    - "client-app": "bookbuyer"
-  - name: buy-a-book
-    pathRegex: ".*a-book.*new"
-    methods:
-    - GET
-  - name: update-books-bought
-    pathRegex: /update-books-bought
-    methods:
-    - POST
----
-kind: TrafficTarget
-apiVersion: access.smi-spec.io/v1alpha3
-metadata:
-  name: bookstore-access-bookwarehouse
-  namespace: bookwarehouse
-spec:
-  destination:
-    kind: ServiceAccount
-    name: bookwarehouse
-    namespace: bookwarehouse
-  rules:
-  - kind: HTTPRouteGroup
-    name: bookwarehouse-service-routes
-    matches:
-    - restock-books
-  sources:
-  - kind: ServiceAccount
-    name: bookstore
-    namespace: bookstore
-  - kind: ServiceAccount
-    name: bookstore-v2
-    namespace: bookstore
----
-apiVersion: specs.smi-spec.io/v1alpha4
-kind: HTTPRouteGroup
-metadata:
-  name: bookwarehouse-service-routes
-  namespace: bookwarehouse
-spec:
-  matches:
-    - name: restock-books
-      methods:
-      - POST
-      headers:
-      - host: bookwarehouse.bookwarehouse
-EOF
-
-kubectl patch ConfigMap -n kube-system osm-config --type merge --patch '{"data":{"permissive_traffic_policy_mode":"true"}}'
-
-
-kubectl delete traffictarget.access.smi-spec.io/bookbuyer-access-bookstore  -n bookstore
-kubectl delete httproutegroup.specs.smi-spec.io/bookstore-service-routes -n bookstore
-kubectl delete traffictarget.access.smi-spec.io/bookstore-access-bookwarehouse -n bookwarehouse
-kubectl delete httproutegroup.specs.smi-spec.io/bookwarehouse-service-routes -n bookwarehouse
-
-kubectl apply -f - <<EOF
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: bookstore-v2
-  namespace: bookstore
-  labels:
-    app: bookstore-v2
-spec:
-  ports:
-  - port: 14001
-    name: bookstore-port
-  selector:
-    app: bookstore-v2
----
-# Deploy bookstore-v2 Service Account
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: bookstore-v2
-  namespace: bookstore
----
-# Deploy bookstore-v2 Deployment
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: bookstore-v2
-  namespace: bookstore
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: bookstore-v2
-  template:
-    metadata:
-      labels:
-        app: bookstore-v2
-    spec:
-      serviceAccountName: bookstore-v2
-      containers:
-        - name: bookstore
-          image: openservicemesh/bookstore:v0.8.0
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 14001
-              name: web
-          command: ["/bookstore"]
-          args: ["--path", "./", "--port", "14001"]
-          env:
-            - name: BOOKWAREHOUSE_NAMESPACE
-              value: bookwarehouse
-            - name: IDENTITY
-              value: bookstore-v2
----
-kind: TrafficTarget
-apiVersion: access.smi-spec.io/v1alpha3
-metadata:
-  name: bookbuyer-access-bookstore-v2
-  namespace: bookstore
-spec:
-  destination:
-    kind: ServiceAccount
-    name: bookstore-v2
-    namespace: bookstore
-  rules:
-  - kind: HTTPRouteGroup
-    name: bookstore-service-routes
-    matches:
-    - buy-a-book
-    - books-bought
-  sources:
-  - kind: ServiceAccount
-    name: bookbuyer
-    namespace: bookbuyer
-EOF
-
-kubectl delete service/bookstore-v2 -n bookstore
-kubectl delete serviceaccount/bookstore-v2 -n bookstore
-kubectl delete deployment.apps/bookstore-v2 -n bookstore
-kubectl delete traffictarget.access.smi-spec.io/bookbuyer-access-bookstore-v2 -n bookstore
-
-kubectl apply -f - <<EOF
-apiVersion: split.smi-spec.io/v1alpha2
-kind: TrafficSplit
-metadata:
-  name: bookstore-split
-  namespace: bookstore
-spec:
-  service: bookstore.bookstore
   backends:
-  - service: bookstore
-    weight: 25
-  - service: bookstore-v2
-    weight: 75
+  - name: httpbin
+    port:
+      number: 14001
+      protocol: https
+    tls:
+      skipClientCertValidation: false
+  sources:
+  - kind: Service
+    name: "$nginx_ingress_service"
+    namespace: "$nginx_ingress_namespace"
+  - kind: AuthenticatedPrincipal
+    name: ingress-nginx.ingress.cluster.local
 EOF
 
-kubectl delete trafficsplit.split.smi-spec.io/bookstore-split -n bookstore
+curl -sI http://"$DNS"/get
+
+kubectl get secret dummy-cert-secret -n dummy-logger -o json | jq '.data | map_values(@base64d)'
+
+openssl pkcs12 -export -in ingress-tls.crt -inkey ingress-tls.key  -out $CERT_NAME.pfx
+# skip Password prompt
+
+az keyvault certificate import --vault-name ${KEYVAULT_NAME} -n $CERT_NAME -f $CERT_NAME.pfx
+
+cat <<EOF | kubectl apply -f -
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+  name: ingress-tls
+  namespace: ingress
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    useVMManagedIdentity: "true"
+    userAssignedIdentityID: "$AKS_KUBELET_CLIENT_ID"
+    keyvaultName: "$VAULT_NAME"
+    cloudName: ""                   # [OPTIONAL for Azure] if not provided, azure environment will default to AzurePublicCloud
+    objects:  |
+      array:
+        - |
+          objectName: mySecret
+          objectType: secret        # object types: secret, key or cert
+          objectVersion: ""         # [OPTIONAL] object versions, default to latest if empty
+    tenantId: "$TENANT_ID"                 # the tenant ID of the KeyVault  
+EOF
 
 
-curl -H 'Host: bookbuyer.contoso.com' http://51.144.177.28/
+cat <<EOF | kubectl apply -f -
+kind: Pod
+apiVersion: v1
+metadata:
+  name: busybox-secrets-store-inline-user-msi
+  namespace: ingress
+spec:
+  containers:
+    - name: busybox
+      image: k8s.gcr.io/e2e-test-images/busybox:1.29
+      command:
+        - "/bin/sleep"
+        - "10000"
+      volumeMounts:
+      - name: secrets-store01-inline
+        mountPath: "/mnt/secrets-store"
+        readOnly: true
+  volumes:
+    - name: secrets-store01-inline
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: "ingress-tls"
+EOF
+
+
+AD_APP_NAME="$DEPLOYMENT_NAME-msal-proxy"
+APP_HOSTNAME="$DNS"
+HOMEPAGE=https://$APP_HOSTNAME
+IDENTIFIER_URIS=$HOMEPAGE
+REPLY_URLS=https://$APP_HOSTNAME/msal/signin-oidc
+
+CLIENT_ID=""
+OBJECT_ID=""
+
+CLIENT_ID=$(az ad app create --display-name $AD_APP_NAME --homepage $HOMEPAGE --reply-urls $REPLY_URLS --required-resource-accesses @manifest.json -o json | jq -r '.appId')
+echo $CLIENT_ID
+
+OBJECT_ID=$(az ad app show --id $CLIENT_ID -o json | jq '.objectId' -r)
+echo $OBJECT_ID
+
+az ad app update --id $OBJECT_ID --set "oauth2Permissions=[]"
+
+# The newly registered app does not have a password.  Use "az ad app credential reset" to add password and save to a variable.
+CLIENT_SECRET=$(az ad app credential reset --id $CLIENT_ID -o json | jq '.password' -r)
+echo $CLIENT_SECRET
+
+# Get your Azure AD tenant ID and save to variable
+AZURE_TENANT_ID=$(az account show -o json | jq '.tenantId' -r)
+echo $AZURE_TENANT_ID

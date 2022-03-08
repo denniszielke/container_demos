@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: azure-cli
+spec:
+  containers:
+    - image: mcr.microsoft.com/azure-cli
+      name: sp-app
+      command: ["/bin/sh", "-c", "--"]
+      args: ['while true; echo "retrieving login credentials"; az login --identity --username $MANAGED_IDENTITY; az account set --subscription $SUBSCRIPTION_ID; echo "\nyour credentials have the following roles:"; az role assignment list --subscription $SUBSCRIPTION_ID; echo "\nyour credentials have access to the following resource groups:"; az group list --subscription $SUBSCRIPTION_ID -o table; echo "\nyour credentials have access to the following resources:"; az resource list -o table; do sleep 10; done;']      
+      env: 
+        - name: "MANAGED_IDENTITY"
+          value: "6a12"
+        - name: "SUBSCRIPTION_ID"
+          value: "57e5"

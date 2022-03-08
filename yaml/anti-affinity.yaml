@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    run: pause
+  name: pause
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      run: pause
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        run: pause
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: run
+                  operator: In
+                  values:
+                  - pause
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - image: mcr.microsoft.com/oss/kubernetes/pause:3.6
+        name: pause
+        resources:
+          limits:
+            memory: "20Mi"
+            cpu: "20m"
+          requests:
+            memory: "10Mi"
+            cpu: "10m"

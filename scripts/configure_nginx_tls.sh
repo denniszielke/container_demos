@@ -13,6 +13,9 @@ NODE_GROUP=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query 
 AKS_SUBNET_ID=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query "agentPoolProfiles[0].vnetSubnetId" -o tsv)
 AKS_SUBNET_NAME="aks-5-subnet"
 KUBE_ING_SUBNET_NAME="ing-4-subnet"
+APP_NAMESPACE="dummy-logger"
+SECRET_NAME="mytls-cert-secret"
+VAULT_NAME=dzkv$KUBE_NAME 
 
 CERT_MANAGER_REGISTRY=quay.io
 CERT_MANAGER_TAG=v1.3.1
@@ -42,22 +45,22 @@ if kubectl get namespace ingress; then
   echo -e "Namespace ingress found."
 else
   kubectl create namespace ingress
-  kubectl label namespace ingress cert-manager.io/disable-validation=true
   echo -e "Namespace ingress created."
 fi
 
-if kubectl get namespace dummy-logger; then
-  echo -e "Namespace dummy-logger found."
+if kubectl get namespace $APP_NAMESPACE; then
+  echo -e "Namespace $APP_NAMESPACE found."
 else
-  kubectl create namespace dummy-logger
-  echo -e "Namespace dummy-logger created."
+  kubectl create namespace $APP_NAMESPACE
+  echo -e "Namespace $APP_NAMESPACE created."
 fi
 
+sleep 2
 
-kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/depl-logger.yaml -n dummy-logger
-kubectl apply -f logging/dummy-logger/svc-cluster-logger.yaml -n dummy-logger
+kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/depl-logger.yaml -n $APP_NAMESPACE
+#kubectl apply -f logging/dummy-logger/svc-cluster-logger.yaml -n dummy-logger
 
-#kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/svc-cluster-logger.yaml -n dummy-logger
+kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/svc-cluster-logger.yaml -n $APP_NAMESPACE
 
 # Add the ingress-nginx repository
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
@@ -113,8 +116,8 @@ kubectl apply -f - <<EOF
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: https-dummy-logger
-  namespace: dummy-logger
+  name: https-$APP_NAMESPACE
+  namespace: $APP_NAMESPACE
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
     nginx.ingress.kubernetes.io/rewrite-target: /
@@ -122,13 +125,13 @@ spec:
   tls:
   - hosts:
     - $DNS
-    secretName: dummy-cert-secret
+    secretName: $SECRET_NAME
   ingressClassName: nginx
   rules:
   - host: $DNS
     http:
       paths:
-      - path: /logger
+      - path: /
         pathType: Prefix
         backend:
           service:
@@ -138,3 +141,23 @@ spec:
 EOF
 
 echo $DNS
+
+exit
+
+OUTPUT=${1:-"$HOME/certificates"}
+
+DOMAIN=$(kubectl get secret -n $APP_NAMESPACE $SECRET_NAME -o json | jq -r '.data."tls.crt"' | base64 -d | openssl x509 -noout -text | grep "Subject: CN=" | sed -E 's/\s+Subject: CN=([^ ]*)/\1/g')
+echo -n " ${DOMAIN}"
+
+mkdir -p "${OUTPUT}/${DOMAIN}"
+
+kubectl get secret -n ${APP_NAMESPACE} ${SECRET_NAME} -o json | jq -r '.data."tls.key"' | base64 -d > "${OUTPUT}/${DOMAIN}/privkey.pem"
+kubectl get secret -n ${APP_NAMESPACE} ${SECRET_NAME}  -o json | jq -r '.data."tls.crt"' | base64 -d > "${OUTPUT}/${DOMAIN}/fullchain.pem"
+#kubectl get secret -n dummy-logger dummy-cert-secret -o json | jq -r '.data."tls.crt"' | base64 -d
+
+
+openssl pkcs12 -export -in "${OUTPUT}/${DOMAIN}/fullchain.pem" -inkey "${OUTPUT}/${DOMAIN}/privkey.pem" -out "${OUTPUT}/${DOMAIN}/$SECRET_NAME.pfx"
+
+
+az keyvault certificate import --vault-name ${VAULT_NAME} -n $SECRET_NAME -f "${OUTPUT}/${DOMAIN}/$SECRET_NAME.pfx"
+

@@ -327,17 +327,19 @@ echo $SERVICE_PRINCIPAL_SECRET
 KUBE_NAME=MyManagedCluster
 KUBE_GROUP=myResourceGroup
 
-az aks get-credentials -g MyResourceGroup -n MyManagedCluster
+az aks get-credentials -g dzallincl -n dzallincl
 
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
 AZURE_TENANT_ID=
 
+az login --identity
+
 az login --service-principal -u $SERVICE_PRINCIPAL_ID -p $SERVICE_PRINCIPAL_SECRET --tenant $AZURE_TENANT_ID
 az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee "$SERVICE_PRINCIPAL_ID" --scope $AKS_ID/namespaces/aadsecured
 
 
-wget https://github.com/Azure/kubelogin/releases/download/v0.0.6/kubelogin-linux-amd64.zip
+wget https://github.com/Azure/kubelogin/releases/download/v0.0.10/kubelogin-linux-amd64.zip
 unzip kubelogin-linux-amd64.zip -d kubetools
 
 export KUBECONFIG=/home/dennis/.kube/config
@@ -523,6 +525,7 @@ SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID
 echo $SERVICE_PRINCIPAL_SECRET
 
 az role assignment create --assignee $SERVICE_PRINCIPAL_ID --scope $AKS_ID --role "Azure Kubernetes Service Cluster User Role"
+az role assignment create --assignee $MY_USER_ID --scope $AKS_ID --role "Azure Kubernetes Service Cluster User Role"
 az role assignment create --assignee $SERVICE_PRINCIPAL_ID --scope /subscriptions/$SUBSCRIPTION_ID --role "Azure Kubernetes Service Cluster User Role"
 
 az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee $SERVICE_PRINCIPAL_ID --scope /subscriptions/$SUBSCRIPTION_ID
@@ -608,7 +611,26 @@ https://docs.microsoft.com/en-us/azure/developer/java/sdk/identity-azure-hosted-
 ## Pod Identity V2
 
 ```
-SECRET_NAME=supersecret1
+KUBE_GROUP="dzaadwlidv5"
+KUBE_NAME="dzaadwlidv5"
+KEYVAULT_NAME="dzkvdzallincl"
+SECRET_NAME=mySecret
+SERVICE_PRINCIPAL_ID=
+
+
+az aks update -g $KUBE_GROUP --name $KUBE_NAME --enable-oidc-issuer 
+
+
+helm repo add azure-workload-identity https://azure.github.io/azure-workload-identity/charts
+helm repo update
+helm install workload-identity-webhook azure-workload-identity/workload-identity-webhook \
+   --namespace azure-workload-identity-system \
+   --create-namespace \
+   --set azureTenantID="${AZURE_TENANT_ID}"
+
+kubectl get pods -n azure-workload-identity-system
+
+
 SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $KUBE_NAME-sp -o json | jq -r '.appId')
 echo $SERVICE_PRINCIPAL_ID
 
@@ -621,7 +643,7 @@ cat <<EOF | kubectl apply -f -
 apiVersion: v1
 data:
   AZURE_ENVIRONMENT: "AzurePublicCloud"
-  AZURE_TENANT_ID: "72f988bf-86f1-41af-91ab-2d7cd011db47"
+  AZURE_TENANT_ID: "$AZURE_TENANT_ID"
 kind: ConfigMap
 metadata:
   name: aad-pi-webhook-config
@@ -633,9 +655,10 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   annotations:
-    azure.pod.identity/client-id: ${SERVICE_PRINCIPAL_ID}
+    azure.workload.identity/client-id: ${SERVICE_PRINCIPAL_ID}
+    azure.workload.identity/tenant-id: "$AZURE_TENANT_ID"
   labels:
-    azure.pod.identity/use: "true"
+    azure.workload.identity/use: "true"
   name: pod-identity-sa
 EOF
 
@@ -647,15 +670,17 @@ metadata:
 spec:
   serviceAccountName: pod-identity-sa
   containers:
-    - image: denniszielke/dotnet:v0.4
+    - image: denniszielke/akvdotnet:latest
       imagePullPolicy: IfNotPresent
       name: oidc
       env:
       - name: KEYVAULT_NAME
         value: ${KEYVAULT_NAME}
       - name: SECRET_NAME
-        value: ${KEYVAULT_SECRET_NAME}
+        value: ${SECRET_NAME}
   nodeSelector:
     kubernetes.io/os: linux
 EOF
 ```
+
+cat /var/run/secrets/tokens/azure-identity-token

@@ -1,0 +1,43 @@
+--- #
+#SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --role="Monitoring Reader" --scopes="/subscriptions/${SUBSCRIPTION_ID}" --name $KUBE_NAME   -o json | jq -r '.appId')
+#echo $SERVICE_PRINCIPAL_ID
+#SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
+#echo $SERVICE_PRINCIPAL_SECRET
+#kubectl create secret generic azure-monitor-secrets --from-literal=activeDirectoryClientId=$SERVICE_PRINCIPAL_ID --from-literal=activeDirectoryClientPassword=$SERVICE_PRINCIPAL_SECRET 
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: azure-monitor-trigger-auth
+spec:
+  secretTargetRef:
+    - parameter: activeDirectoryClientId
+      name: azure-monitor-secrets
+      key: activeDirectoryClientId
+    - parameter: activeDirectoryClientPassword
+      name: azure-monitor-secrets
+      key: activeDirectoryClientPassword
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: azure-monitor-scaler
+spec:
+  scaleTargetRef:
+    name: pause
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  pollingInterval: 20  # Optional. Default: 30 seconds
+  cooldownPeriod:  300 # Optional. Default: 300 seconds
+  triggers:
+  - type: azure-monitor
+    metadata:
+      resourceURI: Microsoft.Network/frontdoors/dzincluded
+      tenantId: 7247 #az account show --query tenantId -o tsv
+      subscriptionId: 5ab17e5
+      resourceGroupName: dzallincluded
+      metricName: BackendRequestCount
+      metricAggregationInterval: "0:1:0"
+      metricAggregationType: Total
+      targetValue: "1"
+    authenticationRef:
+      name: azure-monitor-trigger-auth

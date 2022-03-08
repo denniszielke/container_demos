@@ -69,6 +69,14 @@ https://github.com/Azure/aks-engine/blob/master/parts/k8s/cloud-init/artifacts/c
 # TCP dump
 https://github.com/digeler/k8tcpappend
 
+# Snapshpt
+
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+KUBE_VERSION=$(az aks get-versions -l $LOCATION --query 'orchestrators[?default == `true`].orchestratorVersion' -o tsv) # here enter the kubernetes version of your AKS
+LOCATION=$(az group show -n $KUBE_GROUP --query location -o tsv)
+az group create -n $KUBE_GROUP-1 -l $LOCATION -o none
+az aks create -g $KUBE_GROUP -n $KUBE_NAME --kubernetes-version $KUBE_VERSION --snapshot-id "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP-1/providers/Microsoft.ContainerService/snapshots/$KUBE_NAME-1"
+
 
 # Diagnostics
 

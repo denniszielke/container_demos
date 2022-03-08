@@ -50,7 +50,7 @@ data:
         # Any errors related to prometheus scraping can be found in the KubeMonAgentEvents table in the Log Analytics workspace that the cluster is sending data to.
 
         #Interval specifying how often to scrape for metrics. This is duration of time and can be specified for supporting settings by combining an integer value and time unit as a string value. Valid time units are ns, us (or µs), ms, s, m, h.
-        interval = "1m"
+        interval = "10s"
 
         ## Uncomment the following settings with valid string arrays for prometheus scraping
         #fieldpass = ["metric_to_pass1", "metric_to_pass12"]
@@ -61,7 +61,7 @@ data:
         # urls = ["http://myurl:9101/metrics"]
 
         # An array of Kubernetes services to scrape metrics from.
-        kubernetes_services = ["http://my-service-dns.my-namespace:9102/metrics"]
+        kubernetes_services = ["http://dummy-logger.dummy-logger:80/metrics", "http://nginx-ingress-ingress-nginx-controller-metrics.ingress:10254/metrics"]
 
         # When monitor_kubernetes_pods = true, replicaset will scrape Kubernetes pods for the following prometheus annotations:
         # - prometheus.io/scrape: Enable scraping for this pod

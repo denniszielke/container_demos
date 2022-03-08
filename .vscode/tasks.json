@@ -1,0 +1,73 @@
+// See https://go.microsoft.com/fwlink/?LinkId=733558
+// for the documentation about the tasks.json format
+{
+	"version": "2.0.0",
+	"options": {
+		"env": {
+			"MAVEN_OPTS": "-javaagent:${workspaceFolder}/apps/java-calc-requester/applicationinsights-agent-3.2.7.jar",
+			"APPLICATIONINSIGHTS_CONNECTION_STRING": "InstrumentationKey=",
+			"ENDPOINT_HOST": "localhost",
+			"ENDPOINT_PORT": "3000"
+		}
+	},
+	"tasks": [
+		{
+			"type": "shell",
+			"isBackground": true,
+			"problemMatcher": [
+				{
+					"pattern": [
+						{
+							"regexp": "\\b\\B",
+							"file": 1,
+							"location": 2,
+							"message": 3
+						}
+					],
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": "^.*Scanning for projects...*",
+						"endsPattern": "^.*Quarkus .* started in .*\\. Listening on:*"
+					}
+				}
+			],
+			"group": "build",
+			"label": "quarkus:dev (apps/java-calc-requester)",
+			"command": "./mvnw quarkus:dev ",
+			"windows": {
+				"command": ".\\mvnw.cmd quarkus:dev "
+			},
+			"options": {
+				"cwd": "apps/java-calc-requester"
+			}
+		},
+		{
+			"type": "shell",
+			"isBackground": true,
+			"problemMatcher": [
+				{
+					"pattern": [
+						{
+							"regexp": "\\b\\B",
+							"file": 1,
+							"location": 2,
+							"message": 3
+						}
+					],
+					"background": {
+						"activeOnStart": true
+					}
+				}
+			],
+			"group": "build",
+			"label": "package -Pnative (apps/java-calc-requester)",
+			"command": "./mvnw package -Pnative ",
+			"windows": {
+				"command": ".\\mvnw.cmd package -Pnative "
+			},
+			"options": {
+				"cwd": "apps/java-calc-requester"
+			}
+		}
+	]
+}

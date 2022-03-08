@@ -1,58 +1,89 @@
 # Cillium
 
+## CLI
+
+
+```
+
+
+
+```
+
 ## Install
 https://docs.cilium.io/en/latest/gettingstarted/k8s-install-aks/
-
-```
-kubectl apply -f cilium/cilium-cm.yaml
-
-curl -sL https://github.com/cilium/cilium/archive/master.tar.gz | tar xz
-
-cd cilium-master/install/kubernetes
-
-
-helm template cilium \
-  --namespace cilium \
-  --set global.cni.chainingMode=generic-veth \
-  --set global.cni.customConf=true \
-  --set global.nodeinit.enabled=true \
-  --set global.cni.configMap=cni-configuration \
-  --set global.tunnel=disabled \
-  --set global.masquerade=false \
-  > ../../../container_demos/cilium/cilium-full.yaml
-
-helm template cilium \
-  --namespace cilium \
-  --set global.cni.chainingMode=generic-veth \
-  --set global.cni.customConf=true \
-  --set global.nodeinit.enabled=true \
-  --set nodeinit.azure=true \
-  --set global.cni.configMap=cni-configuration \
-  --set global.tunnel=disabled \
-  --set global.masquerade=false \
-  > ../../../container_demos/cilium/cilium-full.yaml
-
-helm template cilium cilium/cilium --version 1.8.0 \
-  --namespace cilium \
-  --set global.cni.chainingMode=generic-veth \
-  --set global.cni.customConf=true \
-  --set global.nodeinit.enabled=true \
-  --set nodeinit.azure=true \
-  --set global.cni.configMap=cni-configuration \
-  --set global.tunnel=disabled \
-  --set global.masquerade=false  \
-  > cilium/cilium-full.yaml
-
-cd ../../../
-
-kubectl apply -f cilium/cilium-full.yaml
-
-kubectl -n kube-system get pods --watch
-kubectl -n cilium get pods --watch
+curl -L --remote-name-all https://github.com/cilium/cilium-cli/releases/download/v0.10.0/cilium-darwin-amd64.tar.gz
+shasum -a 256 -c cilium-darwin-amd64.tar.gz.sha256sum
+sudo tar xzvfC cilium-darwin-amd64.tar.gz /usr/local/bin
+rm cilium-darwin-amd64.tar.gz{,.sha256sum}
 ```
 
-deploy connectivity set
-```
+SUBSCRIPTION_ID=$(az account show --query id -o tsv) 
+TENANT_ID=$(az account show --query tenantId -o tsv)
+NODE_GROUP=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --query nodeResourceGroup -o tsv)
+SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $KUBE_NAME-sp -o json | jq -r '.appId')
+echo $SERVICE_PRINCIPAL_ID
+
+SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
+echo $SERVICE_PRINCIPAL_SECRET
+
+RG_ID=$(az group show -n $KUBE_GROUP --query id -o tsv)
+NODE_RG_ID=$(az group show -n $NODE_GROUP --query id -o tsv)
+
+az role assignment create --role "Contributor" --assignee $SERVICE_PRINCIPAL_ID --scope $RG_ID -o none
+
+az role assignment create --role "Contributor" --assignee $SERVICE_PRINCIPAL_ID --scope $NODE_RG_ID -o none
+
+
+az role assignment create --role "Reader" --assignee 21e02cfc-b6dc-4727-b1b5-bbe200f08dd9 --scope $RG_ID -o none
+
+
+
+nodepool_to_delete=$(az aks nodepool list --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --output tsv --query "[0].name")
+
+az aks nodepool add --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME \
+            --name systempool \
+            --mode system \
+            --node-count 1 \
+            --node-taints "CriticalAddonsOnly=true:NoSchedule" \
+            --no-wait
+
+az aks nodepool add --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME \
+            --name userpool \
+            --mode user \
+            --node-count 2 \
+            --node-taints "node.cilium.io/agent-not-ready=true:NoSchedule" \
+            --no-wait
+
+
+ az aks nodepool delete --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME \
+            --name "${nodepool_to_delete}"
+
+helm repo add cilium https://helm.cilium.io/
+
+helm upgrade cilium cilium/cilium --install --version 1.11.0 \
+  --namespace kube-system \
+  --set azure.enabled=true \
+  --set azure.resourceGroup=$NODE_GROUP \
+  --set azure.subscriptionID=$SUBSCRIPTION_ID \
+  --set azure.tenantID=$TENANT_ID \
+  --set azure.clientID=$SERVICE_PRINCIPAL_ID \
+  --set azure.clientSecret=$SERVICE_PRINCIPAL_SECRET \
+  --set tunnel=disabled \
+  --set ipam.mode=azure \
+  --set enableIPv4Masquerade=false \
+  --set nodeinit.enabled=true
+
+kubectl get pods --all-namespaces -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name,HOSTNETWORK:.spec.hostNetwork --no-headers=true | grep '<none>' | awk '{print "-n "$1" "$2}' | xargs -L 1 -r kubectl delete pod
+
+
+kubectl create ns cilium-test
+
+kubectl apply -n cilium-test -f https://raw.githubusercontent.com/cilium/cilium/v1.9/examples/kubernetes/connectivity-check/connectivity-check.yaml
+
+
+kubectl get pods -n cilium-test
+
+
 kubectl apply -f https://raw.githubusercontent.com/cilium/cilium/HEAD/examples/kubernetes/connectivity-check/connectivity-check.yaml
 
 
@@ -65,209 +96,30 @@ kubectl logs -l name=probe
 https://github.com/cilium/hubble
 
 ```
-git clone https://github.com/cilium/hubble.git
-git clone https://github.com/cilium/hubble.git --branch v0.5
+export CILIUM_NAMESPACE=kube-system
 
-cd hubble/install/kubernetes
+helm upgrade cilium cilium/cilium --version 1.9.11 \
+   --namespace $CILIUM_NAMESPACE \
+   --reuse-values \
+   --set hubble.listenAddress=":4244" \
+   --set hubble.relay.enabled=true \
+   --set hubble.ui.enabled=true
 
-helm template hubble \
-    --namespace kube-system \
-    --set metrics.enabled="{dns:query;ignoreAAAA;destinationContext=pod-short,drop:sourceContext=pod;destinationContext=pod,tcp,flow,port-distribution,icmp,http}" \
-    --set ui.enabled=true \
-  > ../../../container_demos/cilium/hubble.yaml
+kubectl port-forward -n $CILIUM_NAMESPACE svc/hubble-ui --address 0.0.0.0 --address :: 12000:80
 
-kubectl apply -f cilium/hubble.yaml
+export HUBBLE_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/hubble/master/stable.txt)
+curl -LO "https://github.com/cilium/hubble/releases/download/$HUBBLE_VERSION/hubble-darwin-amd64.tar.gz"
+curl -LO "https://github.com/cilium/hubble/releases/download/$HUBBLE_VERSION/hubble-darwin-amd64.tar.gz.sha256sum"
+shasum -a 256 -c hubble-darwin-amd64.tar.gz.sha256sum
+tar zxf hubble-darwin-amd64.tar.gz
+
+sudo mv hubble /usr/local/bin
+
+kubectl port-forward -n $CILIUM_NAMESPACE svc/hubble-relay --address 0.0.0.0 --address :: 4245:80
 
 
-kubectl create -f https://raw.githubusercontent.com/cilium/cilium/master/install/kubernetes/quick-install.yaml
-kubectl create -f https://raw.githubusercontent.com/cilium/hubble/master/tutorials/deploy-hubble-servicemap/hubble-all-minikube.yaml
+hubble --server localhost:4245 status
 
-
-export NAMESPACE=kube-system
-export POD_NAME=$(kubectl get pods --namespace $NAMESPACE -l "k8s-app=hubble-ui" -o jsonpath="{.items[0].metadata.name}")
-kubectl --namespace $NAMESPACE port-forward $POD_NAME 12000
+hubble --server localhost:4245 observe
 
 ```
-
-## Configure calculator with cillium
-
-
-cat <<EOF | kubectl apply -f -
-apiVersion: "cilium.io/v2"
-kind: CiliumNetworkPolicy
-metadata:
-  name: "calculator-to-appinsights-allowed-cnp"
-  namespace: calculator
-spec:
-  endpointSelector:
-    matchLabels:
-      "app.kubernetes.io/name": multicalculatorv3
-  egress:
-  - toFQDNs:
-    - matchPattern: "*.visualstudio.com"
-EOF
-
-cat <<EOF | kubectl apply -f -
-apiVersion: "cilium.io/v2"
-kind: CiliumNetworkPolicy
-metadata:
-  name: "calculator-to-app-allowed-cnp"
-  namespace: calculator
-spec:
-  endpointSelector:
-    matchLabels:
-      role: frontend
-      k8s:io.kubernetes.pod.namespace: redis
-  egress:
-  - toFQDNs:
-    - matchPattern: "redis-master.redis.svc.cluster.local"
-  - toEndpoints:
-    - matchLabels:
-        "k8s:io.kubernetes.pod.namespace": redis
-        app: redis
-    toPorts:
-    - ports:
-      - port: "6379"
-        protocol: TCP
-  - toEndpoints:
-    - matchLabels:
-        role: backend
-    toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
-  - toEndpoints:
-    - matchLabels:
-        "k8s:io.kubernetes.pod.namespace": kube-system
-        "k8s:k8s-app": kube-dns
-    toPorts:
-    - ports:
-      - port: "53"
-        protocol: UDP
-EOF
-
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  name: centos
-  namespace: calculator
-  labels:
-    role: frontend
-spec:
-  containers:
-  - name: centoss
-    image: centos
-    ports:
-    - containerPort: 80
-    command:
-    - sleep
-    - "3600"
-EOF
-
-
-
-## Configure DNS lockdown
-
-https://docs.cilium.io/en/v1.6/gettingstarted/dns/
-
-
-cat <<EOF | kubectl apply -f -
-apiVersion: "cilium.io/v2"
-kind: CiliumNetworkPolicy
-metadata:
-  name: "fqdn"
-spec:
-  endpointSelector:
-    matchLabels:
-      sec: allow
-  egress:
-  - toFQDNs:
-    - matchName: "ipinfo.io"  
-    toPorts:
-    - ports:
-      - port: "443"
-        protocol: TCP
-  - toEndpoints:
-    - matchLabels:
-        "k8s:k8s-app": kube-dns
-    toPorts:
-    - ports:
-      - port: "53"
-        protocol: ANY
-      rules:
-        dns:
-        - matchPattern: "*"
-EOF
-
-kubectl delete CiliumNetworkPolicy fqdn
-
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  name: centos1
-  labels:
-    sec: allow
-spec:
-  containers:
-  - name: centos
-    image: centos
-    ports:
-    - containerPort: 80
-    command:
-    - sleep
-    - "3600"
-EOF
-
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  name: centos2
-  labels:
-    sec: lock
-spec:
-  containers:
-  - name: centos
-    image: centos
-    ports:
-    - containerPort: 80
-    command:
-    - sleep
-    - "3600"
-EOF
-
-kubectl exec -it centos1 -- curl https://ipinfo.io/ip
-kubectl exec -it centos1 -- curl https://ifconfig.co/ip
-kubectl exec -it centos2 -- curl https://ipinfo.io/ip
-kubectl exec -it centos2 -- curl https://ifconfig.co/ip
-
-kubectl delete pod centos1
-kubectl delete pod centos2
-
-cat <<EOF | kubectl apply -f -
-apiVersion: "cilium.io/v2"
-kind: CiliumNetworkPolicy
-metadata:
-  name: "fqdn"
-spec:
-  endpointSelector:
-    matchLabels:
-      org: empire
-      class: mediabot
-  egress:
-  - toFQDNs:
-    - matchName: "api.twitter.com"  
-  - toEndpoints:
-    - matchLabels:
-        "k8s:io.kubernetes.pod.namespace": kube-system
-        "k8s:k8s-app": kube-dns
-    toPorts:
-    - ports:
-      - port: "53"
-        protocol: ANY
-      rules:
-        dns:
-        - matchPattern: "*"
-EOF

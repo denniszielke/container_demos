@@ -87,7 +87,7 @@ helm repo update
 
 
 ## Troubleshooting Logs
-
+https://raw.githubusercontent.com/microsoft/Docker-Provider/ci_prod/kubernetes/container-azm-ms-agentconfig.yaml
 ```
 KUBE_NAME=
 LOCATION=westeurope

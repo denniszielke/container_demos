@@ -8,12 +8,12 @@
 
 set -e
 
-DEPLOYMENT_NAME="dzaadpodv2" # here enter unique deployment name (ideally short and with letters for global uniqueness)
+DEPLOYMENT_NAME="dzfullobs" # here enter unique deployment name (ideally short and with letters for global uniqueness)
 USE_PRIVATE_LINK="false" # use to deploy private master endpoint
-USE_POD_SUBNET="false"
+USE_POD_SUBNET="true"
 
 AAD_GROUP_ID="9329d38c-5296-4ecb-afa5-3e74f9abe09f --enable-azure-rbac" # here the AAD group that will be used to lock down AKS authentication
-LOCATION="westeurope" #"centralus" #"southcentralus" #"eastus2euap" #"westeurope" # here enter the datacenter location can be eastus or westeurope
+LOCATION="northeurope" #"southcentralus" #"eastus2euap" #"westeurope" # here enter the datacenter location can be eastus or westeurope
 KUBE_GROUP=$DEPLOYMENT_NAME # here enter the resources group name of your AKS cluster
 KUBE_NAME=$DEPLOYMENT_NAME # here enter the name of your kubernetes resource
 NODE_GROUP=$KUBE_GROUP"_"$KUBE_NAME"_nodes_"$LOCATION # name of the node resource group
@@ -30,7 +30,7 @@ KUBE_VERSION=$(az aks get-versions -l $LOCATION --query 'orchestrators[?default 
 KUBE_CNI_PLUGIN="azure"
 MY_OWN_OBJECT_ID=$(az ad signed-in-user show --query objectId --output tsv) # this will be your own aad object id
 OUTBOUNDTYPE=""
-az account set --subscription $SUBSCRIPTION_ID
+#az account set --subscription $SUBSCRIPTION_ID
 
 az extension add --name aks-preview
 az extension update --name aks-preview
@@ -73,6 +73,51 @@ if [ "$VNET_RESOURCE_ID" == "" ]; then
     echo "created $VNET_RESOURCE_ID"
 else
     echo "vnet $VNET_RESOURCE_ID already exists"
+fi
+
+NSG_RESOURCE_ID=$(az network nsg list -g $KUBE_GROUP --query "[?contains(name, '$APPGW_SUBNET_NAME')].id" -o tsv)
+if [ "$NSG_RESOURCE_ID" == "" ]; then
+    echo "creating nsgs..."
+
+    az network nsg create --name $APPGW_SUBNET_NAME --resource-group $KUBE_GROUP --location $LOCATION
+    APPGW_SUBNET_NSG=$(az network nsg show -g $KUBE_GROUP -n $APPGW_SUBNET_NAME --query id -o tsv)
+    APPGW_SUBNET_ID=$(az network vnet subnet show -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $APPGW_SUBNET_NAME --query id -o tsv)
+
+    az network nsg rule create --name appgwrule --nsg-name $APPGW_SUBNET_NAME --resource-group $KUBE_GROUP --priority 110 \
+    --source-address-prefixes '*' --source-port-ranges '*' \
+    --destination-address-prefixes '*' --destination-port-ranges '*' --access Allow --direction Inbound \
+    --protocol "*" --description "Required allow rule for AppGW."
+
+    az network vnet subnet update --resource-group $KUBE_GROUP --network-security-group $APPGW_SUBNET_NSG --ids $APPGW_SUBNET_ID
+    #az lock create --name $APPGW_SUBNET_NAME --lock-type ReadOnly --resource-group $KUBE_GROUP --resource-name $APPGW_SUBNET_NAME --resource-type Microsoft.Network/networkSecurityGroups
+
+    az network nsg create --name $KUBE_ING_SUBNET_NAME --resource-group $KUBE_GROUP --location $LOCATION
+    KUBE_ING_SUBNET_NSG=$(az network nsg show -g $KUBE_GROUP -n $KUBE_ING_SUBNET_NAME --query id -o tsv)
+    KUBE_ING_SUBNET_ID=$(az network vnet subnet show -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_ING_SUBNET_NAME --query id -o tsv)
+    az network vnet subnet update --resource-group $KUBE_GROUP --network-security-group $KUBE_ING_SUBNET_NSG --ids $KUBE_ING_SUBNET_ID
+    #az lock create --name $KUBE_ING_SUBNET_NAME --lock-type ReadOnly --resource-group $KUBE_GROUP --resource-name $KUBE_ING_SUBNET_NAME --resource-type Microsoft.Network/networkSecurityGroups
+
+    az network nsg create --name $KUBE_AGENT_SUBNET_NAME --resource-group $KUBE_GROUP --location $LOCATION
+
+    az network nsg rule create --name ingress --nsg-name $KUBE_AGENT_SUBNET_NAME --resource-group $KUBE_GROUP --priority 110 \
+    --source-address-prefixes '*' --source-port-ranges '*' \
+    --destination-address-prefixes '*' --destination-port-ranges 80 443 --access Allow --direction Inbound \
+    --protocol "*" --description "Required to allow ingress."
+
+    KUBE_AGENT_SUBNET_NSG=$(az network nsg show -g $KUBE_GROUP -n $KUBE_AGENT_SUBNET_NAME --query id -o tsv)
+    KUBE_AGENT_SUBNET_ID=$(az network vnet subnet show -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --query id -o tsv)
+    az network vnet subnet update --resource-group $KUBE_GROUP --network-security-group $KUBE_AGENT_SUBNET_NSG --ids $KUBE_AGENT_SUBNET_ID
+    #az lock create --name $KUBE_AGENT_SUBNET_NAME --lock-type ReadOnly --resource-group $KUBE_GROUP --resource-name $KUBE_AGENT_SUBNET_NAME --resource-type Microsoft.Network/networkSecurityGroups
+
+    az network nsg create --name $POD_AGENT_SUBNET_NAME --resource-group $KUBE_GROUP --location $LOCATION
+    POD_AGENT_SUBNET_NSG=$(az network nsg show -g $KUBE_GROUP -n $POD_AGENT_SUBNET_NAME --query id -o tsv)
+    POD_AGENT_SUBNET_ID=$(az network vnet subnet show -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $POD_AGENT_SUBNET_NAME --query id -o tsv)
+    az network vnet subnet update --resource-group $KUBE_GROUP --network-security-group $POD_AGENT_SUBNET_NSG --ids $POD_AGENT_SUBNET_ID
+    #az lock create --name $POD_AGENT_SUBNET_NAME --lock-type ReadOnly --resource-group $KUBE_GROUP --resource-name $POD_AGENT_SUBNET_NAME --resource-type Microsoft.Network/networkSecurityGroups
+
+    echo "cread and locked nsgs "
+else
+    echo "nsg $NSG_RESOURCE_ID already exists"
 fi
 
 ROUTE_TABLE_ID=$(az network vnet subnet show -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --query routeTable.id -o tsv)
@@ -150,18 +195,18 @@ if [ "$AKS_KUBELET_CLIENT_ID" == "" ]; then
     AKS_KUBELET_RESOURCE_ID="$(az identity show -g $KUBE_GROUP -n $KUBE_NAME-kbl-id --query id -o tsv)"
     echo "created kubelet identity $AKS_KUBELET_RESOURCE_ID "
     echo "assigning permissions on keyvault $VAULT_ID"
-    az keyvault set-policy -n $VAULT_NAME --object-id $AKS_KUBELET_CLIENT_ID --key-permissions get --certificate-permissions get -o none
+    az keyvault set-policy -n $VAULT_NAME --object-id $AKS_KUBELET_CLIENT_ID --key-permissions get --certificate-permissions get --secret-permissions get -o none
 else
     echo "kubelet identity $AKS_KUBELET_RESOURCE_ID already exists"
     echo "assigning permissions on keyvault $VAULT_ID"
-    az keyvault set-policy -n $VAULT_NAME --object-id $AKS_KUBELET_CLIENT_ID --key-permissions get --certificate-permissions get -o none
+    az keyvault set-policy -n $VAULT_NAME --object-id $AKS_KUBELET_CLIENT_ID --key-permissions get --certificate-permissions get --secret-permissions get -o none
 fi
 
 echo "setting up aks"
 AKS_ID=$(az aks list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME')].id" -o tsv)
 
 if [ "$USE_PRIVATE_LINK" == "true" ]; then
-    ACTIVATE_PRIVATE_LINK=" --enable-private-cluster "
+    ACTIVATE_PRIVATE_LINK=" --enable-private-cluster --private-dns-zone /subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourceGroups/hub/providers/Microsoft.Network/privateDnsZones/org1.privatelink.westeurope.azmk8s.io --fqdn-subdomain cluster1"
 else
     ACTIVATE_PRIVATE_LINK=""
 fi
@@ -172,12 +217,16 @@ AKS_ID=$(az aks list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME')].id"
 if [ "$AKS_ID" == "" ]; then
     echo "creating AKS $KUBE_NAME in $KUBE_GROUP"
     echo "using host subnet $KUBE_AGENT_SUBNET_ID"
-    az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub  --node-count 3 --node-vm-size "Standard_B2s" --min-count 3 --max-count 5 --enable-cluster-autoscaler --auto-upgrade-channel patch  --node-resource-group $NODE_GROUP --load-balancer-sku standard --enable-vmss  --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --assign-kubelet-identity $AKS_KUBELET_RESOURCE_ID --node-osdisk-size 300 --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID --network-policy calico $ACTIVATE_PRIVATE_LINK -o none
+    az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub --zones 1 2 3  --node-count 3 --node-vm-size "Standard_D2s_v3" --min-count 3 --max-count 5 --enable-cluster-autoscaler --auto-upgrade-channel patch  --node-resource-group $NODE_GROUP --load-balancer-sku standard --enable-vmss  --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --assign-kubelet-identity $AKS_KUBELET_RESOURCE_ID --node-osdisk-size 300 --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID $ACTIVATE_PRIVATE_LINK -o none
     az aks update --resource-group $KUBE_GROUP --name $KUBE_NAME --auto-upgrade-channel rapid --yes
     az aks enable-addons --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --addons="azure-keyvault-secrets-provider"
     az aks update --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --enable-secret-rotation --yes
-    # az aks enable-addons --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --addons="open-service-mesh"
+    #az aks update --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" syncSecret.enabled --yes
+    #az aks enable-addons --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --addons="open-service-mesh"
     #az aks upgrade -n $KUBE_NAME -g $KUBE_GROUP --aks-custom-headers EnableCloudControllerManager=True
+    az aks update -n $KUBE_NAME -g $KUBE_GROUP  --enable-oidc-issuer
+    #az aks nodepool update --scale-down-mode Deallocate --name nodepool1 --cluster-name $KUBE_NAME --resource-group $KUBE_GROUP
+
     AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
     echo "created AKS $AKS_ID"
 else

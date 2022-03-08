@@ -79,6 +79,10 @@ az feature register --namespace "Microsoft.ContainerService" --name "AKS-Dapr"
 az feature register --namespace "Microsoft.ContainerService" --name "EnableMultipleStandardLoadBalancers"
 az feature register --namespace "Microsoft.ContainerService" --name "EnablePodIdentityPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "EnableOIDCIssuerPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "PreviewGuardRails"
+az feature register --namespace "Microsoft.ContainerService" --name "EnableNamespaceResourcesPreview"
+
+
 
 
 az feature register --name PrivatePreview --namespace Microsoft.Dashboard

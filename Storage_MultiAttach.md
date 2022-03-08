@@ -6,6 +6,8 @@ https://docs.microsoft.com/en-gb/azure/virtual-machines/linux/disks-shared
 https://discourse.ubuntu.com/t/ubuntu-high-availability-corosync-pacemaker-shared-disk-environments/14874
 https://datamattsson.tumblr.com/post/187582900281/running-traditional-ha-clusters-on-kubernetes
 
+https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/master/deploy/example/failover/README.md
+
 KUBE_GROUP="dzielkedefstor"
 KUBE_NAME="aksdiskshared"
 LOCATION="westcentralus"

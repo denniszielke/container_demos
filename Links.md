@@ -97,6 +97,6 @@ Using a daemonset :https://github.com/dgkanatsios/AksNodePublicIPController
 https://learnk8s.io/production-best-practices/
 
 # Dapr 
-
+https://aka.ms/smartinsights.
 Grafana: https://github.com/RicardoNiepel/dapr-docs/blob/master/howto/setup-monitoring-tools/setup-prometheus-grafana.md
 Dapr VSCode: https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-dapr 

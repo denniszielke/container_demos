@@ -628,7 +628,7 @@ apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
 kind: SecretProviderClass
 metadata:
   name: azure-kvname-user-msi
-  namespace: $AKV_NS
+  namespace: default
 spec:
   provider: azure
   parameters:
@@ -640,7 +640,7 @@ spec:
     objects:  |
       array:
         - |
-          objectName: supersecret1
+          objectName: mySecret
           objectType: secret        # object types: secret, key or cert
           objectVersion: ""         # [OPTIONAL] object versions, default to latest if empty
     tenantId: "$TENANT_ID"                 # the tenant ID of the KeyVault  
@@ -649,7 +649,7 @@ EOF
 cat <<EOF | kubectl apply -f -
 apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
 kind: SecretProviderClass
-metadata:
+metadata
   name: azure-sync
   namespace: $AKV_NS
 spec:
@@ -682,7 +682,7 @@ kind: Pod
 apiVersion: v1
 metadata:
   name: busybox-secrets-store-inline-user-msi
-  namespace: $AKV_NS
+  namespace: default
 spec:
   containers:
     - name: busybox

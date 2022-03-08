@@ -1,0 +1,17 @@
+{
+    "AconnectionString": "InstrumentationKey=",
+    "role": {
+      "name": "java-calc-requester"
+    },
+    "selfDiagnostics": {
+      "level": "ERROR"
+    },
+    "preview": {
+      "captureControllerSpans": true
+    },
+    "instrumentation": {
+      "logging": {
+        "level": "ERROR"
+      }
+    }
+  }
