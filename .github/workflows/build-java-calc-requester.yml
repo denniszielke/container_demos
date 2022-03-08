@@ -25,7 +25,7 @@ jobs:
       - name: Build image
         run: |
           wget https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.2.7/applicationinsights-agent-3.2.7.jar
-          docker build . --file Dockerfile --tag $IMAGE_NAME --label "runnumber=${GITHUB_RUN_ID}"
+          docker build . --file src/main/docker/Dockerfile.jvm  --tag $IMAGE_NAME --label "runnumber=${GITHUB_RUN_ID}"
           
       - name: Log in to registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
