@@ -4,17 +4,20 @@
   "description": "calculator frontend node",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dapr": "dapr run --app-id js-calc-frontend --dapr-http-port 3500 --app-port 8081 node server.js"
   },
   "author": {
     "name": "dzielke"
   },
   "dependencies": {
-    "express": "^4.17.1",
+    "express": "^4.17.2",
+    "applicationinsights": "^2.2.2",
     "morgan": "^1.10.0",
-    "applicationinsights": "^2.1.9",
     "dotenv-extended": "^2.9.0",
-    "redis": "^3.1.2",
-    "request": "^2.88.0"
+    "swagger-ui-express": "^4.3.0",
+    "request": "^2.88.2",
+    "redis": "^4.0.4",
+    "isomorphic-fetch": "^3.0.0"
   }
 }

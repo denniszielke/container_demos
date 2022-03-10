@@ -1,4 +1,4 @@
-﻿var apiUrl = '/api/';
+﻿var apiUrl = window.location.href + 'api/';
 
 function loopClick() {
     console.log(document.getElementById('triggerButton'));
@@ -30,6 +30,19 @@ angular.module('CalculatorApp', [])
                     });                
             };
 
+            $scope.CalculateCssClass = function(versionValue){
+                if (versionValue && versionValue != undefined){
+                    if (versionValue.toString().indexOf("blue") >= 0)
+                        return "bg-info";
+                    else if (versionValue.toString().indexOf("green") >= 0)
+                        return "bg-green";
+                    else if (versionValue.toString().indexOf("red") >= 0)
+                        return "bg-red";
+                    else
+                        return "bg-yellow";
+                }
+            }
+
             $scope.Calculate = function () {
                 var postUrl = apiUrl + 'calculation';
                 var config = {
@@ -51,6 +64,34 @@ angular.module('CalculatorApp', [])
                         if (window.appInsights){
                             window.appInsights.trackEvent("calculation-client-call-end", { value: $scope.result});
                         }
+                        if ($scope.loop){
+                            var randomNumber = Math.floor((Math.random() * 10000000) + 1);
+                            console.log(randomNumber);
+                            $scope.id = randomNumber;
+                            if (!$scope.frequency){
+                                $scope.frequency = 500;
+                            }
+                            $scope.looping = false;
+                            if (!$scope.looping)
+                            {
+                                window.setTimeout(loopClick, $scope.frequency);
+                            }
+                            $scope.looping = true;
+                        }
+                    })
+                    .error( function (err) {
+                        console.log("error");
+                        console.log(err);
+                        var response = {};
+                        response.result = {};
+                        response.result.value="Error";
+                        response.backend = {};
+                        response.backend.version="red";
+                        response.version="red";
+                        var endDate = new Date();
+                        response.duration = endDate - $scope.requeststartDate
+                        $scope.result = response;
+
                         if ($scope.loop){
                             var randomNumber = Math.floor((Math.random() * 10000000) + 1);
                             console.log(randomNumber);

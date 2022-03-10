@@ -1,16 +1,22 @@
 require('dotenv-extended').load();
 const config = require('./config');
+
 var appInsights = require("applicationinsights");
 
 if (config.instrumentationKey){ 
     appInsights.setup(config.instrumentationKey)
     .setAutoDependencyCorrelation(true)
     .setAutoCollectDependencies(true)
-    .setAutoCollectPerformance(true);
+    .setAutoCollectPerformance(true)
+    .setSendLiveMetrics(true)
+    .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C);
     appInsights.defaultClient.context.tags[appInsights.defaultClient.context.keys.cloudRole] = "http-calcback";
     appInsights.start();
+    var client = appInsights.defaultClient;
+    client.commonProperties = {
+        slot: config.version
+    };
 }
-var client = appInsights.defaultClient;
 
 const express = require('express');
 const app = express();
@@ -33,7 +39,11 @@ app.get('/', function(req, res) {
 });
 app.get('/ping', function(req, res) {
     console.log('received ping');
-    res.send('Pong');
+    var sourceIp = req.connection.remoteAddress;
+    var forwardedFrom = (req.headers['x-forwarded-for'] || '').split(',').pop();
+    var pong = { response: "pong!", host: OS.hostname(), source: sourceIp, forwarded: forwardedFrom, version: config.version };
+    console.log(pong);
+    res.send(pong);
 });
 app.get('/healthz', function(req, res) {
     res.send('OK');
@@ -61,14 +71,10 @@ var primeFactors = function getAllFactorsFor(remainder) {
     return factors;
 }
 
-// curl -X POST --header "number: 3" http://localhost:3001/api/calculation
+// curl -X POST --header "number: 3" --header "randomvictim: true" http://localhost:3002/api/calculation
 app.post('/api/calculation', function(req, res) {
     console.log("received client request:");
-    console.log(req.headers.number);
-    if (config.instrumentationKey){ 
-        var startDate = new Date();
-        client.trackEvent( { name: "calculation-js-backend-call"});
-    }
+    console.log(req.headers);
     var resultValue = [0];
     try{
         resultValue = primeFactors(req.headers.number);
@@ -76,30 +82,23 @@ app.post('/api/calculation', function(req, res) {
         console.log(resultValue);
     }catch(e){
         console.log(e);
-        if (config.instrumentationKey){ 
-            client.trackException(e);
-        }
         resultValue = [0];
     }
     var endDate = new Date();
-    if (config.instrumentationKey){ 
-        var duration = endDate - startDate;
-        client.trackEvent({ name: "calculation-js-backend-result"});
-        client.trackMetric({ name:"calculation-js-backend-duration", value: duration });
-    }
+
     if (req.headers.joker){
         resultValue = "42";
     }
 
     var randomNumber = Math.floor((Math.random() * 20) + 1);
 
-    if (req.headers.randomvictim || (config.buggy && randomNumber > 19)){
+    if ((req.headers.randomvictim && req.headers.randomvictim ===true ) || (config.buggy && randomNumber > 19)){
         console.log("looks like a 19 bug");
-        res.status(500).send({ value: "[ b, u, g]", error: "looks like a 19 bug", host: OS.hostname(), remote: remoteAddress });
+        res.status(500).send({ value: "[ b, u, g]", error: "looks like a 19 bug", host: OS.hostname(), remote: remoteAddress, version: config.version });
     }
     else{
         var remoteAddress = req.connection.remoteAddress;
-        var serverResult = JSON.stringify({ timestamp: endDate, value: resultValue, host: OS.hostname(), remote: remoteAddress } );
+        var serverResult = JSON.stringify({ timestamp: endDate, value: resultValue, host: OS.hostname(), remote: remoteAddress, version: config.version } );
         console.log(serverResult);
         res.send(serverResult.toString());
     }
@@ -108,17 +107,11 @@ app.post('/api/calculation', function(req, res) {
 app.post('/api/dummy', function(req, res) {
     console.log("received dummy request:");
     console.log(req.headers)
-    if (config.instrumentationKey){ 
-        client.trackEvent({ name: "dummy-js-backend-call"});
-    }
     res.send('42');
 });
 
 console.log(config);
 console.log(OS.hostname());
-// Listen
-if (config.instrumentationKey){ 
-    client.trackEvent({ name: "js-backend-initializing"});
-}
+
 app.listen(config.port);
 console.log('Listening on localhost:'+ config.port);

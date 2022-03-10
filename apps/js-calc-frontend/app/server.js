@@ -5,10 +5,17 @@ if (config.instrumentationKey){
     appInsights.setup(config.instrumentationKey)
     .setAutoDependencyCorrelation(true)
     .setAutoCollectDependencies(true)
-    .setAutoCollectPerformance(true);
+    .setAutoCollectPerformance(true)
+    .setSendLiveMetrics(true)
+    .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C);
     appInsights.defaultClient.context.tags[appInsights.defaultClient.context.keys.cloudRole] = "calc-frontend";
     appInsights.start();
+    var client = appInsights.defaultClient;
+    client.commonProperties = {
+        slot: config.version
+    };
 }
+
 var client = appInsights.defaultClient;
 
 const express = require('express');
@@ -29,7 +36,9 @@ app.use(express.static(publicDir));
 // Routes
 app.get('/ping', function(req, res) {
     console.log('received ping');
-    res.send('Pong');
+    var pong = { response: "pong!", host: OS.hostname(), version: config.version };
+    console.log(pong);
+    res.send(pong);
 });
 
 app.get('/healthz', function(req, res) {
@@ -85,9 +94,16 @@ app.post('/api/calculation', function(req, res) {
                     client.trackMetric({ name:"calculation-js-frontend-duration", value: duration });
                 }
                 console.log("cache hit");
-                res.send(reply);            
-                console.log(reply);                
+
+                var calcResult = JSON.parse(reply); 
+
+                var response = { host: OS.hostname(), version: config.version, 
+                    backend: { host: calcResult.host, version: calcResult.version, value: calcResult.value, remote: calcResult.remote, timestamp: calcResult.timestamp } };
+    
+                console.log(response);
+                res.send(response);              
             }else{
+                console.log(err);
                 console.log("cache miss");
                 var formData = {
                     received: new Date().toLocaleString(), 
@@ -112,10 +128,6 @@ app.post('/api/calculation', function(req, res) {
                         }
                     }
                     if (config.instrumentationKey){ 
-                        // client.trackDependency(
-                        //     { target: "calc-backend-svc", name: "calc-backend-svc", 
-                        //     data:"calculate number " + req.headers.number, 
-                        //     duration: duration, resultCode:200, success: true});
                         client.trackRequest({name:"POST /api/calculation", url: options.url, duration:duration, resultCode:200, success:true});
                         client.trackEvent({ name: "calculation-js-frontend-call-complete", properties: {randomVictim: victim, cached: false} });
                         client.trackMetric({ name:"calculation-js-frontend-duration", value: duration });
@@ -125,9 +137,14 @@ app.post('/api/calculation', function(req, res) {
                         console.log("cache save");
                         console.log(reply);
                     });
-                            
-                    console.log(body);
-                    res.send(body);
+
+                    var calcResult = JSON.parse(body); 
+
+                    var response = { host: OS.hostname(), version: config.version, 
+                        backend: { host: calcResult.host, version: calcResult.version, value: calcResult.value, remote: calcResult.remote, timestamp: calcResult.timestamp } };
+        
+                    console.log(response);
+                    res.send(response);
                 });    
             }
         });
@@ -156,10 +173,6 @@ app.post('/api/calculation', function(req, res) {
             }
             if (config.instrumentationKey){ 
                 console.log("sending telemetry");
-                // client.trackDependency(
-                //     { name: "POST /api/calculation", target: "calc-backend-svc | roleName:calc-backend-svc", 
-                //     data: options.url, dependencyTypeName: "Http",
-                //     duration: duration, resultCode:200, success: true});
                 client.trackEvent({ name: "calculation-js-frontend-call-complete", properties: {randomVictim: victim, cached: false} });
                 client.trackRequest({name:"POST /api/calculation", url: options.url, duration:duration, resultCode:200, success:true});
                 client.trackMetric({ name:"calculation-js-frontend-duration", value: duration });
@@ -170,9 +183,14 @@ app.post('/api/calculation', function(req, res) {
                     console.log(reply);
                 });
             }
+            
+            var calcResult = JSON.parse(body); 
 
-            console.log(body);
-            res.send(body);
+            var response = { host: OS.hostname(), version: config.version, 
+                backend: { host: calcResult.host, version: calcResult.version, value: calcResult.value, remote: calcResult.remote, timestamp: calcResult.timestamp } };
+
+            console.log(response);
+            res.send(response);
         });
     }
     

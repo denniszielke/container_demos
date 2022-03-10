@@ -15,8 +15,8 @@
 <body class="site">
     <div class="jumbotron">
         <div class="container">
-            <h2 class="display-5">Hello Prime Factor Calculator App</h2>
-            <p>This is a sample application for demonstrating multi container applications on Kubernetes in Azure.<a class="btn btn-primary btn-lg" href="https://github.com/denniszielke/phoenix" role="button">Learn more &raquo;</a></p>
+            <h2 class="display-5">Cloud Native Prime Yellow Blue Factor Calculator App NEW</h2>
+            <p>This is a sample application for demonstrating blue green deployments on Azure Container Apps<a class="btn btn-primary btn-lg" href="https://github.com/denniszielke/blue-green-with-containerapps" role="button">Learn more &raquo;</a></p>
         </div>
     </div>
     <div class="container">
@@ -41,8 +41,9 @@
                     </p>
                 </form>
                 <div class="row">
-                    <h2>Result: {{ result.value }}</h2>
-                    <p class="bg-info">{{ result.duration }}, {{ result.host }}, {{ result.remote }}</p>
+                    <h2>Result: {{ result.result.value }}</h2>
+                    <p ng-class="CalculateCssClass(result.version)">Frontend: {{ result.host }}, {{ result.version }}</p>
+                    <p ng-class="CalculateCssClass(result.backend.version)">Backend: {{ result.duration }}, {{ result.backend.host }}, {{ result.backend.remote }}, {{ result.backend.version }}</p>
                     <table class="table">
                         <thead>
                             <tr>
@@ -50,14 +51,16 @@
                             <th scope="col">Value</th>
                             <th scope="col">Host</th>
                             <th scope="col">RemoteIp</th>
+                            <th scope="col">Version</th>
                             </tr>
                         </thead>
                         <tbody>
                         <tr ng-repeat="response in responses track by $index">
-                          <td>{{ response.duration }}</td>
-                          <td>{{ response.value }}</td>
-                          <td>{{ response.host }}</td>
-                          <td>{{ response.remote }}</td>
+                          <td ng-class="CalculateCssClass(response.backend.version)">{{ response.duration }}</td>
+                          <td ng-class="CalculateCssClass(response.backend.version)">{{ response.backend.value }}</td>
+                          <td ng-class="CalculateCssClass(response.backend.version)">{{ response.backend.host }}</td>
+                          <td ng-class="CalculateCssClass(response.backend.version)">{{ response.backend.remote }}</td>
+                          <td ng-class="CalculateCssClass(response.backend.version)">{{ response.backend.version }}</td>
                         </tr>
                         </tbody>
                     </table>
@@ -66,6 +69,5 @@
         </div>
 
     </div><!-- /.container -->
-    
 </body>
 </html>

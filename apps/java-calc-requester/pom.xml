@@ -56,11 +56,6 @@
       <artifactId>applicationinsights-agent</artifactId>
       <version>${azure-applicationinsights.version}</version>
     </dependency>
-    <!-- <dependency>
-      <groupId>com.microsoft.azure</groupId>
-      <artifactId>applicationinsights-core</artifactId>
-      <version>2.6.4</version>
-    </dependency> -->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-container-image-jib</artifactId>

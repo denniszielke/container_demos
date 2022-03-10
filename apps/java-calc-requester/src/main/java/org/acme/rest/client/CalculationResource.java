@@ -28,7 +28,13 @@ public class CalculationResource {
     Logger log;
 
     @GET
-    @Path("/Trigger/{count}")
+    @Path("/ping")
+    public Boolean ping() {
+        return true;
+    }
+    
+    @GET
+    @Path("/trigger/{count}")
     public Boolean trigger(@PathParam Integer count) {
         Random rand = new Random();
 
@@ -53,7 +59,7 @@ public class CalculationResource {
     }
 
     @GET
-    @Path("/TriggerAsync/{count}")
+    @Path("/triggerasync/{count}")
     public CompletionStage<CalculationResponse> triggerAsync(@PathParam Integer count) {
         Random rand = new Random();
         Integer randInt = rand.nextInt(1000);

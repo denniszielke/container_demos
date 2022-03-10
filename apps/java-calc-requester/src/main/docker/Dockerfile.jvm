@@ -12,7 +12,7 @@
 # Then run the container using:
 #
 # docker run -i --rm -p 8080:8080 quarkus/java-calc-requester-jvm
-# docker run -i --rm -p 8080:8080 quarkus/java-calc-requester-jvm --add-host host.docker.internal:host-gateway
+# docker run -i --rm -p 8080:8080 quarkus/java-calc-requester-jvm --add-host host.docker.internal:host-gateway -e $APPLICATIONINSIGHTS_CONNECTION_STRING -e $ENDPOINT_HOST
 #
 # If you want to include the debug port into your docker image
 # you will have to expose the debug port (default 5005) like this :  EXPOSE 8080 5005
@@ -27,9 +27,8 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
 ARG JAVA_PACKAGE=java-11-openjdk-headless
 ARG RUN_JAVA_VERSION=1.3.8
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
-# ENV APPLICATIONINSIGHTS_CONNECTION_STRING='InstrumentationKey='
-# ENV ENDPOINT_HOST=host.docker.internal
-#ENV ENDPOINT_HOST=localhost
+ARG APPLICATIONINSIGHTS_CONNECTION_STRING
+ARG ENDPOINT_HOST
 ENV ENDPOINT_PORT=3000
 # Install java and the run-java script
 # Also set up permissions for user `1001`
@@ -50,6 +49,7 @@ ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jb
 # We make four distinct layers so if there are application changes the library layers can be re-used
 COPY --chown=1001 target/quarkus-app/lib/ /deployments/lib/
 COPY --chown=1001 target/quarkus-app/lib/main/com.microsoft.azure.applicationinsights-agent-*.jar /deployments/agent/applicationinsights-agent.jar
+COPY --chown=1001 applicationinsights.json /deployments/agent
 COPY --chown=1001 target/quarkus-app/*.jar /deployments/
 COPY --chown=1001 target/quarkus-app/app/ /deployments/app/
 COPY --chown=1001 target/quarkus-app/quarkus/ /deployments/quarkus/
