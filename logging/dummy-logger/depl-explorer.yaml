@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dummy-logger
+  name: explorer
 spec:
   replicas: 2 
   minReadySeconds: 10
@@ -12,11 +12,11 @@ spec:
       maxSurge: 1 
   selector:
     matchLabels:
-      app: dummy-logger
+      app: explorer
   template:
     metadata:
       labels:
-        app: dummy-logger
+        app: explorer
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/path: "/metrics"
@@ -25,23 +25,23 @@ spec:
     spec:
       containers:
       - name: dummy-logger
-        image: denniszielke/dummy-logger:latest  
+        image: ghcr.io/denniszielke/container-apps/js-dapr-explorer:latest
         ports:
-        - containerPort: 80
+        - containerPort: 3000
         imagePullPolicy: Always 
         env: 
-          - name: "METRICRESET"
-            value: "5"
+          - name: "PORT"
+            value: "3000"
           - name: "NAME"
-            value: "dublin" 
+            value: "paris" 
         livenessProbe:
           httpGet:
             path: /ping
-            port: 80
+            port: 3000
         readinessProbe:
           httpGet:
             path: /ping
-            port: 80
+            port: 3000
           initialDelaySeconds: 10
           periodSeconds: 5
         resources:

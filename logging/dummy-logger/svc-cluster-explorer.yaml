@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: explorer-cluster
+spec:
+  ports:
+  - port: 80
+    targetPort: 3000
+  selector:
+    app: explorer
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: explorer
+spec:
+  ports:
+  - port: 80
+    targetPort: 3000
+  selector:
+    app: explorer
+  type: ClusterIP

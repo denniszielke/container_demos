@@ -315,6 +315,8 @@ az role assignment create --role "Azure Kubernetes Service RBAC Viewer" --assign
 
 az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee $MY_USER_ID --scope $AKS_ID/namespaces/aadsecured
 
+
+
 az aks update --enable-pod-identity --resource-group $KUBE_GROUP --name $KUBE_NAME
 
 
@@ -331,20 +333,22 @@ az aks get-credentials -g dzallincl -n dzallincl
 
 SERVICE_PRINCIPAL_ID=
 SERVICE_PRINCIPAL_SECRET=
-AZURE_TENANT_ID=
+AZURE_TENANT_ID=$(az account show -o json | jq '.tenantId' -r)
+echo $AZURE_TENANT_ID
 
 az login --identity
 
 az login --service-principal -u $SERVICE_PRINCIPAL_ID -p $SERVICE_PRINCIPAL_SECRET --tenant $AZURE_TENANT_ID
 az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee "$SERVICE_PRINCIPAL_ID" --scope $AKS_ID/namespaces/aadsecured
 
+az role assignment create --role "Azure Kubernetes Service RBAC Writer" --assignee $SERVICE_PRINCIPAL_ID --scope $AKS_ID/namespaces/aadsecured
 
 wget https://github.com/Azure/kubelogin/releases/download/v0.0.10/kubelogin-linux-amd64.zip
 unzip kubelogin-linux-amd64.zip -d kubetools
 
 export KUBECONFIG=/home/dennis/.kube/config
 
-az aks get-credentials -g MyResourceGroup -n MyManagedCluster
+az aks get-credentials -g $KUBE_GROUP -n $KUBE_NAME
 
 rm /home/dennis/.kube/config
 touch /home/dennis/.kube/config
@@ -558,7 +562,7 @@ az login --service-principal -u $SERVICE_PRINCIPAL_ID -p $SERVICE_PRINCIPAL_SECR
 
 https://github.com/azure/kubelogin
 
-wget https://github.com/Azure/kubelogin/releases/download/v0.0.9/kubelogin-linux-amd64.zip
+wget https://github.com/Azure/kubelogin/releases/download/v0.0.12/kubelogin-linux-amd64.zip
 unzip kubelogin-linux-amd64.zip -d kubetools
 
 export KUBECONFIG=`pwd`/kubeconfig
@@ -611,9 +615,9 @@ https://docs.microsoft.com/en-us/azure/developer/java/sdk/identity-azure-hosted-
 ## Pod Identity V2
 
 ```
-KUBE_GROUP="dzaadwlidv5"
-KUBE_NAME="dzaadwlidv5"
-KEYVAULT_NAME="dzkvdzallincl"
+KUBE_GROUP="dzallincluded"
+KUBE_NAME="dzallincluded"
+KEYVAULT_NAME="dzkvdzallincluded"
 SECRET_NAME=mySecret
 SERVICE_PRINCIPAL_ID=
 
@@ -637,7 +641,20 @@ echo $SERVICE_PRINCIPAL_ID
 SERVICE_PRINCIPAL_SECRET=$(az ad app credential reset --id $SERVICE_PRINCIPAL_ID -o json | jq '.password' -r)
 echo $SERVICE_PRINCIPAL_SECRET
 
+SERVICE_PRINCIPAL_OBJECT_ID="$(az ad app show --id ${SERVICE_PRINCIPAL_ID} --query objectId -o tsv)"
+echo $SERVICE_PRINCIPAL_OBJECT_ID
+
 az keyvault set-policy -n ${KEYVAULT_NAME} --secret-permissions get --spn ${SERVICE_PRINCIPAL_ID}
+
+ISSUER_URL=$(az aks show  -g $KUBE_GROUP -n $KUBE_NAME --query "oidcIssuerProfile.issuerUrl" -o tsv)
+echo $ISSUER_URL
+
+
+az rest --method POST --uri "https://graph.microsoft.com/beta/applications/$SERVICE_PRINCIPAL_OBJECT_ID/federatedIdentityCredentials" --body "{'name':'aks-kv','issuer':'$ISSUER_URL','subject':'system:serviceaccount:default:pod-identity-sa','description':'aks kv access','audiences':['api://AzureADTokenExchange']}"
+
+kubectl create secret generic secrets-store-creds --from-literal clientid=$SERVICE_PRINCIPAL_ID --from-literal clientsecret=$SERVICE_PRINCIPAL_SECRET
+kubectl label secret secrets-store-creds secrets-store.csi.k8s.io/used=true
+
 
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -681,6 +698,59 @@ spec:
   nodeSelector:
     kubernetes.io/os: linux
 EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: azure-kvname-workload-id
+  namespace: default
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    clientID: ${SERVICE_PRINCIPAL_ID}
+    keyvaultName: "$KEYVAULT_NAME"
+    cloudName: ""                   # [OPTIONAL for Azure] if not provided, azure environment will default to AzurePublicCloud
+    objects:  |
+      array:
+        - |
+          objectName: ${SECRET_NAME}
+          objectType: secret        # object types: secret, key or cert
+          objectVersion: ""         # [OPTIONAL] object versions, default to latest if empty
+    tenantId: "$AZURE_TENANT_ID"                 # the tenant ID of the KeyVault  
+EOF
+
+
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-csi
+spec:
+  serviceAccountName: pod-identity-sa
+  containers:
+    - name: busybox
+      image: k8s.gcr.io/e2e-test-images/busybox:1.29
+      command:
+        - "/bin/sleep"
+        - "10000"
+      volumeMounts:
+      - name: secrets-store01-inline
+        mountPath: "/mnt/secrets-store"
+        readOnly: true
+  volumes:
+    - name: secrets-store01-inline
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: "azure-kvname-workload-id"
+        nodePublishSecretRef: 
+          name: secrets-store-creds   
+EOF
+
 ```
 
 cat /var/run/secrets/tokens/azure-identity-token

@@ -49,6 +49,7 @@ helm upgrade nginx-ingress-auth ingress-nginx/ingress-nginx --install \
     --set defaultBackend.enabled=true \
     --set controller.ingressClassByName=true \
     --set controller.ingressClassResource.name=nginx-auth \
+    --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz  \
     --set-string controller.service.annotations.'service\.beta\.kubernetes\.io/azure-load-balancer-resource-group'="$KUBE_GROUP" \
     --set-string controller.service.annotations.'service\.beta\.kubernetes\.io/azure-pip-name'="nginxingressauth" \
     --set controller.service.externalTrafficPolicy=Local --wait --timeout 60s

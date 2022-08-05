@@ -81,8 +81,11 @@ az feature register --namespace "Microsoft.ContainerService" --name "EnablePodId
 az feature register --namespace "Microsoft.ContainerService" --name "EnableOIDCIssuerPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "PreviewGuardRails"
 az feature register --namespace "Microsoft.ContainerService" --name "EnableNamespaceResourcesPreview"
-
-
+az feature register --namespace "Microsoft.ContainerService" --name "FleetResourcePreview"
+az feature register --namespace "Microsoft.ContainerService" --name "SnapshotPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "HTTP-Application-Routing"
+az feature register --namespace "Microsoft.ContainerService" --name "AKS-KedaPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "AKSARM64Preview"
 
 
 az feature register --name PrivatePreview --namespace Microsoft.Dashboard
@@ -91,6 +94,9 @@ az feature register --namespace "Microsoft.Network" --name "AllowPrivateEndpoint
 az feature register --namespace "Microsoft.Network" --name "AllowAppGwPublicAndPrivateIpOnSamePort"
 az feature register --namespace "Microsoft.Network" --name "AllowApplicationGatewayV2UrlRewrite"
 az feature register --namespace "Microsoft.Network" --name "AllowApplicationGatewayPrivateLink"
+az feature register --namespace "Microsoft.Network" --name "AllowApplicationGatewayRelaxedOutboundRestrictions"
+az feature register --namespace "Microsoft.Network" --name "AllowApplicationGatewayLoadDistributionPolicy"
+
 
 
 

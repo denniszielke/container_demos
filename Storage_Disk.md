@@ -174,3 +174,83 @@ spec:
 az disk
 
 ```
+
+
+## ZRS CSI Driver V2
+https://apache.github.io/solr-operator/docs/local_tutorial
+```
+DNS="dzdublin7.northeurope.cloudapp.azure.com"
+
+cat <<EOF | kubectl apply -f -
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: azuredisk2-standard-ssd-zrs-replicas
+parameters:
+  cachingmode: None
+  skuName: StandardSSD_ZRS
+  maxShares: "2"
+provisioner: disk2.csi.azure.com
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+EOF
+
+kubectl patch storageclass default -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+
+kubectl patch storageclass azuredisk2-standard-ssd-zrs-replicas -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+
+
+kubectl get sc | grep azuredisk
+
+https://apache.github.io/solr-operator/docs/local_tutorial
+
+helm repo add apache-solr https://solr.apache.org/charts
+helm repo update
+
+kubectl create -f https://solr.apache.org/operator/downloads/crds/v0.5.1/all-with-dependencies.yaml
+ https://artifacthub.io/packages/helm/apache-solr/solr
+helm upgrade solr-operator apache-solr/solr-operator --version 0.5.1 --install
+
+helm upgrade example-solr apache-solr/solr --version 0.5.1 --install \
+  --set image.tag=8.3 \
+  --set solrOptions.javaMemory="-Xms300m -Xmx300m" \
+  --set addressability.external.method=Ingress \
+  --set addressability.external.domainName="running.de" \
+  --set addressability.external.useExternalAddress="true" \
+  --set ingressOptions.ingressClassName="nginx" \
+  --set dataStorage.type="persistent" \
+  --set dataStorage.persistent.pvc.storageClassName="azuredisk2-standard-ssd-zrs-replicas" 
+
+kubectl apply -f - <<EOF
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: solr
+spec:  
+  ingressClassName: nginx
+  rules:
+  - host: $DNS
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dummy-logger
+            port:
+              number: 80
+EOF
+
+open "http://default-example-solrcloud.running.de/solr/#/~cloud?view=nodes"
+open "http://$DNS/solr/#/~cloud?view=nodes"
+
+curl "http://default-example-solrcloud.running.de/solr/admin/collections?action=CREATE&name=mycoll&numShards=1&replicationFactor=3&maxShardsPerNode=2&collection.configName=_default"
+
+open "http://default-example-solrcloud.running.de/solr/#/~cloud?view=graph"
+
+curl -XPOST -H "Content-Type: application/json" \
+    -d '[{id: 1}, {id: 2}, {id: 3}, {id: 4}, {id: 5}, {id: 6}, {id: 7}, {id: 8}]' \
+    "http://default-example-solrcloud.running.de/solr/mycoll/update/"
+
+```

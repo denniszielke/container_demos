@@ -346,7 +346,7 @@ EOF
 
 ## Pod Subnet
 
-https://ms.portal.azure.com/#@microsoft.onmicrosoft.com/resource/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourceGroups/kubes_fw_knet/overview
+https://ms.portal.azure.com/#@microsoft.onmicrosoft.com/resource/subscriptions/$SUBSCRIPTION_ID/resourceGroups/kubes_fw_knet/overview
 
 KUBE_NAME=dzkubekube-3
 LOCATION=westcentralus

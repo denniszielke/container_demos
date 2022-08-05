@@ -33,6 +33,8 @@ echo "create ingress"
 
 helm upgrade nginx-controller nginx/nginx-ingress --install --set controller.stats.enabled=true --set controller.replicaCount=1 --set controller.service.externalTrafficPolicy=Local --set-string controller.pod.annotations.'dapr\.io/enabled'="true" --set-string controller.pod.annotations.'dapr\.io/app-id'="nginx" --set-string controller.pod.annotations.'dapr\.io/app-protocol'="http" --set-string controller.pod.annotations.'dapr\.io/app-port'="80" --set-string controller.pod.annotations.'dapr\.io/port'="80" --namespace=$INGRESS_NAMESPACE 
 
+kubectl patch deployment nginx -n app-routing-system -p '{"spec": {"template":{"metadata":{"annotations":{"dapr.io/app-por":"80"}}}} }'
+
 SERVICE_IP=$(kubectl get svc --namespace $INGRESS_NAMESPACE nginx-controller-nginx-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
 cat <<EOF | kubectl apply -f -  

@@ -628,7 +628,7 @@ apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
 kind: SecretProviderClass
 metadata:
   name: azure-kvname-user-msi
-  namespace: default
+  namespace: aadsecured
 spec:
   provider: azure
   parameters:
@@ -682,7 +682,7 @@ kind: Pod
 apiVersion: v1
 metadata:
   name: busybox-secrets-store-inline-user-msi
-  namespace: default
+  namespace: aadsecured
 spec:
   containers:
     - name: busybox

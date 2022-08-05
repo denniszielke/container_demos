@@ -58,15 +58,9 @@ kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/
 
 # Add the ingress-nginx repository
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-helm repo add jetstack https://charts.jetstack.io
 
 # Update the helm repo(s)
 helm repo update
-
-
-helm upgrade cert-manager jetstack/cert-manager \
-  --namespace ingress --install \
-  --set installCRDs=true  --wait
 
 helm upgrade nginx-ingress ingress-nginx/ingress-nginx --install \
     --namespace ingress \
@@ -78,29 +72,13 @@ helm upgrade nginx-ingress ingress-nginx/ingress-nginx --install \
     --set-string controller.service.annotations.'service\.beta\.kubernetes\.io/azure-load-balancer-resource-group'="$KUBE_GROUP" \
     --set-string controller.service.annotations.'service\.beta\.kubernetes\.io/azure-pip-name'="nginxingress" \
     --set controller.service.externalTrafficPolicy=Local  \
+    --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-pls-create"="true"  \
+    --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-pls-name"="aks-ingress-pls"  \
+    --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-pls-ip-configuration-subnet"="aks-pl-snet"  \
     --set-string controller.podAnnotations.'linkerd\.io/inject'="enabled" --wait
 
 sleep 5
 
-kubectl apply -f - <<EOF
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt
-  namespace: ingress
-spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: mail@test.de
-    privateKeySecretRef:
-      name: letsencrypt
-    solvers:
-    - http01:
-        ingress:
-          class: nginx
-EOF
-
-sleep 5
 
 kubectl apply -f - <<EOF
 apiVersion: networking.k8s.io/v1
@@ -132,23 +110,3 @@ spec:
 EOF
 
 echo $DNS
-
-exit
-
-OUTPUT=${1:-"$HOME/certificates"}
-
-DOMAIN=$(kubectl get secret -n $APP_NAMESPACE $SECRET_NAME -o json | jq -r '.data."tls.crt"' | base64 -d | openssl x509 -noout -text | grep "Subject: CN=" | sed -E 's/\s+Subject: CN=([^ ]*)/\1/g')
-echo -n " ${DOMAIN}"
-
-mkdir -p "${OUTPUT}/${DOMAIN}"
-
-kubectl get secret -n ${APP_NAMESPACE} ${SECRET_NAME} -o json | jq -r '.data."tls.key"' | base64 -d > "${OUTPUT}/${DOMAIN}/privkey.pem"
-kubectl get secret -n ${APP_NAMESPACE} ${SECRET_NAME}  -o json | jq -r '.data."tls.crt"' | base64 -d > "${OUTPUT}/${DOMAIN}/fullchain.pem"
-#kubectl get secret -n dummy-logger dummy-cert-secret -o json | jq -r '.data."tls.crt"' | base64 -d
-
-
-openssl pkcs12 -export -in "${OUTPUT}/${DOMAIN}/fullchain.pem" -inkey "${OUTPUT}/${DOMAIN}/privkey.pem" -out "${OUTPUT}/${DOMAIN}/$SECRET_NAME.pfx"
-
-
-az keyvault certificate import --vault-name ${VAULT_NAME} -n $SECRET_NAME -f "${OUTPUT}/${DOMAIN}/$SECRET_NAME.pfx"
-

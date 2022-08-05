@@ -11,14 +11,7 @@ data:
     # Log data collection settings
     # Any errors related to config map settings can be found in the KubeMonAgentEvents table in the Log Analytics workspace that the cluster is sending data to.
 
-
     [log_collection_settings]
-       [log_collection_settings.schema]
-          # In the absense of this configmap, default value for containerlog_schema_version is "v1"
-          # Supported values for this setting are "v1","v2"
-          # See documentation for benefits of v2 schema over v1 schema before opting for "v2" schema
-          containerlog_schema_version = "v2"
-          
        [log_collection_settings.stdout]
           # In the absense of this configmap, default value for enabled is true
           enabled = true
@@ -49,6 +42,12 @@ data:
           # When the setting is set to false, only the kube events with !normal event type will be collected
           enabled = false
           # When this is enabled (enabled = true), all kube events including normal events will be collected
+       #[log_collection_settings.schema]
+          # In the absence of this configmap, default value for containerlog_schema_version is "v1"
+          # Supported values for this setting are "v1","v2"
+          # See documentation at https://aka.ms/ContainerLogv2 for benefits of v2 schema over v1 schema before opting for "v2" schema
+          containerlog_schema_version = "v2"
+
 
   prometheus-data-collection-settings: |-
     # Custom Prometheus metrics data collection settings
@@ -142,6 +141,8 @@ data:
     [integrations.azure_network_policy_manager]
         collect_basic_metrics = false
         collect_advanced_metrics = false
+    [integrations.azure_subnet_ip_usage]
+        enabled = false
 
 # Doc - https://github.com/microsoft/Docker-Provider/blob/ci_prod/Documentation/AgentSettings/ReadMe.md
   agent-settings: |-

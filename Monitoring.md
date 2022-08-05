@@ -97,7 +97,7 @@ KUBE_VERSION=1.19.7
 az rest --method get --url "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP/providers/Microsoft.
 OperationalInsights/workspaces/$KUBE_NAME-lga/tables/ContainerLog?api-version=2020-10-01"
 
-az rest --method get --url "https://management.azure.com/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourceGroups/dzcheapobs/providers/Microsoft.OperationalInsights/workspaces/dzcheapobs/tables/ContainerLog?api-version=2020-10-01"
+az rest --method get --url "https://management.azure.com/subscriptions//resourceGroups/dzcheapobs/providers/Microsoft.OperationalInsights/workspaces/dzcheapobs/tables/ContainerLog?api-version=2020-10-01"
 
 {
 
@@ -109,7 +109,7 @@ az rest --method get --url "https://management.azure.com/subscriptions/5abd8123-
   },
 }
 
-az rest --method put --url "https://management.azure.com/subscriptions/5abd8123-18f8-427f-a4ae-30bfb82617e5/resourceGroups/dzcheapobs/providers/Microsoft.OperationalInsights/workspaces/dzcheapobs/tables/ContainerLog?api-version=2020-10-01" --body @container_log.json
+az rest --method put --url "https://management.azure.com/subscriptions//resourceGroups/dzcheapobs/providers/Microsoft.OperationalInsights/workspaces/dzcheapobs/tables/ContainerLog?api-version=2020-10-01" --body @container_log.json
 
 
 wget https://raw.githubusercontent.com/microsoft/Docker-Provider/ci_prod/kubernetes/container-azm-ms-agentconfig.yaml

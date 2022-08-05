@@ -207,3 +207,146 @@ kubectl get ServiceProfile
 kubectl -n booksapp edit sp/authors.booksapp.svc.cluster.local
 
 linkerd -n booksapp routes deploy/books --to svc/authors -o wide
+
+
+## Linkerd multi cluster
+
+linkerd multicluster uninstall | kubectl delete -f -
+linkerd multicluster unlink --cluster-name=dzdublin | kubectl delete -f -
+linkerd viz uninstall | kubectl delete -f -
+
+
+kubectl config rename-context dzparis-admin dzparis
+kubectl config rename-context dzdublin-admin dzdublin
+
+kubectl config use-context dzdublin
+kubectl config use-context dzparis
+
+west=dzparis
+east=dzdublin
+
+step certificate create root.linkerd.cluster.local root.crt root.key \
+  --profile root-ca --no-password --insecure
+
+
+  step certificate create identity.linkerd.cluster.local issuer.crt issuer.key \
+  --profile intermediate-ca --not-after 8760h --no-password --insecure \
+  --ca root.crt --ca-key root.key
+
+
+linkerd install \
+  --identity-trust-anchors-file root.crt \
+  --identity-issuer-certificate-file issuer.crt \
+  --identity-issuer-key-file issuer.key \
+  | tee \
+    >(kubectl --context=dzparis apply -f -) \
+    >(kubectl --context=dzdublin apply -f -)
+
+for ctx in dzparis dzdublin; do
+  linkerd --context=${ctx} viz install | \
+    kubectl --context=${ctx} apply -f - || break
+done
+
+for ctx in dzparis dzdublin; do
+  echo "Checking cluster: ${ctx} ........."
+  linkerd --context=${ctx} check || break
+  echo "-------------"
+done
+
+for ctx in dzparis dzdublin; do
+  echo "Installing on cluster: ${ctx} ........."
+  linkerd --context=${ctx} multicluster install | \
+    kubectl --context=${ctx} apply -f - || break
+  echo "-------------"
+done
+
+for ctx in dzparis dzdublin; do
+  echo "Checking gateway on cluster: ${ctx} ........."
+  kubectl --context=${ctx} -n linkerd-multicluster \
+    rollout status deploy/linkerd-gateway || break
+  echo "-------------"
+done
+
+for ctx in dzparis dzdublin; do
+  printf "Checking cluster: ${ctx} ........."
+  while [ "$(kubectl --context=${ctx} -n linkerd-multicluster get service -o 'custom-columns=:.status.loadBalancer.ingress[0].ip' --no-headers)" = "<none>" ]; do
+      printf '.'
+      sleep 1
+  done
+  printf "\n"
+done
+
+
+
+linkerd --context=dzdublin multicluster link --cluster-name dzdublin |
+  kubectl --context=dzparis apply -f -
+
+linkerd --context=dzparis multicluster check
+linkerd --context=dzdublin multicluster check
+
+kubectl label namespace dummy-logger "linkerd.io/inject=enabled"
+
+kubectl apply -f logging/dummy-logger/depl-logger.yaml -n dummy-logger
+
+kubectl apply -f logging/dummy-logger/depl-explorer.yaml -n dummy-logger
+
+kubectl apply -f logging/dummy-logger/svc-cluster-logger.yaml -n dummy-logger
+
+kubectl apply -f logging/dummy-logger/svc-cluster-explorer.yaml -n dummy-logger
+
+kubectl get deploy -o yaml -n dummy-logger | linkerd inject - | kubectl apply -f -
+
+
+
+
+kubectl apply -f - <<EOF
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: https-$APP_NAMESPACE
+  namespace: $APP_NAMESPACE
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:  
+  tls:
+  - hosts:
+    - $DNS
+    secretName: $SECRET_NAME
+  ingressClassName: nginx
+  rules:
+  - host: $DNS
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: explorer
+            port:
+              number: 80
+      - path: /dummy-logger
+        pathType: Prefix
+        backend:
+          service:
+            name: dummy-logger
+            port:
+              number: 80
+      - path: /explorer
+        pathType: Prefix
+        backend:
+          service:
+            name: explorer
+            port:
+              number: 80
+EOF
+
+
+linkerd --context=dzdublin-admin multicluster link --cluster-name dzdublin |
+  kubectl --context=dzparis-admin apply -f -
+
+linkerd --context=dzparis multicluster check
+linkerd --context=dzdublin multicluster check
+
+linkerd --context=dzparis-admin multicluster gateways

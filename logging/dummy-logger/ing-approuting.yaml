@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: creator
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:  
+  ingressClassName: webapprouting.kubernetes.azure.com
+  rules:
+  - host: app.
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dummy-logger
+            port:
+              number: 80

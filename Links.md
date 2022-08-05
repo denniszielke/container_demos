@@ -42,7 +42,7 @@ https://github.com/microsoft/OMS-Agent-for-Linux
 
 AKS ARM Template:
 https://docs.microsoft.com/en-us/azure/templates/microsoft.containerservice/2019-02-01/managedclusters
-https://docs.microsoft.com/en-us/azure/templates/microsoft.containerservice/2019-06-01/managedclusters
+https://review.docs.microsoft.com/en-us/azure/templates/microsoft.containerservice/2022-03-02-preview/managedclusters?branch=main&tabs=bicep
 
 Review docs:
 https://github.com/MicrosoftDocs/azure-docs/tree/master/articles/aks
