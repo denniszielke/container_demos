@@ -1,9 +1,0 @@
-cat <<EOF | kubectl create -f -
-apiVersion: "aadpodidentity.k8s.io/v1"
-kind: AzureIdentity
-metadata:
-  name: $MSA_NAME
-spec:
-  type: 0
-  ResourceID: /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$VAULT_GROUP/providers/Microsoft.ManagedIdentity/userAssignedIdentities/$MSA_NAME
-  ClientID: $MSA_CLIENT_ID

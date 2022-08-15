@@ -8,7 +8,7 @@
 
 set -e
 
-DEPLOYMENT_NAME="dzalldemo4" # here enter unique deployment name (ideally short and with letters for global uniqueness)
+DEPLOYMENT_NAME="dzlinked5" # here enter unique deployment name (ideally short and with letters for global uniqueness)
 USE_PRIVATE_API="false" # use to deploy private master endpoint
 USE_POD_SUBNET="true"
 USE_OVERLAY="false"
@@ -170,6 +170,7 @@ if [ "$AKS_CONTROLLER_RESOURCE_ID" == "" ]; then
     sleep 10 # wait for replication
     az role assignment create --role "Network Contributor" --assignee $AKS_CONTROLLER_CLIENT_ID --scope $KUBE_AGENT_SUBNET_ID -o none
     az role assignment create --role "Network Contributor" --assignee $AKS_CONTROLLER_CLIENT_ID --scope $KUBE_API_SUBNET_ID -o none
+    az role assignment create --role "Network Contributor" --assignee $AKS_CONTROLLER_CLIENT_ID --scope $KUBE_ING_SUBNET_ID -o none
     if [ "$ROUTE_TABLE_ID" == "" ]; then
         echo "no route table used"
     else
@@ -181,6 +182,7 @@ else
     echo "assigning permissions on network $KUBE_AGENT_SUBNET_ID"
     az role assignment create --role "Network Contributor" --assignee $AKS_CONTROLLER_CLIENT_ID --scope $KUBE_AGENT_SUBNET_ID -o none
     az role assignment create --role "Network Contributor" --assignee $AKS_CONTROLLER_CLIENT_ID --scope $KUBE_API_SUBNET_ID -o none
+    az role assignment create --role "Network Contributor" --assignee $AKS_CONTROLLER_CLIENT_ID --scope $KUBE_ING_SUBNET_ID -o none
     if [ "$ROUTE_TABLE_ID" == "" ]; then
         echo "no route table used"
     else
@@ -254,7 +256,6 @@ if [ "$AKS_ID" == "" ]; then
     az aks nodepool update --scale-down-mode Deallocate --name nodepool1 --cluster-name $KUBE_NAME --resource-group $KUBE_GROUP
 
     az aks maintenanceconfiguration add -g $KUBE_GROUP --cluster-name $KUBE_NAME --name tuesday --weekday Tuesday  --start-hour 13
-    az aks maintenance
     
     az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name armpool --node-count 2 --node-vm-size Standard_Dpds_v5
 

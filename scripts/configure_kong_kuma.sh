@@ -63,14 +63,27 @@ helm repo add kuma https://kumahq.github.io/charts
 helm repo update
 # https://github.com/Kong/charts/blob/main/charts/kong/README.md
 
+# helm upgrade kong-ingress kong/kong --install \
+#     --set ingressController.installCRDs=false \
+#     --namespace ingress \
+#     --set replicaCount=2 \
+#     --set proxy.loadBalancerIP="$IP" \
+#     --set proxy.externalTrafficPolicy="Local" \
+#     --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-load-balancer-resource-group'="$KUBE_GROUP" \
+#     --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pip-name'="kongingress" \
+#     --set autoscaling.enabled=true --wait
+
 helm upgrade kong-ingress kong/kong --install \
     --set ingressController.installCRDs=false \
     --namespace ingress \
     --set replicaCount=2 \
-    --set SVC.loadBalancerIP="$IP" \
-    --set SVC.externalTrafficPolicy="Local" \
-    --set-string SVC.annotations.'service\.beta\.kubernetes\.io/azure-load-balancer-resource-group'="$KUBE_GROUP" \
-    --set-string SVC.annotations.'service\.beta\.kubernetes\.io/azure-pip-name'="kongingress" \
+    --set proxy.externalTrafficPolicy="Local" \
+    --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-load-balancer-internal'="true" \
+    --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pls-create'="true" \
+    --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pls-name'="internalpls" \
+    --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pls-ip-configuration-subnet'="ing-4-subnet" \
+    --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pls-proxy-protocol'="false" \
+    --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pls-visibility'="*" \
     --set autoscaling.enabled=true --wait
 
 sleep 5
@@ -80,33 +93,65 @@ helm upgrade kuma kuma/kuma --create-namespace --namespace kuma-system  --instal
 
 #kubectl port-forward svc/kuma-control-plane -n kuma-system 5681:5681
 
-# kubectl apply -f - <<EOF
-# apiVersion: networking.k8s.io/v1
-# kind: Ingress
-# metadata:
-#   name: https-$APP_NAMESPACE
-#   namespace: $APP_NAMESPACE
-#   annotations:
-#     cert-manager.io/cluster-issuer: letsencrypt
-#     nginx.ingress.kubernetes.io/service-upstream: "true"
-#     nginx.ingress.kubernetes.io/rewrite-target: /
-# spec:  
-#   tls:
-#   - hosts:
-#     - $DNS
-#     secretName: $SECRET_NAME
-#   ingressClassName: nginx
-#   rules:
-#   - host: $DNS
-#     http:
-#       paths:
-#       - path: /
-#         pathType: Prefix
-#         backend:
-#           service:
-#             name: dummy-logger
-#             port:
-#               number: 80
-# EOF
+echo "
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: request-id
+config:
+  header_name: my-request-id
+plugin: correlation-id
+" | kubectl apply -f -
+
+kubectl apply -f - <<EOF
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: http-$APP_NAMESPACE
+  namespace: $APP_NAMESPACE
+  annotations:
+    konghq.com/plugins: request-id
+spec:  
+  ingressClassName: kong
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: dummy-logger
+            port:
+              number: 80
+EOF
+
+
+
+kubectl apply -f - <<EOF
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: https-$APP_NAMESPACE
+  namespace: $APP_NAMESPACE
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:  
+  tls:
+  - hosts:
+    - $DNS
+    secretName: $SECRET_NAME
+  ingressClassName: nginx
+  rules:
+  - host: $DNS
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dummy-logger
+            port:
+              number: 80
+EOF
 
 echo $DNS
