@@ -42,7 +42,5 @@ jobs:
         run: |
           wget https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.3.1/applicationinsights-agent-3.3.1.jar
           $MVN package -Pnative -DskipTests -Dquarkus.native.container-build=true -Dquarkus.container-image.push=true -Dquarkus.container-image.image=ghcr.io/${{ github.repository_owner }}/demos/$IMAGE_NAME:${GITHUB_RUN_ID} '-Dquarkus.jib.labels."org.opencontainers.image.revision"='$GITHUB_SHA
-      - name: tag latest
-        run: |
           docker tag ghcr.io/${{ github.repository_owner }}/demos/$IMAGE_NAME:${GITHUB_RUN_ID} ghcr.io/${{ github.repository_owner }}/demos/$IMAGE_NAME:latest
           docker push ghcr.io/${{ github.repository_owner }}/demos/$IMAGE_NAME:latest
