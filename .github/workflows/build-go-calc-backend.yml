@@ -1,0 +1,38 @@
+name: build-go-calc-backend
+
+# Controls when the action will run. 
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: apps/go-calc-backend
+
+env:
+  IMAGE_NAME: "js-go-calc-backend"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build image
+        run: |
+          docker build . --file Dockerfile  --tag $IMAGE_NAME --label "runnumber=${GITHUB_RUN_ID}"
+          
+      - name: Log in to registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push image
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/demos/$IMAGE_NAME
+          docker tag $IMAGE_NAME $IMAGE_ID:${GITHUB_RUN_ID}
+          docker tag $IMAGE_NAME $IMAGE_ID:latest
+          docker push $IMAGE_ID:${GITHUB_RUN_ID}     
+          docker push $IMAGE_ID:latest  
