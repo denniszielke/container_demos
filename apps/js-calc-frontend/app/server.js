@@ -15,7 +15,6 @@ if (config.instrumentationKey){
         slot: config.version
     };
 }
-
 var client = appInsights.defaultClient;
 
 const express = require('express');

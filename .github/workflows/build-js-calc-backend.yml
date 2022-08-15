@@ -1,4 +1,4 @@
-name: build-java-calc-requester
+name: build-js-calc-backend
 
 # Controls when the action will run. 
 on:
@@ -7,10 +7,10 @@ on:
 
 defaults:
   run:
-    working-directory: apps/java-calc-requester
+    working-directory: apps/js-calc-backend
 
 env:
-  IMAGE_NAME: "java-calc-requester"
+  IMAGE_NAME: "js-calc-backend"
 
 jobs:
   build:
@@ -24,7 +24,6 @@ jobs:
 
       - name: Build image
         run: |
-          wget https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.3.1/applicationinsights-agent-3.3.1.jar
           docker build . --file Dockerfile  --tag $IMAGE_NAME --label "runnumber=${GITHUB_RUN_ID}"
           
       - name: Log in to registry
