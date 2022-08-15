@@ -34,5 +34,5 @@ jobs:
           IMAGE_ID=ghcr.io/${{ github.repository_owner }}/demos/$IMAGE_NAME
           docker tag $IMAGE_NAME $IMAGE_ID:${GITHUB_RUN_ID}
           docker tag $IMAGE_NAME $IMAGE_ID:latest
-          docker push $IMAGE_NAME:${GITHUB_RUN_ID}     
-          docker push $IMAGE_NAME:latest  
+          docker push $IMAGE_ID:${GITHUB_RUN_ID}     
+          docker push $IMAGE_ID:latest  
