@@ -1,0 +1,22 @@
+mode: deployment
+config:
+  exporters:
+    prometheus:
+      endpoint: "0.0.0.0:8889"
+      namespace: azure_apim
+      send_timestamps: true
+  service:
+    pipelines:
+      metrics:
+        exporters:
+        - prometheus
+service:
+  type: LoadBalancer
+ports:
+  jaeger-compact:
+    enabled: false
+  prom-exporter:
+    enabled: true
+    containerPort: 8889
+    servicePort: 8889
+    protocol: TCP

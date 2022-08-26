@@ -620,7 +620,7 @@ KUBE_NAME="dzallincluded"
 KEYVAULT_NAME="dzkvdzallincluded"
 SECRET_NAME=mySecret
 SERVICE_PRINCIPAL_ID=
-
+AZURE_TENANT_ID=$(az account show --query tenantId -o tsv)
 
 az aks update -g $KUBE_GROUP --name $KUBE_NAME --enable-oidc-issuer 
 

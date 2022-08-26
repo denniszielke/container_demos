@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calc-requester-app
+  labels:
+    app: calc-requester-app
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: calc-requester-app
+  template:
+    metadata:
+      labels:
+        app: calc-requester-app
+    spec:
+      containers:
+      - name: calc-requester-app
+        image: ghcr.io/{.registry}/demos/java-calc-requester:2861460758
+        ports:
+        - containerPort: 8080
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /api/ping
+            port: 8080
+        readinessProbe:
+          httpGet:
+            path: /api/ping
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "250Mi"
+            cpu: "200m"
+          limits:
+            memory: "500Mi"
+            cpu: "300m"
+        env: 
+          - name: "PORT"
+            value: "8080"
+          - name: "VERSION"
+            value: "{.version}"
+          - name: "ENDPOINT_HOST"
+            value: "calc-frontend-svc"
+          - name: "ENDPOINT_PORT"
+            value: "80"
+          - name: "APPLICATIONINSIGHTS_CONNECTION_STRING"
+            valueFrom:
+              secretKeyRef:
+                name: appconfig
+                key: applicationInsightsConnectionString
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calc-requester-svc
+  labels:
+    app.kubernetes.io/name: calc-requester-service
+    app.kubernetes.io/version: 1.0.0
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  selector:
+    app: calc-requester-app
+  type: ClusterIP

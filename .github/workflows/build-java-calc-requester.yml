@@ -44,3 +44,4 @@ jobs:
           $MVN package -Pnative -DskipTests -Dquarkus.native.container-build=true -Dquarkus.container-image.push=true -Dquarkus.container-image.image=ghcr.io/${{ github.repository_owner }}/demos/$IMAGE_NAME:${GITHUB_RUN_ID} '-Dquarkus.jib.labels."org.opencontainers.image.revision"='$GITHUB_SHA
           docker tag ghcr.io/${{ github.repository_owner }}/demos/$IMAGE_NAME:${GITHUB_RUN_ID} ghcr.io/${{ github.repository_owner }}/demos/$IMAGE_NAME:latest
           docker push ghcr.io/${{ github.repository_owner }}/demos/$IMAGE_NAME:latest
+          

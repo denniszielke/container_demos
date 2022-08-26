@@ -8,13 +8,13 @@
 
 set -e
 
-DEPLOYMENT_NAME="dzlinked5" # here enter unique deployment name (ideally short and with letters for global uniqueness)
-USE_PRIVATE_API="false" # use to deploy private master endpoint
+DEPLOYMENT_NAME="dzprivate5" # here enter unique deployment name (ideally short and with letters for global uniqueness)
+USE_PRIVATE_API="true" # use to deploy private master endpoint
 USE_POD_SUBNET="true"
 USE_OVERLAY="false"
 
 AAD_GROUP_ID="9329d38c-5296-4ecb-afa5-3e74f9abe09f --enable-azure-rbac" # here the AAD group that will be used to lock down AKS authentication
-LOCATION="uksouth" #"northeurope" #"southcentralus" #"eastus2euap" #"westeurope" # here enter the datacenter location can be eastus or westeurope
+LOCATION="eastus2" #"northeurope" #"southcentralus" #"eastus2euap" #"westeurope" # here enter the datacenter location can be eastus or westeurope
 KUBE_GROUP=$DEPLOYMENT_NAME # here enter the resources group name of your AKS cluster
 KUBE_NAME=$DEPLOYMENT_NAME # here enter the name of your kubernetes resource
 NODE_GROUP=$KUBE_GROUP"_"$KUBE_NAME"_nodes_"$LOCATION # name of the node resource group
@@ -257,7 +257,7 @@ if [ "$AKS_ID" == "" ]; then
 
     az aks maintenanceconfiguration add -g $KUBE_GROUP --cluster-name $KUBE_NAME --name tuesday --weekday Tuesday  --start-hour 13
     
-    az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name armpool --node-count 2 --node-vm-size Standard_Dpds_v5
+    #az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name armpool --node-count 2 --node-vm-size Standard_Dpds_v5
 
     AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
     echo "created AKS $AKS_ID"

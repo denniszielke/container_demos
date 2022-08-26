@@ -72,6 +72,8 @@ kubectl run alp --image=alpine:3.6
 kubectl run alp --image=quay.io/collectai/alpine-curl
 
 docker run --rm jess/curl -sSL ipinfo.io/ip
+
+while true; do kubectl get pod -A -o wide ; done
 ```
 
 ## Steps how to attach public IP to a worker node

@@ -785,6 +785,7 @@ spec:
             storage: 100Gi
 EOF
 
+cat <<EOF | kubectl apply -f -
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -818,6 +819,153 @@ spec:
             requests:
               storage: 100Gi
   backoffLimit: 4
+EOF
+
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-blob-fuse
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain  # If set as "Delete" container would be removed after pvc deletion
+  storageClassName: azureblob-nfs-premium
+  mountOptions:
+    - nconnect=8  # only supported on linux kernel version >= 5.3
+  csi:
+    driver: blob.csi.azure.com
+    readOnly: false
+    volumeHandle: unique-volumeid
+    volumeAttributes:
+      resourceGroup: $NODE_GROUP
+      storageAccount: a2f$KUBE_NAME
+      containerName: blobs
+      protocol: nfs
+EOF
+
+cat <<EOF | kubectl apply -f -
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-blob-nfs
+  annotations:
+      volume.beta.kubernetes.io/storage-class: azureblob-nfs-premium
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: azureblob-nfs-premium
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: blobnfs
+spec:
+  template:
+    spec:
+      containers:
+      - name: dbench
+        image: denniszielke/dbench:latest
+        imagePullPolicy: Always
+        env:
+          - name: DBENCH_MOUNTPOINT
+            value: /data
+          # - name: DBENCH_QUICK
+          #   value: "yes"
+          - name: FIO_SIZE
+            value: 1G
+          - name: FIO_OFFSET_INCREMENT
+            value: 256M
+          # - name: FIO_DIRECT
+          #   value: "0"
+        volumeMounts:
+        - name: dbench-pv
+          mountPath: /data
+      restartPolicy: Never
+      volumes:
+      - name: dbench-pv
+        persistentVolumeClaim:
+          claimName: pvc-blob-nfs
+  backoffLimit: 4
+EOF
+
+
+cat <<EOF | kubectl apply -f -
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-blob-fuse
+  annotations:
+      volume.beta.kubernetes.io/storage-class: azureblob-fuse-premium
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: azureblob-fuse-premium
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: blobfuse
+spec:
+  template:
+    spec:
+      containers:
+      - name: dbench
+        image: denniszielke/dbench:latest
+        imagePullPolicy: Always
+        env:
+          - name: DBENCH_MOUNTPOINT
+            value: /data
+          # - name: DBENCH_QUICK
+          #   value: "yes"
+          #- name: FIO_SIZE
+          #  value: 1G
+          #- name: FIO_OFFSET_INCREMENT
+          #  value: 256M
+          # - name: FIO_DIRECT
+          #   value: "0"
+        volumeMounts:
+        - name: dbench-pv
+          mountPath: /data
+      restartPolicy: Never
+      volumes:
+      - name: dbench-pv
+        persistentVolumeClaim:
+          claimName: pvc-blob-fuse
+  backoffLimit: 4
+EOF
+
+cat <<EOF | kubectl apply -f -
+kind: Pod
+apiVersion: v1
+metadata:
+  name: nginx-blob
+spec:
+  nodeSelector:
+    "kubernetes.io/os": linux
+  containers:
+    - image: mcr.microsoft.com/oss/nginx/nginx:1.17.3-alpine
+      name: nginx-blob
+      volumeMounts:
+        - name: blob01
+          mountPath: "/mnt/blob"
+  volumes:
+    - name: blob01
+      persistentVolumeClaim:
+        claimName: pvc-blob-fuse
 EOF
 ```
 
@@ -928,7 +1076,11 @@ Average Latency (usec) Read/Write: 2681.44/1879.12
 Sequential Read/Write: 232MiB/s / 184MiB/s
 Mixed Random Read/Write IOPS: 11.7k/3849
 
-# eastus premium files
+# blob nfs
+Random Read/Write IOPS: 6473/44. BW: 811MiB/s / 5682KiB/s
+Average Latency (usec) Read/Write: 6595.41/490.90
+Sequential Read/Write: 1208MiB/s / 32.6MiB/s
+Mixed Random Read/Write IOPS: 51/17
 
 https://docs.microsoft.com/en-us/azure/storage/files/storage-troubleshooting-files-nfs
 

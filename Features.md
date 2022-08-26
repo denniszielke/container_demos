@@ -86,7 +86,7 @@ az feature register --namespace "Microsoft.ContainerService" --name "SnapshotPre
 az feature register --namespace "Microsoft.ContainerService" --name "HTTP-Application-Routing"
 az feature register --namespace "Microsoft.ContainerService" --name "AKS-KedaPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "AKSARM64Preview"
-
+az feature register --namespace "Microsoft.ContainerService" --name "EnableBlobCSIDriver"
 
 az feature register --name PrivatePreview --namespace Microsoft.Dashboard
 

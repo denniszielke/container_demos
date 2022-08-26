@@ -26,10 +26,10 @@ COPY --chown=1001 target/quarkus-app/lib/main/com.microsoft.azure.applicationins
 # ENV APPLICATIONINSIGHTS_CONNECTION_STRING='InstrumentationKey='
 # ENV ENDPOINT_HOST=localhost
 # ENV ENDPOINT_PORT=3000
-ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -javaagent:/work/applicationinsights-agent.jar"
+#ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 
 
 EXPOSE 8080
 USER 1001
-#CMD ["./application", "-Dquarkus.http.host=0.0.0.0", "-javaagent:/work/application/applicationinsights-agent.jar"]
-CMD ["./application", "-Dquarkus.http.host=0.0.0.0"]
+CMD ["./application", "-Dquarkus.http.host=0.0.0.0", "-javaagent:/work/application/applicationinsights-agent.jar"]
+#CMD ["./application", "-Dquarkus.http.host=0.0.0.0"]

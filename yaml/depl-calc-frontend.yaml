@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calc-frontend-app
+  labels:
+    app: calc-frontend-app
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: calc-frontend-app
+  template:
+    metadata:
+      labels:
+        app: calc-frontend-app
+    spec:
+      containers:
+      - name: calc-frontend-app
+        image: ghcr.io/{.registry}/demos/js-calc-frontend:{.tag}
+        ports:
+        - containerPort: 8080
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /ping
+            port: 8080
+        readinessProbe:
+          httpGet:
+            path: /ping
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "250Mi"
+            cpu: "200m"
+          limits:
+            memory: "500Mi"
+            cpu: "300m"
+        env: 
+          - name: "PORT"
+            value: "8080"
+          - name: "VERSION"
+            value: "{.version}"
+          - name: "ENDPOINT_HOST"
+            value: "calc-frontend-svc"
+          - name: "ENDPOINT_PORT"
+            value: "80"
+          - name: "BUGGY"
+            value: "false"
+          - name: "LAGGY"
+            value: "false"
+          - name: "ENDPOINT"
+            value: "calc-backend-svc"
+          - name: "INSTRUMENTATIONKEY"
+            valueFrom:
+              secretKeyRef:
+                name: appconfig
+                key: applicationInsightsConnectionString
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calc-frontend-svc
+  labels:
+    app.kubernetes.io/name: calc-frontend-service
+    app.kubernetes.io/version: 1.0.0
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  selector:
+    app: calc-frontend-app
+  type: ClusterIP
