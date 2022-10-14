@@ -37,13 +37,6 @@ echo $OBJECT_ID
 az ad app update --id $OBJECT_ID --set oauth2Permissions[0].isEnabled=false
 az ad app update --id $OBJECT_ID --set oauth2Permissions=[]
 
-APP_HOSTNAME="ndzauthd2.northeurope.cloudapp.azure.com"
-AD_APP_NAME="ndzauthd2-easy-auth-proxy"
-CLIENT_ID=0f9db807-a00e-409f-a124-fe909c2e50da
-OBJECT_ID=8f825070-cf3c-4580-8dec-84c01e07e78a
-CLIENT_SECRET=b3k8Q~779XETiNrX9LxlawZ7y2Q0XCLmGJuPIat7
-AZURE_TENANT_ID=$(az account show --query tenantId -o tsv)
-TLS_SECRET_NAME=ndzauthd2-tls
 
 # The newly registered app does not have a password.  Use "az ad app credential reset" to add password and save to a variable.
 CLIENT_SECRET=$(az ad app credential reset --id $CLIENT_ID -o json | jq '.password' -r)
