@@ -2,6 +2,7 @@
 
 https://github.com/virtual-kubelet/virtual-kubelet
 https://github.com/virtual-kubelet/azure-aci/blob/master/README.md
+https://github.com/virtual-kubelet/azure-aci/blob/master/README.md#manual-set-up
 
 0. Variables
 ```

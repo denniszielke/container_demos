@@ -13,7 +13,7 @@ AKS_SUBNET_ID=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --que
 AKS_SUBNET_NAME="aks-5-subnet"
 KUBE_ING_SUBNET_NAME="ing-4-subnet"
 APP_NAMESPACE="dummy-logger"
-SECRET_NAME="mytls-cert-secret"
+SECRET_NAME="kong-cert-secret"
 VAULT_NAME=dzkv$KUBE_NAME 
 
 AKS_CONTROLLER_CLIENT_ID="$(az identity list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME-ctl-id')].clientId" -o tsv)"
@@ -22,7 +22,7 @@ AKS_CONTROLLER_RESOURCE_ID="$(az identity list -g $KUBE_GROUP --query "[?contain
 IP_ID=$(az network public-ip list -g $KUBE_GROUP --query "[?contains(name, 'kongingress')].id" -o tsv)
 if [ "$IP_ID" == "" ]; then
     echo "creating ingress ip kongingress"
-    az network public-ip create -g $KUBE_GROUP -n kongingress --sku STANDARD --dns-name $KUBE_NAME -o none
+    az network public-ip create -g $KUBE_GROUP -n kongingress --sku STANDARD --dns-name k$KUBE_NAME -o none
     IP_ID=$(az network public-ip show -g $KUBE_GROUP -n kongingress -o tsv --query id)
     IP=$(az network public-ip show -g $KUBE_GROUP -n kongingress -o tsv --query ipAddress)
     DNS=$(az network public-ip show -g $KUBE_GROUP -n kongingress -o tsv --query dnsSettings.fqdn)
@@ -63,33 +63,33 @@ helm repo add kuma https://kumahq.github.io/charts
 helm repo update
 # https://github.com/Kong/charts/blob/main/charts/kong/README.md
 
-# helm upgrade kong-ingress kong/kong --install \
-#     --set ingressController.installCRDs=false \
-#     --namespace ingress \
-#     --set replicaCount=2 \
-#     --set proxy.loadBalancerIP="$IP" \
-#     --set proxy.externalTrafficPolicy="Local" \
-#     --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-load-balancer-resource-group'="$KUBE_GROUP" \
-#     --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pip-name'="kongingress" \
-#     --set autoscaling.enabled=true --wait
-
 helm upgrade kong-ingress kong/kong --install \
     --set ingressController.installCRDs=false \
     --namespace ingress \
     --set replicaCount=2 \
+    --set proxy.loadBalancerIP="$IP" \
     --set proxy.externalTrafficPolicy="Local" \
-    --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-load-balancer-internal'="true" \
-    --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pls-create'="true" \
-    --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pls-name'="internalpls" \
-    --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pls-ip-configuration-subnet'="ing-4-subnet" \
-    --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pls-proxy-protocol'="false" \
-    --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pls-visibility'="*" \
+    --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-load-balancer-resource-group'="$KUBE_GROUP" \
+    --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pip-name'="kongingress" \
     --set autoscaling.enabled=true --wait
+
+# helm upgrade kong-ingress kong/kong --install \
+#     --set ingressController.installCRDs=false \
+#     --namespace ingress \
+#     --set replicaCount=2 \
+#     --set proxy.externalTrafficPolicy="Local" \
+#     --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-load-balancer-internal'="true" \
+#     --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pls-create'="true" \
+#     --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pls-name'="internalpls" \
+#     --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pls-ip-configuration-subnet'="ing-4-subnet" \
+#     --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pls-proxy-protocol'="false" \
+#     --set-string proxy.annotations.'service\.beta\.kubernetes\.io/azure-pls-visibility'="*" \
+#     --set autoscaling.enabled=true --wait
 
 sleep 5
 
 
-helm upgrade kuma kuma/kuma --create-namespace --namespace kuma-system  --install
+#helm upgrade kuma kuma/kuma --create-namespace --namespace kuma-system  --install
 
 #kubectl port-forward svc/kuma-control-plane -n kuma-system 5681:5681
 
@@ -125,7 +125,29 @@ spec:
               number: 80
 EOF
 
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.9.1/cert-manager.yaml
 
+kubectl apply -f - <<EOF
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: dz@microsoft.com #please change this/this is an optional, but recommended setting
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    server: https://acme-v02.api.letsencrypt.org/directory
+    solvers:
+    - http01:
+        ingress:
+          podTemplate:
+             metadata:
+               annotations:
+                 kuma.io/sidecar-injection: "false"   # If ingress is running in Kuma/Kong Mesh, disable sidecar injection
+                 sidecar.istio.io/inject: "false"  # If using Istio, disable sidecar injection
+          class: kong
+EOF
 
 kubectl apply -f - <<EOF
 apiVersion: networking.k8s.io/v1
@@ -134,13 +156,13 @@ metadata:
   name: https-$APP_NAMESPACE
   namespace: $APP_NAMESPACE
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:  
   tls:
   - hosts:
     - $DNS
     secretName: $SECRET_NAME
-  ingressClassName: nginx
+  ingressClassName: kong
   rules:
   - host: $DNS
     http:

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: host-daemon
+  labels:
+    app: host-daemon
+spec:
+  selector:
+    matchLabels:
+      name: host-daemon
+  template:
+    metadata:
+      labels:
+        name: host-daemon
+    spec:
+      containers:
+        - name: centos
+          securityContext:
+            privileged: true
+          image: centos
+          imagePullPolicy: Always
+          env:
+            - name: MY_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          command: [ "sh", "-c"]
+          args:
+          - while true; do
+              echo "check-host $MY_NODE_NAME" > /mnt/host/status.txt;
+              echo "writing status";
+              sleep 10000;
+            done;
+          resources:
+            requests:
+              cpu: 5m
+              memory: 50Mi
+          volumeMounts:
+            - name: host-mount
+              mountPath: /mnt/host
+              readOnly: false
+      volumes:
+      - name: host-mount
+        hostPath:
+          path: /tmp
+          type: Directory

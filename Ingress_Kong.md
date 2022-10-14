@@ -309,3 +309,14 @@ env:
 # Override the host header on requests so that it can be used to set the l5d-dst-override header
 - name: HOST_OVERRIDE
   value: web-svc.emojivoto
+
+
+
+curl -X POST "https://login.microsoftonline.com/<your_tenant_id>/oauth2/v2.0/token" \
+--data scope="<your_client_id>/.default" \
+--data grant_type="client_credentials" \
+--data client_id="<your_client_id>" \
+--data client_secret="<your_client_secret>"
+
+
+curl --header 'Authorization: bearer <token_from_above>' '<admin-hostname>:8000/httpbin-azure'

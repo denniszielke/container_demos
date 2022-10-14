@@ -11,7 +11,7 @@ API_APP_SECRET=
 ## Nginx
 
 ```
-INGRESS_NAMESPACE="nginx"
+INGRESS_NAMESPACE="ingress"
 DNS="dzapps1.westeurope.cloudapp.azure.com"
 APP_NAMESPACE="loggers"
 
@@ -31,7 +31,7 @@ controller:
 
 echo "create ingress"
 
-helm upgrade nginx-controller nginx/nginx-ingress --install --set controller.stats.enabled=true --set controller.replicaCount=1 --set controller.service.externalTrafficPolicy=Local --set-string controller.pod.annotations.'dapr\.io/enabled'="true" --set-string controller.pod.annotations.'dapr\.io/app-id'="nginx" --set-string controller.pod.annotations.'dapr\.io/app-protocol'="http" --set-string controller.pod.annotations.'dapr\.io/app-port'="80" --set-string controller.pod.annotations.'dapr\.io/port'="80" --namespace=$INGRESS_NAMESPACE 
+helm upgrade nginx-controller ingress-nginx/ingress-nginx  --install --set controller.stats.enabled=true --set controller.replicaCount=1 --set controller.service.externalTrafficPolicy=Local --set-string controller.pod.annotations.'dapr\.io/enabled'="true" --set-string controller.pod.annotations.'dapr\.io/app-id'="nginx" --set-string controller.pod.annotations.'dapr\.io/app-protocol'="http" --set-string controller.pod.annotations.'dapr\.io/app-port'="80" --set-string controller.pod.annotations.'dapr\.io/port'="80" --namespace=$INGRESS_NAMESPACE 
 
 kubectl patch deployment nginx -n app-routing-system -p '{"spec": {"template":{"metadata":{"annotations":{"dapr.io/app-por":"80"}}}} }'
 

@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
       - name: calc-requester-app
-        image: ghcr.io/{.registry}/demos/java-calc-requester:2861460758
+        image: ghcr.io/{.registry}/demos/java-calc-requester:2935495540
         ports:
         - containerPort: 8080
         imagePullPolicy: Always

@@ -80,7 +80,7 @@ set up without helm chart
 
 ```
 cat <<EOF | kubectl apply -f -
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: oauth2-proxy
@@ -134,7 +134,7 @@ spec:
 EOF
 
 cat <<EOF | kubectl create -f -
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: oauth2-proxy-ingress
@@ -158,7 +158,7 @@ spec:
 EOF
 
 cat <<EOF | kubectl apply -f -
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: hello-auth
@@ -190,7 +190,7 @@ EOF
 create the ingress with oauth2 support
 ```
 cat <<EOF | kubectl create -f -
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: authproxy-ingress
@@ -224,7 +224,7 @@ Deploy ingress for service
 
 ```
 cat <<EOF | kubectl create -f -
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: hello-external-oauth2

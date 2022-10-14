@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: host-deploy
+  labels:
+    app: host-deploy
+spec:
+  replicas: 2
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1 
+  selector:
+    matchLabels:
+      app: host-deploy
+  template:
+    metadata:
+      labels:
+        app: host-deploy
+    spec:
+      containers:
+      - name: centos
+        image: centos
+        imagePullPolicy: Always
+        command: [ "sh", "-c"]
+        args:
+        - while true; do
+            tail /mnt/host/status.txt;
+            echo "reading status";
+            sleep 10000;
+          done;
+        ports:
+        - containerPort: 2580
+          name: http
+        # livenessProbe:
+        #   httpGet:
+        #     path: /
+        #     port: 2580
+        # readinessProbe:
+        #   httpGet:
+        #     path: /
+        #     port: 2580
+        #   initialDelaySeconds: 10
+        #   periodSeconds: 5
+        resources:
+          requests:
+            memory: "1000Mi"
+            cpu: "1000m"
+        volumeMounts:
+          - name: host-mount
+            mountPath: /mnt/host
+            readOnly: true
+      volumes:
+      - name: host-mount
+        hostPath:
+          path: /tmp
+          type: Directory

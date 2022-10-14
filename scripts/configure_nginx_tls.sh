@@ -14,7 +14,7 @@ AKS_SUBNET_ID=$(az aks show --resource-group $KUBE_GROUP --name $KUBE_NAME --que
 AKS_SUBNET_NAME="aks-5-subnet"
 KUBE_ING_SUBNET_NAME="ing-4-subnet"
 APP_NAMESPACE="dummy-logger"
-SECRET_NAME="mytls-cert-secret"
+SECRET_NAME="nginx-cert-secret"
 VAULT_NAME=dzkv$KUBE_NAME 
 
 AKS_CONTROLLER_CLIENT_ID="$(az identity list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME-ctl-id')].clientId" -o tsv)"
@@ -23,7 +23,7 @@ AKS_CONTROLLER_RESOURCE_ID="$(az identity list -g $KUBE_GROUP --query "[?contain
 IP_ID=$(az network public-ip list -g $KUBE_GROUP --query "[?contains(name, 'nginxingress')].id" -o tsv)
 if [ "$IP_ID" == "" ]; then
     echo "creating ingress ip nginxingress"
-    az network public-ip create -g $KUBE_GROUP -n nginxingress --sku STANDARD --dns-name $KUBE_NAME -o none
+    az network public-ip create -g $KUBE_GROUP -n nginxingress --sku STANDARD --dns-name n$KUBE_NAME -o none
     IP_ID=$(az network public-ip show -g $KUBE_GROUP -n nginxingress -o tsv --query id)
     IP=$(az network public-ip show -g $KUBE_GROUP -n nginxingress -o tsv --query ipAddress)
     DNS=$(az network public-ip show -g $KUBE_GROUP -n nginxingress -o tsv --query dnsSettings.fqdn)
@@ -64,9 +64,9 @@ helm repo add jetstack https://charts.jetstack.io
 helm repo update
 
 
-helm upgrade cert-manager jetstack/cert-manager \
-  --namespace ingress --install \
-  --set installCRDs=true  --wait
+# helm upgrade cert-manager jetstack/cert-manager \
+#   --namespace ingress --install \
+#   --set installCRDs=true  --wait
 
 helm upgrade nginx-ingress ingress-nginx/ingress-nginx --install \
     --namespace ingress \
@@ -77,8 +77,8 @@ helm upgrade nginx-ingress ingress-nginx/ingress-nginx --install \
     --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz  \
     --set-string controller.service.annotations.'service\.beta\.kubernetes\.io/azure-load-balancer-resource-group'="$KUBE_GROUP" \
     --set-string controller.service.annotations.'service\.beta\.kubernetes\.io/azure-pip-name'="nginxingress" \
-    --set controller.service.externalTrafficPolicy=Local  \
-    --set-string controller.podAnnotations.'linkerd\.io/inject'="enabled" --wait
+    --set controller.service.externalTrafficPolicy=Local #\
+    #--set-string controller.podAnnotations.'linkerd\.io/inject'="enabled" --wait
 
 sleep 5
 
@@ -132,23 +132,3 @@ spec:
 EOF
 
 echo $DNS
-
-exit
-
-OUTPUT=${1:-"$HOME/certificates"}
-
-DOMAIN=$(kubectl get secret -n $APP_NAMESPACE $SECRET_NAME -o json | jq -r '.data."tls.crt"' | base64 -d | openssl x509 -noout -text | grep "Subject: CN=" | sed -E 's/\s+Subject: CN=([^ ]*)/\1/g')
-echo -n " ${DOMAIN}"
-
-mkdir -p "${OUTPUT}/${DOMAIN}"
-
-kubectl get secret -n ${APP_NAMESPACE} ${SECRET_NAME} -o json | jq -r '.data."tls.key"' | base64 -d > "${OUTPUT}/${DOMAIN}/privkey.pem"
-kubectl get secret -n ${APP_NAMESPACE} ${SECRET_NAME}  -o json | jq -r '.data."tls.crt"' | base64 -d > "${OUTPUT}/${DOMAIN}/fullchain.pem"
-#kubectl get secret -n dummy-logger dummy-cert-secret -o json | jq -r '.data."tls.crt"' | base64 -d
-
-
-openssl pkcs12 -export -in "${OUTPUT}/${DOMAIN}/fullchain.pem" -inkey "${OUTPUT}/${DOMAIN}/privkey.pem" -out "${OUTPUT}/${DOMAIN}/$SECRET_NAME.pfx"
-
-
-az keyvault certificate import --vault-name ${VAULT_NAME} -n $SECRET_NAME -f "${OUTPUT}/${DOMAIN}/$SECRET_NAME.pfx"
-
