@@ -84,8 +84,9 @@ app.post('/api/calculate', async (req, res, next) => {
     }
 
     const randomvictim = Math.floor((Math.random() * 20) + 1);
-    if (config.buggy && randomvictim){
+    if (config.buggy && randomvictim > 19){
         victim = true;
+        console.log("request is randomly selected as victim");
     }
 
     if (config.cacheEndPoint){
