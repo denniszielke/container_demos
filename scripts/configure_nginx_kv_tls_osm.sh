@@ -7,9 +7,6 @@ KUBE_NAME=$1
 KUBE_GROUP=$2
 USE_ADDON=$3
 
-KUBE_NAME=dzmtls
-KUBE_GROUP=dzmtls
-
 SUBSCRIPTION_ID=$(az account show --query id -o tsv) #subscriptionid
 TENANT_ID=$(az account show --query tenantId -o tsv)
 LOCATION=$(az group show -n $KUBE_GROUP --query location -o tsv)

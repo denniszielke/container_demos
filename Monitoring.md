@@ -13,6 +13,10 @@ export DUMMY_LOGGER_IP=$(kubectl get svc dummy-logger-pub-lb  -o jsonpath='{.sta
 curl -X POST http://$DUMMY_LOGGER_IP/api/log -H "message: {more: content}" 
 curl -X POST http://$DUMMY_LOGGER_IP/api/log -H "message: hi" 
 
+for i in {1..100}; do curl -s -w "%{time_total}\n" -o /dev/null -X POST http://$DUMMY_LOGGER_IP/api/log -H "message: hi"; done
+
+for i in {1..100000}; do curl -s -w "%{time_total}\n" -X POST http://$DUMMY_LOGGER_IP/api/log -H "message: hi $i"; done
+
 curl -X GET http://$CRASHING_APP_IP/crash
 ```
 
@@ -175,3 +179,8 @@ AzureDiagnostics
 | extend subresource=tostring(event.objectRef.subresource)
 | extend lat=datetime_diff('Millisecond', todatetime(event.stageTimestamp), todatetime(event.requestReceivedTimestamp))
 | summarize count() by bin(PreciseTimeStamp, 1m), code
+
+
+
+az deployment group create --resource-group $KUBE_GROUP --template-file ./existingClusterOnboarding.json --parameters @./existingClusterParam.json
+

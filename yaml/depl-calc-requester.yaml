@@ -1,7 +1,13 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {.requester-namespace}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: calc-requester-app
+  namespace: {.requester-namespace}
   labels:
     app: calc-requester-app
 spec:
@@ -39,11 +45,11 @@ spec:
           periodSeconds: 5
         resources:
           requests:
-            memory: "250Mi"
-            cpu: "200m"
+            memory: "100Mi"
+            cpu: "20m"
           limits:
-            memory: "500Mi"
-            cpu: "300m"
+            memory: "400Mi"
+            cpu: "200m"
         env: 
           - name: "PORT"
             value: "8080"
@@ -63,9 +69,13 @@ apiVersion: v1
 kind: Service
 metadata:
   name: calc-requester-svc
+  namespace: {.requester-namespace}
   labels:
     app.kubernetes.io/name: calc-requester-service
     app.kubernetes.io/version: 1.0.0
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "ing-4-subnet"
 spec:
   ports:
   - name: http
@@ -73,4 +83,4 @@ spec:
     targetPort: 8080
   selector:
     app: calc-requester-app
-  type: ClusterIP
+  type: LoadBalancer

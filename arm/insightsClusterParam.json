@@ -1,0 +1,29 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "aksResourceId": {
+        "value": "/subscriptions/SUBSCRIPTION_ID/resourcegroups/GROUP/providers/Microsoft.ContainerService/managedClusters/KUBE_NAME"
+      },
+      "aksResourceLocation": {
+        "value": "northeurope"
+      },
+      "workspaceResourceId": {
+        "value": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/GROUP/providers/Microsoft.OperationalInsights/workspaces/WORKSPACE"
+      },
+      "workspaceLocation": {
+        "value": "northeurope"
+      },
+      "resourceTagValues": {
+        "value": {
+          "project": "accounting"
+        }
+      },
+      "dataCollectionInterval":  {
+        "value" : "5m"
+      },
+      "excludeNamespacesForDataCollection": {
+        "value": [ "kube-system"]
+      }
+    }
+  }

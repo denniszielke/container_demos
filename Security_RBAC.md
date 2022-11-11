@@ -360,11 +360,13 @@ tshark -Q -i2 -O http -T json tcp port 7001 | grep http.file_data
 
 ## Auditing
 
+```
 {"kind":"Event","apiVersion":"audit.k8s.io/v1","level":"Request","auditID":"130ba120-d9b1-4b35-9e91-3366568bfd8d","stage":"ResponseComplete","requestURI":"/api/v1/namespaces/default/pods/nginx","verb":"get","user":{"username":"masterclient","groups":["system:masters","system:authenticated"]},"sourceIPs":["52.191.253.156"],"userAgent":"kubectl/v1.14.0 (linux/amd64) kubernetes/641856d","objectRef":{"resource":"pods","namespace":"default","name":"nginx","apiVersion":"v1"},"responseStatus":{"metadata":{},"status":"Failure","reason":"NotFound","code":404},"requestReceivedTimestamp":"2019-09-20T11:52:19.062985Z","stageTimestamp":"2019-09-20T11:52:19.068391Z","annotations":{"authorization.k8s.io/decision":"allow","authorization.k8s.io/reason":""}}
 
  
 
 {"kind":"Event","apiVersion":"audit.k8s.io/v1","level":"Request","auditID":"e13ca54f-9b7a-4a47-abb4-930d0b518c49","stage":"ResponseComplete","requestURI":"/api/v1/namespaces/default/pods/nginx/status","verb":"patch","user":{"username":"nodeclient","groups":["system:nodes","system:authenticated"]},"sourceIPs":["13.88.18.92"],"userAgent":"kubelet/v1.14.5 (linux/amd64) kubernetes/0e9fcb4","objectRef":{"resource":"pods","namespace":"default","name":"nginx","apiVersion":"v1","subresource":"status"},"responseStatus":{"metadata":{},"code":200},"requestObject":{"status":{"$setElementOrder/conditions":[{"type":"Initialized"},{"type":"Ready"},{"type":"ContainersReady"},{"type":"PodScheduled"}],"conditions":[{"lastTransitionTime":"2019-09-20T12:56:55Z","message":null,"reason":null,"status":"True","type":"Ready"},{"lastTransitionTime":"2019-09-20T12:56:55Z","message":null,"reason":null,"status":"True","type":"ContainersReady"}],"containerStatuses":[{"containerID":"docker://e4d6babb34b671237490bbf384326c142281bcabe0c74416ea63088146ed1500","image":"nginx:1.15.5","imageID":"docker-pullable://nginx@sha256:b73f527d86e3461fd652f62cf47e7b375196063bbbd503e853af5be16597cb2e","lastState":{},"name":"mypod","ready":true,"restartCount":0,"state":{"running":{"startedAt":"2019-09-20T12:56:55Z"}}}],"phase":"Running","podIP":"10.244.4.11"}},"requestReceivedTimestamp":"2019-09-20T12:56:55.895345Z","stageTimestamp":"2019-09-20T12:56:55.910588Z","annotations":{"authorization.k8s.io/decision":"allow","authorization.k8s.io/reason":"RBAC: allowed by ClusterRoleBinding \"system:aks-client-nodes\" of ClusterRole \"system:node\" to Group \"system:nodes\""}}
+```
 
 ## Kubernetes API
 
@@ -478,4 +480,31 @@ https://docs.microsoft.com/en-gb/azure/security-center/security-center-alerts-co
 ```
 SUBSCRIPTION_ID=
 open https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.Security/assessmentMetadata?api-version=2019-01-01-preview
+```
+
+
+# Create service account
+
+```
+
+KUBE_GROUP="dzprivate1"
+KUBE_NAME="dzprivate1"
+
+kubectl create serviceaccount jump-account --namespace kube-system
+kubectl create clusterrolebinding jump-account-binding --clusterrole=cluster-admin --serviceaccount=kube-system:jump-account --namespace kube-system
+
+kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep jump-account | awk '{print $1}')
+
+KUBE_MANAGEMENT_ENDPOINT=https://**.azmk8s.io:443
+TOKEN=
+kubectl config set-cluster dennis-user --server=$KUBE_MANAGEMENT_ENDPOINT --insecure-skip-tls-verify=true
+
+kubectl config set-credentials dennis --token=$TOKEN
+
+kubectl config set-context dennis-context --cluster=dennis-user --user=dennis
+
+kubectl config use-context dennis-context
+
+az aks command invoke --resource-group $KUBE_GROUP --name $KUBE_NAME --command "kubectl get pods -n kube-system"
+
 ```

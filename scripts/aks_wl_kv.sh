@@ -127,7 +127,7 @@ else
     echo "AKS $AKS_ID already exists"
 fi
 
-AKS_OIDC_ISSUER="$(az aks show -n $KUBE_NAME -g KUBE_GROUP --query "oidcIssuerProfile.issuerUrl" -o tsv)"
+AKS_OIDC_ISSUER="$(az aks show -n $KUBE_NAME -g $KUBE_GROUP --query "oidcIssuerProfile.issuerUrl" -o tsv)"
 
 echo "setting up azure monitor"
 

@@ -15,7 +15,7 @@ az feature list --namespace Microsoft.KubernetesConfiguration -o table
 az feature list --namespace Microsoft.EventGrid -o table
 az feature list --namespace Microsoft.OperationalInsights -o table
 az feature list --namespace Microsoft.Dashboard -o table
-
+az feature list --namespace Microsoft.ServiceNetworking -o table
 ```
 
 Register a feature and reregister the provider
@@ -76,6 +76,7 @@ az feature register --namespace "Microsoft.ContainerService" --name "DisableLoca
 az feature register --namespace "Microsoft.ContainerService" --name "AKS-ScaleDownModePreview"
 az feature register --namespace "Microsoft.ContainerService" --name "AKS-NATGatewayPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "AKS-Dapr"
+az feature register --namespace "Microsoft.ContainerService" --name "PreviewStartStopAgentPool"
 az feature register --namespace "Microsoft.ContainerService" --name "EnableMultipleStandardLoadBalancers"
 az feature register --namespace "Microsoft.ContainerService" --name "EnablePodIdentityPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "EnableOIDCIssuerPreview"
@@ -89,8 +90,21 @@ az feature register --namespace "Microsoft.ContainerService" --name "AKSARM64Pre
 az feature register --namespace "Microsoft.ContainerService" --name "EnableBlobCSIDriver"
 az feature register --namespace "Microsoft.ContainerService" --name "EnableImageCleanerPreview"
 az feature register --namespace "Microsoft.ContainerService" --name "FleetResourcePreview"
-  
-
+az feature register --namespace "Microsoft.ContainerService" --name "KubeProxyConfigurationPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "CiliumDataplanePreview"
+az feature register --namespace "Microsoft.ContainerService" --name "WasmNodePoolPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "EnablePrivateClusterSubZone"
+az feature register --namespace "Microsoft.ContainerService" --name "EnableWorkloadIdentityPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "EnableAzureDiskCSIDriverV2"
+az feature register --namespace "Microsoft.ContainerService" --name "AzureOverlayPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "AKS-PrometheusAddonPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "KataVMIsolationPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "AutoUpgradePreview"
+az feature register --namespace "Microsoft.ContainerService" --name "AKS-ExtensionManager"
+az feature register --namespace "Microsoft.ContainerService" --name "AKSNodelessPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "AKS-ExtensionManager"
+az feature register --namespace "Microsoft.ContainerService" --name "CiliumDataplanePreview"
+az feature register --namespace "Microsoft.ContainerService" --name "EnableAPIServerVnetIntegrationPreview" 
 
 az feature register --name PrivatePreview --namespace Microsoft.Dashboard
 
@@ -101,8 +115,9 @@ az feature register --namespace "Microsoft.Network" --name "AllowApplicationGate
 az feature register --namespace "Microsoft.Network" --name "AllowApplicationGatewayRelaxedOutboundRestrictions"
 az feature register --namespace "Microsoft.Network" --name "AllowApplicationGatewayLoadDistributionPolicy"
 
-
-
+az feature list --namespace Microsoft.App -o table
+az feature register --namespace "microsoft.app" --name "ServerlessCompute"
+az feature register --namespace "microsoft.app" --name "PrereleaseApiVersionAllowed"
 
 az feature register --namespace "microsoft.storage" --name "AllowNFSV3"
 az feature register --namespace "microsoft.storage" --name "PremiumHns"
@@ -114,6 +129,9 @@ az feature register --namespace "Microsoft.RedHatOpenShift" --name "INT-APPROVED
 az provider register -n "Microsoft.RedHatOpenShift" --wait
 
 az feature register --namespace "Microsoft.Compute" --name "SharedDisksForPremium"
+
+az feature list --namespace Microsoft.ServiceNetworking -o table
+az feature register --namespace "Microsoft.ServiceNetworking" --name "AllowTrafficController"
 
 ```
 
@@ -128,6 +146,12 @@ az provider register --namespace Microsoft.ContainerService
 az provider register --namespace Microsoft.Network
 az provider register --namespace Microsoft.storage
 az provider register --namespace Microsoft.PolicyInsights
+az provider register --namespace Microsoft.Insights
+az provider register --namespace Microsoft.AlertsManagement
+az provider register --namespace Microsoft.OperationsManagement
+az provider register --namespace Microsoft.ServiceNetworking
+
+az provider show -n Microsoft.ServiceNetworking
 
 az provider unregister --namespace Microsoft.ContainerService
 az provider unregister --namespace Microsoft.Network

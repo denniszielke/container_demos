@@ -8,13 +8,15 @@
 
 set -e
 
-DEPLOYMENT_NAME="dzlinked7" # here enter unique deployment name (ideally short and with letters for global uniqueness)
-USE_PRIVATE_API="false" # use to deploy private master endpoint
+DEPLOYMENT_NAME="dzprivate1" # here enter unique deployment name (ideally short and with letters for global uniqueness)
+USE_PRIVATE_API="true" # use to deploy private master endpoint
 USE_POD_SUBNET="true"
 USE_OVERLAY="false"
+USE_CILIUM="" #" --enable-cilium-dataplane"
+VNET_PREFIX="6"
 
 AAD_GROUP_ID="9329d38c-5296-4ecb-afa5-3e74f9abe09f --enable-azure-rbac" # here the AAD group that will be used to lock down AKS authentication
-LOCATION="northeurope" #"northeurope" #"southcentralus" #"eastus2euap" #"westeurope" # here enter the datacenter location can be eastus or westeurope
+LOCATION="eastus" # "northcentralus" "northeurope" #"southcentralus" #"eastus2euap" #"westeurope" # here enter the datacenter location can be eastus or westeurope
 KUBE_GROUP=$DEPLOYMENT_NAME # here enter the resources group name of your AKS cluster
 KUBE_NAME=$DEPLOYMENT_NAME # here enter the name of your kubernetes resource
 NODE_GROUP=$KUBE_GROUP"_"$KUBE_NAME"_nodes_"$LOCATION # name of the node resource group
@@ -33,12 +35,16 @@ TENANT_ID=$(az account show --query tenantId -o tsv)
 KUBE_VERSION=$(az aks get-versions -l $LOCATION --query 'orchestrators[?default == `true`].orchestratorVersion' -o tsv) # here enter the kubernetes version of your AKS
 KUBE_CNI_PLUGIN="azure" # azure # kubenet
 MY_OWN_OBJECT_ID=$(az ad signed-in-user show --query objectId --output tsv) # this will be your own aad object id
-DNS_ID=$(az network dns zone list -g appconfig -o tsv --query "[].id")
+#DNS_ID=$(az network dns zone list -g appconfig -o tsv --query "[].id")
 OUTBOUNDTYPE=""
 #az account set --subscription $SUBSCRIPTION_ID
+PROM_RESOURCE_ID="/subscriptions/$SUBSCRIPTION_ID/resourcegroups/observability/providers/microsoft.monitor/accounts/observability"
+GF_WORKSPACE="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/observability/providers/Microsoft.Dashboard/grafana/gfdashboards"
 
 az extension add --name aks-preview
 az extension update --name aks-preview
+
+echo "deploying into subscription $SUBSCRIPTION_ID"
 
 if [ $(az group exists --name $KUBE_GROUP) = false ]; then
     echo "creating resource group $KUBE_GROUP..."
@@ -68,15 +74,15 @@ echo "setting up vnet"
 VNET_RESOURCE_ID=$(az network vnet list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_VNET_NAME')].id" -o tsv)
 if [ "$VNET_RESOURCE_ID" == "" ]; then
     echo "creating vnet $KUBE_VNET_NAME..."
-    az network vnet create  --address-prefixes "10.0.0.0/16"  -g $KUBE_GROUP -n $KUBE_VNET_NAME -o none
-    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $BASTION_SUBNET_NAME --address-prefix 10.0.0.0/24  -o none 
-    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_API_SUBNET_NAME --address-prefix 10.0.1.0/24 --delegations Microsoft.ContainerService/managedClusters  -o none
-    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_FW_SUBNET_NAME --address-prefix 10.0.3.0/24  -o none
-    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $APPGW_SUBNET_NAME --address-prefix 10.0.2.0/24  -o none
-    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_ING_SUBNET_NAME --address-prefix 10.0.4.0/24  -o none
-    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --address-prefix 10.0.5.0/24   -o none
-    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $POD_AGENT_SUBNET_NAME --address-prefix 10.0.8.0/22   -o none
-    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $ACI_AGENT_SUBNET_NAME --address-prefix 10.0.16.0/20   -o none
+    az network vnet create  --address-prefixes "10.$VNET_PREFIX.0.0/19"  -g $KUBE_GROUP -n $KUBE_VNET_NAME -o none
+    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $BASTION_SUBNET_NAME --address-prefix 10.$VNET_PREFIX.0.0/24  -o none 
+    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_API_SUBNET_NAME --address-prefix 10.$VNET_PREFIX.1.0/24 --delegations Microsoft.ContainerService/managedClusters  -o none
+    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_FW_SUBNET_NAME --address-prefix 10.$VNET_PREFIX.3.0/24  -o none
+    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $APPGW_SUBNET_NAME --address-prefix 10.$VNET_PREFIX.2.0/24  -o none
+    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_ING_SUBNET_NAME --address-prefix 10.$VNET_PREFIX.4.0/24 -o none
+    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --address-prefix 10.$VNET_PREFIX.5.0/24   -o none
+    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $POD_AGENT_SUBNET_NAME --address-prefix 10.$VNET_PREFIX.8.0/22   -o none
+    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $ACI_AGENT_SUBNET_NAME --address-prefix 10.$VNET_PREFIX.16.0/20   -o none
     VNET_RESOURCE_ID=$(az network vnet show -g $KUBE_GROUP -n $KUBE_VNET_NAME --query id -o tsv)
     echo "created $VNET_RESOURCE_ID"
 else
@@ -100,6 +106,12 @@ if [ "$NSG_RESOURCE_ID" == "" ]; then
     #az lock create --name $APPGW_SUBNET_NAME --lock-type ReadOnly --resource-group $KUBE_GROUP --resource-name $APPGW_SUBNET_NAME --resource-type Microsoft.Network/networkSecurityGroups
 
     az network nsg create --name $KUBE_ING_SUBNET_NAME --resource-group $KUBE_GROUP --location $LOCATION
+
+    az network nsg rule create --name appgwrule --nsg-name $KUBE_ING_SUBNET_NAME --resource-group $KUBE_GROUP --priority 110 \
+    --source-address-prefixes '*' --source-port-ranges '*' \
+    --destination-address-prefixes '*' --destination-port-ranges 80 443 3443 6390 --access Allow --direction Inbound \
+    --protocol "*" --description "Required allow rule for APIM."
+
     KUBE_ING_SUBNET_NSG=$(az network nsg show -g $KUBE_GROUP -n $KUBE_ING_SUBNET_NAME --query id -o tsv)
     KUBE_ING_SUBNET_ID=$(az network vnet subnet show -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_ING_SUBNET_NAME --query id -o tsv)
     az network vnet subnet update --resource-group $KUBE_GROUP --network-security-group $KUBE_ING_SUBNET_NSG --ids $KUBE_ING_SUBNET_ID
@@ -233,12 +245,12 @@ if [ "$AKS_ID" == "" ]; then
 
     if [ "$USE_OVERLAY" == "true" ]; then
         echo "using overlay subnet $KUBE_POD_SUBNET_ID"
-        az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub --node-count 2 --min-count 2 --max-count 5 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --vm-set-type VirtualMachineScaleSets --network-plugin azure --network-plugin-mode overlay --pod-cidr 100.64.0.0/10 --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --node-osdisk-size 300 --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID -o none
+        az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub --node-count 2 --min-count 2 --max-count 5 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --vm-set-type VirtualMachineScaleSets --network-plugin azure --network-plugin-mode overlay --pod-cidr 100.64.0.0/10 --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --node-osdisk-size 300 --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID $USE_CILIUM -o none
 
     else
         if [ "$USE_POD_SUBNET" == "true" ]; then
             echo "using pod subnet $KUBE_POD_SUBNET_ID"
-            az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub --node-count 2 --min-count 2 --max-count 5 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --vm-set-type VirtualMachineScaleSets --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --node-osdisk-size 300 --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID --pod-subnet-id $KUBE_POD_SUBNET_ID $ACTIVATE_PRIVATE_LINK -o none
+            az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub --node-count 2 --min-count 2 --max-count 5 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --vm-set-type VirtualMachineScaleSets --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --node-osdisk-size 300 --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID --pod-subnet-id $KUBE_POD_SUBNET_ID $ACTIVATE_PRIVATE_LINK --node-vm-size "Standard_B2ms" -o none
         else
             az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub --network-policy calico --node-count 3 --min-count 2 --max-count 4 --zones 1 2 3 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --vm-set-type VirtualMachineScaleSets --network-plugin $KUBE_CNI_PLUGIN --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.3.0.10 --service-cidr 10.3.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --node-osdisk-size 300 --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID $ACTIVATE_PRIVATE_LINK -o none
         fi
@@ -261,8 +273,9 @@ if [ "$AKS_ID" == "" ]; then
 
     az aks maintenanceconfiguration add -g $KUBE_GROUP --cluster-name $KUBE_NAME --name tuesday --weekday Tuesday  --start-hour 13
     
-    #az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name armpool --node-count 2 --node-vm-size Standard_D4ps_v5
-
+    #az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name armpool --node-count 2 --mode system --node-vm-size Standard_D4ps_v5 --pod-subnet-id $KUBE_POD_SUBNET_ID
+    #az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name one --node-count 1 --mode system --node-vm-size Standard_B2ms --pod-subnet-id $KUBE_POD_SUBNET_ID
+    #az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name mariner2 --node-count 2 --mode system --node-vm-size Standard_D2s_v3 --pod-subnet-id $KUBE_POD_SUBNET_ID --os-sku CBLMariner
     AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
     echo "created AKS $AKS_ID"
 else
@@ -283,6 +296,7 @@ if [ "$WORKSPACE_RESOURCE_ID" == "" ]; then
     az monitor log-analytics workspace create --resource-group $KUBE_GROUP --workspace-name $KUBE_NAME --location $LOCATION -o none
     WORKSPACE_RESOURCE_ID=$(az monitor log-analytics workspace show --resource-group $KUBE_GROUP --workspace-name $KUBE_NAME -o json | jq '.id' -r)
     az aks enable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME --addons monitoring --workspace-resource-id $WORKSPACE_RESOURCE_ID
+    az aks update --enable-azuremonitormetrics --resource-group $KUBE_GROUP --name $KUBE_NAME --azure-monitor-workspace-resource-id $PROM_RESOURCE_ID --grafana-resource-id $GF_WORKSPACE
     OMS_CLIENT_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query addonProfiles.omsagent.identity.clientId -o tsv)
     az role assignment create --assignee $OMS_CLIENT_ID --scope $AKS_ID --role "Monitoring Metrics Publisher"
     az monitor app-insights component create --app $KUBE_NAME-ai --location $LOCATION --resource-group $KUBE_GROUP --application-type web --kind web --workspace $WORKSPACE_RESOURCE_ID
