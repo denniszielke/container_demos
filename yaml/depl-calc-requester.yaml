@@ -59,7 +59,7 @@ spec:
             value: "calc-frontend-svc"
           - name: "ENDPOINT_PORT"
             value: "80"
-          - name: "APPLICATIONINSIGHTS_CONNECTION_STRING"
+          - name: "AIC_STRING"
             valueFrom:
               secretKeyRef:
                 name: appconfig

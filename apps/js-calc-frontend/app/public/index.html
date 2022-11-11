@@ -15,7 +15,7 @@
 <body class="site">
     <div class="jumbotron">
         <div class="container">
-            <h2 class="display-5">Cloud Native Prime Yellow Blue Factor Calculator App NEW</h2>
+            <h2 class="display-5">Cloud Native Prime Yellow Blue Factor Calculator App</h2>
             <p>This is a sample application for demonstrating blue green deployments on Azure Container Apps<a class="btn btn-primary btn-lg" href="https://github.com/denniszielke/blue-green-with-containerapps" role="button">Learn more &raquo;</a></p>
         </div>
     </div>
@@ -57,7 +57,7 @@
                         <tbody>
                         <tr ng-repeat="response in responses track by $index">
                           <td ng-class="CalculateCssClass(response.backend.version)">{{ response.duration }}</td>
-                          <td ng-class="CalculateCssClass(response.backend.version)">{{ response.backend.value }}</td>
+                          <td ng-class="CalculateCssClass(response.backend.version)">{{ response.backend.values }}</td>
                           <td ng-class="CalculateCssClass(response.backend.version)">{{ response.backend.host }}</td>
                           <td ng-class="CalculateCssClass(response.backend.version)">{{ response.backend.remote }}</td>
                           <td ng-class="CalculateCssClass(response.backend.version)">{{ response.backend.version }}</td>
@@ -67,7 +67,6 @@
                 </div>
             </div>
         </div>
-
     </div><!-- /.container -->
 </body>
 </html>

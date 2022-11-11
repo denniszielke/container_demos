@@ -1,196 +1,233 @@
 require('dotenv-extended').load();
 const config = require('./config');
-var appInsights = require("applicationinsights");
-if (config.instrumentationKey){ 
-    appInsights.setup(config.instrumentationKey)
+const appInsights = require("applicationinsights");
+
+if (config.aicstring){ 
+    appInsights.setup(config.aicstring)
     .setAutoDependencyCorrelation(true)
+    .setAutoCollectRequests(true)
+    .setAutoCollectPerformance(true, true)
+    .setAutoCollectExceptions(true)
     .setAutoCollectDependencies(true)
-    .setAutoCollectPerformance(true)
+    .setAutoCollectConsole(true)
+    .setUseDiskRetryCaching(true)
     .setSendLiveMetrics(true)
     .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C);
-    appInsights.defaultClient.context.tags[appInsights.defaultClient.context.keys.cloudRole] = "calc-frontend";
+    appInsights.defaultClient.context.tags[appInsights.defaultClient.context.keys.cloudRole] = "http-frontend";
     appInsights.start();
-    var client = appInsights.defaultClient;
-    client.commonProperties = {
+    appInsights.defaultClient.commonProperties = {
         slot: config.version
     };
 }
-var client = appInsights.defaultClient;
+
+const swaggerUi = require('swagger-ui-express'), swaggerDocument = require('./swagger.json');
 
 const express = require('express');
 const app = express();
+app.use(express.json())
 const morgan = require('morgan');
-const request = require('request');
 const OS = require('os');
-const redis = require("redis");
-
-var redisClient = null;
+const axios = require('axios');
 
 var publicDir = require('path').join(__dirname, '/public');
 
-// add logging middleware
 app.use(morgan('dev'));
 app.use(express.static(publicDir));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Routes
 app.get('/ping', function(req, res) {
     console.log('received ping');
-    var pong = { response: "pong!", host: OS.hostname(), version: config.version };
+    const sourceIp = req.connection.remoteAddress;
+    const forwardedFrom = (req.headers['x-forwarded-for'] || '').split(',').pop();
+    const pong = { response: "pong!", correlation: "", host: OS.hostname(), source: sourceIp, forwarded: forwardedFrom, version: config.version };
     console.log(pong);
-    res.send(pong);
+    res.status(200).send(pong);
 });
-
 app.get('/healthz', function(req, res) {
-    res.send('OK');
+    const data = {
+        uptime: process.uptime(),
+        message: 'Ok',
+        date: new Date()
+      }
+    res.status(200).send(data);
 });
 
-app.get('/api/getappinsightskey', function(req, res) {
-    console.log('returned app insights key');
-    if (config.instrumentationKey){ 
-        res.send(config.instrumentationKey);
+app.get('/appInsightsConnectionString', function(req, res) {
+    console.log('returned app insights connection string');
+    if (config.aicstring){ 
+        res.send(config.aicstring);
     }
     else{
         res.send('');
     }
 });
 
-app.post('/api/calculation', function(req, res) {
+app.post('/api/calculate', async (req, res, next) => {
     console.log("received frontend request:");
     console.log(req.headers);
-    if (config.instrumentationKey){ 
-        var startDate = new Date();
-        client.trackEvent( { name: "calculation-js-frontend-call-start"});
-    }
-    var victim = false;
+    console.log(req.body);
+    console.log(req.body.number);
+    const requestId = req.headers['traceparent'] || '';
+    let victim = false;
+    var targetNumber = 0;
+    const endDate = new Date();
+    const remoteAddress = req.connection.remoteAddress;
+    const forwardedFrom = (req.headers['x-forwarded-for'] || '').split(',').pop();
 
-    var randomvictim = Math.floor((Math.random() * 20) + 1);
+    try{
+        targetNumber = req.body.number.toString();
+    }catch(e){
+        console.log("correlation: " + requestId);
+        console.log(e);
+        res.status(500).send({ timestamp: endDate, values: [ 'e', 'r', 'r'], host: OS.hostname(), remote: remoteAddress, forwarded: forwardedFrom, version: config.version });
+    }
+
+    const randomvictim = Math.floor((Math.random() * 20) + 1);
     if (config.buggy && randomvictim){
         victim = true;
     }
 
-    if (config.redisHost && config.redisAuth && redisClient == null) {
-        try{
-            redisClient = redis.createClient(6379, config.redisHost, {auth_pass: config.redisAuth, password: config.redisAuth});
-        }
-        catch(e){
-            console.log(e);
-            redisClient=null;
-        }
-    }
+    if (config.cacheEndPoint){
+        console.log("calling caches:");
+        axios({
+            method: 'get',
+            url: config.cacheEndPoint + '/' + targetNumber,
+            headers: {    
+                'dapr-app-id': 'js-calc-frontend'
+            }})
+            .then(function (response) {
+                console.log("received cache response:");
+                console.log(response.data);
+                const cacheBody = response.data;
+                if (cacheBody != null && cacheBody.toString().length > 0 )
+                {   
+                    console.log("cache hit");
+                    console.log(cacheBody);
+                    const serverResult = { timestamp: endDate, correlation: requestId, values: "[" + cacheBody + "]", host: OS.hostname(), remote: "cache", forwarded: forwardedFrom, version: config.version };
+                    console.log(serverResult);
+                    res.status(200).send(serverResult);
 
-    if (redisClient){
-        console.log("calling redis:" + config.redisHost + " with " + config.redisAuth);
-        var cachedResult = redisClient.get(req.headers.number, function(err, reply) {
-            if (reply && !err){
-                if (config.instrumentationKey){ 
-                    var endDate = new Date();
-                    var duration = endDate - startDate;
-                    client.trackDependency(
-                        { target: config.redisHost, dependencyTypeName: "REDIS", name: "calculation-cache", 
-                        data:"calculate number " + req.headers.number, 
-                        duration: duration, resultCode:0, success: true});
-                    client.trackEvent({ name: "calculation-js-frontend-cache", properties: {randomVictim: victim, cached: true} });
-                    client.trackMetric({ name:"calculation-js-frontend-duration", value: duration });
-                }
-                console.log("cache hit");
+                } else
+                {
+                    console.log("cache miss");
+                    
+                    axios({
+                        method: 'post',
+                        url: config.endpoint + '/api/calculate',
+                        headers: {    
+                            'Content-Type': 'application/json',
+                            'dapr-app-id': 'js-calc-frontend'
+                        },
+                        data: {
+                            number: targetNumber,
+                            randomvictim: victim,
+                        }})
+                        .then(function (response) {
+                            console.log("received backend response:");
+                            console.log(response.data);
+                            const appResponse = {
+                                timestamp: endDate, correlation: requestId,
+                                host: OS.hostname(), version: config.version, 
+                                backend: { 
+                                    host: response.data.host, 
+                                    version: response.data.version, 
+                                    values: response.data.values, 
+                                    remote: response.data.remote, 
+                                    timestamp: response.data.timestamp } 
+                            };
+                            
+                            console.log("updating cache:");
+                            const cacheData = '[{"key":"' + targetNumber + '","value":"'+ response.data.values.toString() + '"}]';
+                            console.log(cacheData);
+                            axios({
+                                method: 'post',
+                                url: config.cacheEndPoint,
+                                headers: {    
+                                    'Content-Type': 'application/json',
+                                    'dapr-app-id': 'js-calc-frontend'
+                                },
+                                data: cacheData
+                            }).then(function (response) {
+                                console.log("updated cache");
+                                console.log(response.data);
+                            }).catch(function (error) {
+                                console.log("failed to update cache:");
+                                console.log(error.response.data);
+                            });
 
-                var calcResult = JSON.parse(reply); 
-
-                var response = { host: OS.hostname(), version: config.version, 
-                    backend: { host: calcResult.host, version: calcResult.version, value: calcResult.value, remote: calcResult.remote, timestamp: calcResult.timestamp } };
-    
-                console.log(response);
-                res.send(response);              
-            }else{
-                console.log(err);
-                console.log("cache miss");
-                var formData = {
-                    received: new Date().toLocaleString(), 
-                    number: req.headers.number
-                };
-                var options = { 
-                    'url': config.endpoint + '/api/calculation',
-                    'form': formData,
-                    'headers': {
-                        'number': req.headers.number,
-                        'randomvictim': victim
-                    }
-                };    
-                request.post(options, function(innererr, innerres, body) {
-                    var endDate = new Date();
-                    var duration = endDate - startDate;
-                    if (innererr){
-                        console.log("error:");
-                        console.log(innererr);
-                        if (config.instrumentationKey){ 
-                            client.trackException(innererr);
-                        }
-                    }
-                    if (config.instrumentationKey){ 
-                        client.trackRequest({name:"POST /api/calculation", url: options.url, duration:duration, resultCode:200, success:true});
-                        client.trackEvent({ name: "calculation-js-frontend-call-complete", properties: {randomVictim: victim, cached: false} });
-                        client.trackMetric({ name:"calculation-js-frontend-duration", value: duration });
-                    }
-                                       
-                    var cachedResult = redisClient.set(req.headers.number.toString(), body.toString(), function(err, reply) {
-                        console.log("cache save");
-                        console.log(reply);
-                    });
-
-                    var calcResult = JSON.parse(body); 
-
-                    var response = { host: OS.hostname(), version: config.version, 
-                        backend: { host: calcResult.host, version: calcResult.version, value: calcResult.value, remote: calcResult.remote, timestamp: calcResult.timestamp } };
+                            res.status(200).send(appResponse);
         
-                    console.log(response);
-                    res.send(response);
-                });    
-            }
-        });
-    }else{
-        var formData = {
-            received: new Date().toLocaleString(), 
-            number: req.headers.number
-        };
-        var options = { 
-            'url': config.endpoint + '/api/calculation',
-            'form': formData,
-            'headers': {
-                'number': req.headers.number,
-                'randomvictim': victim
-            }
-        };    
-        request.post(options, function(innererr, innerres, body) {
-            var endDate = new Date();
-            var duration = endDate - startDate;
-            if (innererr){
-                console.log("error:");
-                console.log(innererr);
-                if (config.instrumentationKey){ 
-                    client.trackException(innererr);
+                        }).catch(function (error) {
+                            console.log("error:");
+                            console.log(error);
+                            const backend = { 
+                                host: error.response.data.host || "frontend", 
+                                version: error.response.data.version || "red", 
+                                values: error.response.data.values || [ 'b', 'u', 'g'], 
+                                timestamp: error.response.data.timestamp || ""
+                            };
+                            res.send({ backend: backend, correlation: requestId, host: OS.hostname(), version: config.version });
+                        });
                 }
-            }
-            if (config.instrumentationKey){ 
-                console.log("sending telemetry");
-                client.trackEvent({ name: "calculation-js-frontend-call-complete", properties: {randomVictim: victim, cached: false} });
-                client.trackRequest({name:"POST /api/calculation", url: options.url, duration:duration, resultCode:200, success:true});
-                client.trackMetric({ name:"calculation-js-frontend-duration", value: duration });
-            }
-            
-            if (redisClient){
-                var cachedResult = redisClient.set(req.headers.number, body, function(err, reply) {
-                    console.log(reply);
-                });
-            }
-            
-            var calcResult = JSON.parse(body); 
+                            
+                }).catch(function (error) {
+                    console.log("error:");
+                    console.log(error.response);
+                    console.log("data:");
+                    console.log(error.response.data);
+                    const backend = { 
+                        host: error.response.data.host || "frontend", 
+                        version: error.response.data.version || "red", 
+                        values: error.response.data.values || [ 'b', 'u', 'g'], 
+                        timestamp: error.response.data.timestamp || ""
+                    };
+                    res.send({ backend: backend, error: "looks like " + error.response.status + " from " + error.response.statusText, host: OS.hostname(), version: config.version });
+                });         
 
-            var response = { host: OS.hostname(), version: config.version, 
-                backend: { host: calcResult.host, version: calcResult.version, value: calcResult.value, remote: calcResult.remote, timestamp: calcResult.timestamp } };
+    }
+    else{
 
-            console.log(response);
-            res.send(response);
-        });
+        axios({
+            method: 'post',
+            url: config.endpoint + '/api/calculate',
+            headers: {    
+                'Content-Type': 'application/json',
+                'dapr-app-id': 'js-calc-frontend'
+            },
+            data: {
+                number: targetNumber,
+                randomvictim: victim,
+            }})
+            .then(function (response) {
+                console.log("received backend response:");
+                console.log(response.data);
+                const appResponse = {
+                    timestamp: endDate, correlation: requestId,
+                    host: OS.hostname(), 
+                    version: config.version, 
+                    backend: { 
+                        host: response.data.host, 
+                        version: response.data.version, 
+                        values: response.data.values, 
+                        remote: response.data.remote, 
+                        timestamp: response.data.timestamp } 
+                };
+                res.send(appResponse);
+            }).catch(function (error) {
+                console.log("error:");
+                console.log(error.response);
+                console.log("data:");
+                console.log(error.response.data);
+                const backend = { 
+                    timestamp: endDate, correlation: requestId,
+                    host: error.response.data.host || "frontend", 
+                    version: error.response.data.version || "red", 
+                    values: error.response.data.values || [ 'b', 'u', 'g'], 
+                    timestamp: error.response.data.timestamp || ""
+                };
+                res.send({ backend: backend, error: "looks like " + error.response.status + " from " + error.response.statusText, host: OS.hostname(), version: config.version });
+            });
     }
     
 });
@@ -198,17 +235,10 @@ app.post('/api/calculation', function(req, res) {
 app.post('/api/dummy', function(req, res) {
     console.log("received dummy request:");
     console.log(req.headers);
-    if (config.instrumentationKey){ 
-        client.trackEvent({ name: "dummy-js-frontend-call"});
-    }
-    res.send('42');
+    res.send({ values: "[ 42 ]", host: OS.hostname(), version: config.version });
 });
 
 console.log(config);
 console.log(OS.hostname());
-// Listen
-if (config.instrumentationKey){ 
-    client.trackEvent({ name: "js-frontend-initializing"});
-}
 app.listen(config.port);
 console.log('Listening on localhost:'+ config.port);

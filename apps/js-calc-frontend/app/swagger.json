@@ -1,12 +1,12 @@
 {
   "swagger": "2.0",
   "info": {
-    "description": "This is a backend api for the prime factor calculator demo app.",
+    "description": "This is a frontend api for the prime factor calculator demo app.",
     "license": {
       "name": "Apache-2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "title": "OpenAPI Calculator Backend",
+    "title": "OpenAPI Calculator Frontend",
     "version": "1.0.0"
   },
   "basePath": "/",
@@ -197,8 +197,8 @@
       "name": "calculator"
     },
     {
-      "description": "Backend app",
-      "name": "backend"
+      "description": "Frontend app",
+      "name": "frontend"
     }
   ],
   "x-components": {

@@ -63,7 +63,7 @@ spec:
             value: "false"
           - name: "ENDPOINT"
             value: "http://http-backend.{.backend-namespace}.svc.cluster.local"
-          - name: "INSTRUMENTATIONKEY"
+          - name: "AIC_STRING"
             valueFrom:
               secretKeyRef:
                 name: appconfig

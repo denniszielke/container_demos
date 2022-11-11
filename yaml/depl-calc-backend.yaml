@@ -59,7 +59,7 @@ spec:
             value: "false"
           - name: "LAGGY"
             value: "false"
-          - name: "INSTRUMENTATIONKEY"
+          - name: "AIC_STRING"
             valueFrom:
               secretKeyRef:
                 name: appconfig
