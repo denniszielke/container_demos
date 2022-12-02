@@ -1,7 +1,7 @@
-
 # install
 https://kubecost.com/install
 
+```
 kubectl create namespace kubecost
 helm repo add kubecost https://kubecost.github.io/cost-analyzer/
 helm install kubecost kubecost/cost-analyzer --namespace kubecost --set kubecostToken="YXNkZmFzZGZAc2FmZC5kZQ==xm343yadf98"
@@ -63,4 +63,4 @@ spec:
         path: /
 " | kubectl apply -f -
 
-
+```

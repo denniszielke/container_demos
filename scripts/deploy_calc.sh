@@ -8,8 +8,8 @@ PROJECT_NAME="$1" # here enter unique deployment name (ideally short and with le
 REGISTRY_OWNER="denniszielke"
 IMAGE_TAG="latest"
 APP_NAMESPACE="calculator"
-FRONTEND_NAMESPACE="calculator"
-BACKEND_NAMESPACE="calculator"
+FRONTEND_NAMESPACE="calculator-frontend"
+BACKEND_NAMESPACE="calculator-backend"
 
 if [ "$PROJECT_NAME" == "" ]; then
 echo "No project name provided - aborting"
@@ -65,12 +65,12 @@ replaces="$replaces s/{.requester-namespace}/$APP_NAMESPACE/; ";
 
 cat ./yaml/depl-calc-backend.yaml | sed -e "$replaces" | kubectl apply -f -
 cat ./yaml/depl-calc-frontend.yaml | sed -e "$replaces" | kubectl apply -f -
-cat ./yaml/depl-calc-requester.yaml | sed -e "$replaces" | kubectl apply -f -
+#cat ./yaml/depl-calc-requester.yaml | sed -e "$replaces" | kubectl apply -f -
 
 
-kubectl create secret generic appconfig -n $APP_NAMESPACE \
-   --from-literal=applicationInsightsConnectionString=$AI_CONNECTIONSTRING \
-   --save-config --dry-run=client -o yaml | kubectl apply -f -
+# kubectl create secret generic appconfig -n $APP_NAMESPACE \
+#    --from-literal=applicationInsightsConnectionString=$AI_CONNECTIONSTRING \
+#    --save-config --dry-run=client -o yaml | kubectl apply -f -
 
 kubectl create secret generic appconfig -n $FRONTEND_NAMESPACE \
    --from-literal=applicationInsightsConnectionString=$AI_CONNECTIONSTRING \

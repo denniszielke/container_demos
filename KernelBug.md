@@ -45,9 +45,9 @@ cat <<EOF | kubectl apply -f -
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: centoss-deployment6
+  name: centoss-deployment
   labels:
-    app: centoss6
+    app: centos
 spec:
   replicas: 1
   selector:

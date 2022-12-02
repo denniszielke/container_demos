@@ -123,3 +123,57 @@ hubble --server localhost:4245 status
 hubble --server localhost:4245 observe
 
 ```
+
+## DNS Policy
+
+```
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: centos
+  labels:
+    org: secured
+spec:
+  containers:
+  - name: centos
+    image: centos
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+
+
+httpbin.org/get
+ipinfo.io/ip
+
+cat <<EOF | kubectl apply -f -
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: "fqdn"
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            org: secured
+  egress:
+  - toFQDNs:
+    - matchName: "ipinfo.io"
+  - toEndpoints:
+    - matchLabels:
+        "k8s:io.kubernetes.pod.namespace": kube-system
+        "k8s:k8s-app": kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: ANY
+      rules:
+        dns:
+        - matchPattern: "*"
+EOF
+

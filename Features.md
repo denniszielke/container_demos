@@ -3,6 +3,7 @@
 Get AKS features
 ```
 az feature list --namespace Microsoft.ContainerService -o table
+az feature list --namespace Microsoft.ContainerRegistry -o table
 az feature list --namespace Microsoft.PolicyInsights -o table
 az feature list --namespace Microsoft.DocumentDB -o table
 az feature list --namespace Microsoft.Network -o table
@@ -108,6 +109,7 @@ az feature register --namespace "Microsoft.ContainerService" --name "EnableAPISe
 
 az feature register --name PrivatePreview --namespace Microsoft.Dashboard
 
+az feature list --namespace Microsoft.Network -o table
 az feature register --namespace "Microsoft.Network" --name "AllowPrivateEndpoints"
 az feature register --namespace "Microsoft.Network" --name "AllowAppGwPublicAndPrivateIpOnSamePort"
 az feature register --namespace "Microsoft.Network" --name "AllowApplicationGatewayV2UrlRewrite"

@@ -422,7 +422,7 @@ VAULT_NAME=dzkv$KUBE_NAME
 
 az identity create --name $KUBE_NAME-fic --resource-group $KUBE_GROUP -o none
 
-export USER_ASSIGNED_CLIENT_ID="$(az identity show --resource-group "${KUBE_GROUP}" --name "$KUBE_NAME-fic" --query 'clientId' -otsv)"
+export USER_ASSIGNED_CLIENT_ID="$(az identity show --resource-group "${KUBE_GROUP}" --name "$KUBE_NAME-fic" --query 'clientId' -o tsv)"
 
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
