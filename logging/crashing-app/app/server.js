@@ -51,3 +51,16 @@ console.log(config);
 console.log(OS.hostname());
 app.listen(config.port);
 console.log('Listening on localhost:'+ config.port);
+
+if (process.env.LEAK){
+    console.log('Leaking automatically');
+    var leaks = [];
+    setInterval(function() {
+    for (var i = 0; i < 1000; i++) {
+        leaks.push(new LeakingClass);
+    }
+
+    console.error('Leaks: %d', leaks.length);
+    }, 1000);
+    process.stdout.write('received leak request - leaking');
+}

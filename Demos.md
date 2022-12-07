@@ -83,6 +83,13 @@ kubectl port-forward -n osm-simple-app frontend-7794dbcdc7-rdmjz 8080:80
 
 ```
 
+## crashing app
+```
+kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/crashing-app/crashing-depl.yaml
+kubectl scale deployment crashing-app -n crashing-app --replicas=4
+
+
+```
 
 ## calc
 ```

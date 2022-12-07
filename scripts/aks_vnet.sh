@@ -255,9 +255,9 @@ if [ "$AKS_ID" == "" ]; then
             az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub --network-policy calico --node-count 3 --min-count 2 --max-count 4 --zones 1 2 3 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --vm-set-type VirtualMachineScaleSets --network-plugin $KUBE_CNI_PLUGIN --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.3.0.10 --service-cidr 10.3.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --node-osdisk-size 300 --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID $ACTIVATE_PRIVATE_LINK -o none
         fi
     fi
-
+    sleep 10
     # az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub --zones 1 2 3  --node-count 3 --node-vm-size "Standard_D2s_v3" --min-count 3 --max-count 5 --enable-cluster-autoscaler --auto-upgrade-channel patch  --node-resource-group $NODE_GROUP --load-balancer-sku standard --enable-vmss  --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --assign-kubelet-identity $AKS_KUBELET_RESOURCE_ID --node-osdisk-size 300 --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID $ACTIVATE_PRIVATE_LINK -o none
-    az aks update --resource-group $KUBE_GROUP --name $KUBE_NAME --auto-upgrade-channel rapid --yes
+    az aks update -n $KUBE_NAME -g $KUBE_GROUP  --enable-oidc-issuer --enable-workload-identity --yes
     #az aks enable-addons --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --addons="virtual-node" --subnet-name $ACI_AGENT_SUBNET_NAME
     
     #az aks enable-addons --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --addons="azure-keyvault-secrets-provider"
@@ -268,7 +268,7 @@ if [ "$AKS_ID" == "" ]; then
     #az aks update --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --enable-keda --yes
     #az aks update --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --enable-image-cleaner --yes
     #az aks upgrade -n $KUBE_NAME -g $KUBE_GROUP --aks-custom-headers EnableCloudControllerManager=True
-    az aks update -n $KUBE_NAME -g $KUBE_GROUP  --enable-oidc-issuer --enable-workload-identity --yes
+    
     #az aks nodepool add --scale-down-mode Deallocate --node-count 2 --name marinerpool2 --cluster-name $KUBE_NAME --resource-group $KUBE_GROUP --os-sku CBLMariner
 
     az aks maintenanceconfiguration add -g $KUBE_GROUP --cluster-name $KUBE_NAME --name tuesday --weekday Tuesday  --start-hour 13
@@ -277,6 +277,7 @@ if [ "$AKS_ID" == "" ]; then
     #az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name one --node-count 1 --mode system --node-vm-size Standard_B2ms --pod-subnet-id $KUBE_POD_SUBNET_ID
     #az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name marinertwo --node-count 2 --mode system --node-vm-size Standard_D2s_v3 --pod-subnet-id $KUBE_POD_SUBNET_ID --os-sku CBLMariner
     #az aks update -g $KUBE_GROUP --name $KUBE_NAME --enable-apiserver-vnet-integration --apiserver-subnet-id $KUBE_API_SUBNET_ID
+    az aks update --resource-group $KUBE_GROUP --name $KUBE_NAME --auto-upgrade-channel rapid --yes
     AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
     echo "created AKS $AKS_ID"
 else
