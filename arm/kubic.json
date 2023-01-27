@@ -1,0 +1,216 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"location": {
+			"type": "string",
+			"defaultValue": "[resourceGroup().location]",
+			"metadata": {
+				"description": "Location for all Traffic Controller resources."
+			}
+		},
+		"mcResourceGroup": {
+			"type": "string",
+			"metadata": {
+				"description": "The name of the Resource Group created for the AKS managed cluster."
+			}
+		},
+		"frontendPublicIPAddressName": {
+			"type": "string",
+			"defaultValue": "tc-pip"
+		},
+		"frontendPublicIPAddressHomeRegion": {
+			"type": "string",
+			"defaultValue": "eastus2",
+			"allowedValues": [
+				"eastus2",
+				"westus",
+				"westeurope",
+				"southeastasia",
+				"centralus",
+				"northeurope",
+				"eastasia",
+				"ukwest",
+				"uksouth"
+			]
+		},
+		"trafficControllerName": {
+			"type": "string",
+			"defaultValue": "traffic-controller",
+			"metadata": {
+				"description": "Name of the Traffic Controller resource."
+			}
+		},
+		"frontendName": {
+			"type": "string",
+			"defaultValue": "frontend",
+			"metadata": {
+				"description": "Name of the Traffic Controller Frontend resource."
+			}
+		},
+		"associationName": {
+			"type": "string",
+			"defaultValue": "association",
+			"metadata": {
+				"description": "Name of the Traffic Controller Association resource."
+			}
+		},
+		"subnetId": {
+			"type": "string",
+			"metadata": {
+				"description": "Resource URI of Subnet delegated to Traffic Controller"
+			}
+		},
+		"networkApiVersion": {
+			"type": "string",
+			"defaultValue": "2022-01-01"
+		},
+		"serviceNetworkingApiVersion": {
+			"type": "string",
+			"defaultValue": "2022-10-01-preview"
+		}
+	},
+	"variables": {
+		"azureApplicationLBIdentity": "azure-application-lb-identity",
+		"trafficControllerConfigurationManagerRole": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'fbc52c3f-28ad-4303-a892-8a056630b8f1')]",
+		"trafficControllerId": "[resourceId('Microsoft.ServiceNetworking/trafficControllers', parameters('trafficControllerName'))]",
+		"azureApplicationLBIdentityId": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('azureApplicationLBIdentity'))]",
+		"readerRole": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'acdd72a7-3385-48ef-bd42-f606fba81ae7')]"
+	},
+	"resources": [
+		{
+			"name": "[parameters('frontendPublicIPAddressName')]",
+			"location": "[parameters('frontendPublicIPAddressHomeRegion')]",
+			"type": "Microsoft.Network/publicIPAddresses",
+			"apiVersion": "[parameters('networkApiVersion')]",
+			"sku": {
+				"name": "Standard",
+				"tier": "Global"
+			},
+			"properties": {
+				"publicIPAllocationMethod": "Static",
+				"publicIPAddressVersion": "IPv4"
+			}
+		},
+		{
+			"name": "[parameters('trafficControllerName')]",
+			"type": "Microsoft.ServiceNetworking/trafficControllers",
+			"apiVersion": "[parameters('serviceNetworkingApiVersion')]",
+			"location": "[parameters('location')]",
+			"properties": {
+			}
+		},
+		{
+			"name": "[concat(parameters('trafficControllerName'), '/', parameters('frontendName'))]",
+			"type": "Microsoft.ServiceNetworking/trafficControllers/frontends",
+			"apiVersion": "[parameters('serviceNetworkingApiVersion')]",
+			"location": "[parameters('location')]",
+			"properties": {
+				"mode": "Public",
+				"publicIPAddress": {
+					"id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('frontendPublicIPAddressName'))]"
+				}
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.Network/publicIPAddresses', parameters('frontendPublicIPAddressName'))]",
+				"[resourceId('Microsoft.ServiceNetworking/trafficControllers', parameters('trafficControllerName'))]",
+				"[resourceId('Microsoft.ServiceNetworking/trafficControllers/associations', parameters('trafficControllerName'), parameters('associationName'))]"
+			]
+		},
+		{
+			"name": "[concat(parameters('trafficControllerName'), '/', parameters('associationName'))]",
+			"type": "Microsoft.ServiceNetworking/trafficControllers/associations",
+			"apiVersion": "[parameters('serviceNetworkingApiVersion')]",
+			"location": "[parameters('location')]",
+			"properties": {
+				"associationType": "Subnet",
+				"subnet": {
+					"id": "[parameters('subnetId')]"
+				}
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.ServiceNetworking/trafficControllers', parameters('trafficControllerName'))]"
+			]
+		},
+		{
+            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+            "name": "[variables('azureApplicationLBIdentity')]",
+            "apiVersion": "2021-09-30-preview",
+            "location": "[parameters('location')]"
+        },
+		{
+            "type": "Microsoft.Resources/deployments",
+            "name": "RoleAssignmentForAzureApplicationLBIdentity",
+			"apiVersion": "2021-04-01",
+            "subscriptionId": "[subscription().subscriptionId]",
+            "resourceGroup": "[resourceGroup().name]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "Microsoft.ServiceNetworking/trafficControllers/providers/roleAssignments",
+                            "apiVersion": "2022-04-01",
+                            "name": "[concat(parameters('trafficControllerName'), '/Microsoft.Authorization/', guid(resourceGroup().id, 'trafficcontrolleraccess'))]",
+                            "properties": {
+                                "roleDefinitionId": "[variables('trafficControllerConfigurationManagerRole')]",
+                                "principalId": "[reference(variables('azureApplicationLBIdentityId'), '2021-09-30-PREVIEW').principalId]",
+                                "scope": "[variables('trafficControllerId')]"
+                            }
+                        },
+                        {
+                            "type": "Microsoft.Authorization/roleAssignments",
+                            "apiVersion": "2022-04-01",
+                            "name": "[guid(resourceGroup().id, 'resourcegroupaccess')]",
+                            "properties": {
+                                "roleDefinitionId": "[variables('readerRole')]",
+                                "principalId": "[reference(variables('azureApplicationLBIdentityId'), '2021-09-30-PREVIEW').principalId]",
+                                "scope": "[resourceGroup().id]"
+                            }
+                        }
+                    ]
+                }
+            },
+            "dependsOn": [
+                "[concat('Microsoft.ServiceNetworking/trafficControllers/', parameters('trafficControllerName'))]",
+                "[concat('Microsoft.ManagedIdentity/userAssignedIdentities/', variables('azureApplicationLBIdentity'))]"
+            ]
+        },
+		{
+            "type": "Microsoft.Resources/deployments",
+            "name": "MCResourceGroupRoleAssignmentForAzureApplicationLBIdentity",
+			"apiVersion": "2021-04-01",
+            "subscriptionId": "[subscription().subscriptionId]",
+            "resourceGroup": "[parameters('mcResourceGroup')]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "Microsoft.Authorization/roleAssignments",
+                            "apiVersion": "2022-04-01",
+                            "name": "[guid(resourceGroup().id, 'mcresourcegroupaccess')]",
+                            "properties": {
+                                "roleDefinitionId": "[variables('readerRole')]",
+                                "principalId": "[reference(variables('azureApplicationLBIdentityId'), '2021-09-30-PREVIEW').principalId]",
+                                "scope": "[concat(subscription().Id, '/resourceGroups/', parameters('mcResourceGroup'))]"
+                            }
+                        }
+                    ]
+                }
+            },
+            "dependsOn": [
+                "[concat('Microsoft.ServiceNetworking/trafficControllers/', parameters('trafficControllerName'))]",
+                "[concat('Microsoft.ManagedIdentity/userAssignedIdentities/', variables('azureApplicationLBIdentity'))]"
+            ]
+        }
+	]
+}
