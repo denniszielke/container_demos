@@ -34,6 +34,14 @@ app.get('/', function(req, res) {
     res.send('Hi from ' + OS.hostname() + ' running ' + config.name + ' !');
 });
 
+app.get('/healthz', function(req, res) { 
+    res.send('OK');
+});
+
+app.head('/healthz', function(req, res) {  
+    res.send('OK');
+});
+
 app.get('/metrics', function(req, res) {
     console.log('received fail request');
     console.log(requestStats);

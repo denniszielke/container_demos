@@ -16,6 +16,12 @@ kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/
 export DUMMY_LOGGER_IP=$(kubectl get svc --namespace $DEMO_NS dummy-logger-svc-lb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 export DUMMY_LOGGER_IP=$(kubectl get svc dummy-logger-pub-lb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
+kubectl patch deployment simple --type=json -p='[{"op": "add", "path": "/spec/template/metadata/labels/this", "value": "that"}]'
+
+kubectl patch svc dummy-logger-pub-lb  --type='json' -p='[{"op": "add", "path": "/metadata/annotations/service.beta.kubernetes.io/azure-load-balancer-internal", "value":"true"}]'
+
+kubectl patch svc dummy-logger-pub-lb -p '{"metadata": {"annotations":{"service.beta.kubernetes.io/azure-load-balancer-internal":"true"}} }'
+
 
 curl -X POST http://$DUMMY_LOGGER_IP/api/log -H "message: {more: content}" 
 curl -X POST http://$DUMMY_LOGGER_IP/api/log -H "message: hi" 

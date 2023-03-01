@@ -33,14 +33,14 @@ spec:
           - name: "METRICRESET"
             value: "5"
           - name: "NAME"
-            value: "dublin" 
+            value: "amsterdam" 
         livenessProbe:
           httpGet:
-            path: /ping
+            path: /healthz
             port: 80
         readinessProbe:
           httpGet:
-            path: /ping
+            path: /healthz
             port: 80
           initialDelaySeconds: 10
           periodSeconds: 5

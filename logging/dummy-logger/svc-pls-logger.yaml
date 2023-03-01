@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dummy-logger-int-pls-lb
+  namespace: default
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "ing-4-subnet"
+    service.beta.kubernetes.io/azure-pls-create: "true"
+    service.beta.kubernetes.io/azure-pls-name: "plsinternal"
+    service.beta.kubernetes.io/azure-pls-ip-configuration-subnet: "ing-4-subnet"
+    service.beta.kubernetes.io/azure-pls-ip-configuration-ip-address-count: "4"
+    service.beta.kubernetes.io/azure-pls-visibility: "*"
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: dummy-logger
+  type: LoadBalancer
+  externalTrafficPolicy: Local

@@ -120,6 +120,7 @@ az feature register --namespace "Microsoft.Network" --name "AllowApplicationGate
 az feature list --namespace Microsoft.App -o table
 az feature register --namespace "microsoft.app" --name "ServerlessCompute"
 az feature register --namespace "microsoft.app" --name "PrereleaseApiVersionAllowed"
+az feature register --namespace "microsoft.app" --name "WorkloadProfiles"
 
 az feature register --namespace "microsoft.storage" --name "AllowNFSV3"
 az feature register --namespace "microsoft.storage" --name "PremiumHns"

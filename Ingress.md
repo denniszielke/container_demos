@@ -336,3 +336,9 @@ kubectl get rs --namespace kube-system
 kubectl expose rs nginx-ingress-controller-2781903634 --port=443 --target-port=443 --name=nginx-ingress-ssl --type=LoadBalancer --namespace kube-system
 kubectl get services --namespace kube-system -w
 ```
+
+## App Routing-Addon
+
+```
+kubectl patch svc nginx -n app-routing-system -p '{"metadata": {"annotations":{"service.beta.kubernetes.io/azure-load-balancer-internal":"true"}} }'
+```

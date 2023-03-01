@@ -361,6 +361,9 @@ EOF
 kubectl patch deployment dummy-logger -p \
   '{"spec":{"template":{"spec":{"tolerations":[{"key":"expensive","operator":"Equal","value":"true","effect":"NoSchedule"}]}}}}'
 
+kubectl patch svc mying --type='json' -p='[{"op": "add", "path": "/metadata/annotations/kubernetes.io~1ingress.class", "value":"nginx"}]'
+
+
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Pod

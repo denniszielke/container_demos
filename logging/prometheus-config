@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 60s
+scrape_configs:
+- job_name: dummy-logger-metrics
+  scrape_interval: 30s
+  scheme: http
+  metrics_path: /metrics
+  static_configs:
+    - targets: ['dummy-logger.test-infra.svc.cluster.local:80']

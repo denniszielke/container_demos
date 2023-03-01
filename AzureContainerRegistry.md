@@ -18,7 +18,7 @@ az acr create --resource-group "$KUBE_GROUP" --name "$REGISTRY_NAME" --sku Basic
 
 2. Login to ACR
 ```
-az acr login --name $REGISTRY_NAME
+az acr login --name $REGISTRY_NAME --expose-token
 az acr update --name $REGISTRY_NAME --admin-enabled true
 ```
 
