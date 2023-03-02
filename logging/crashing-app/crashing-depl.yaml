@@ -9,7 +9,7 @@ metadata:
   name: crashing-app
   namespace: crashing-app
 spec:
-  replicas: 3
+  replicas: 1
   minReadySeconds: 5
   selector:
     matchLabels:

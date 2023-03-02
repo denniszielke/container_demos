@@ -312,13 +312,9 @@ az aks get-credentials -g MyResourceGroup -n MyManagedCluster --admin
 
 az role assignment create --role "Azure Kubernetes Service RBAC Viewer" --assignee $MY_USER_ID --scope $AKS_ID/namespaces/aadsecured
 
-
 az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee $MY_USER_ID --scope $AKS_ID/namespaces/aadsecured
 
-
-
 az aks update --enable-pod-identity --resource-group $KUBE_GROUP --name $KUBE_NAME
-
 
 SERVICE_PRINCIPAL_ID=$(az ad sp create-for-rbac --skip-assignment --name $KUBE_NAME-sp -o json | jq -r '.appId')
 echo $SERVICE_PRINCIPAL_ID
@@ -751,6 +747,66 @@ spec:
           name: secrets-store-creds   
 EOF
 
+cat /var/run/secrets/tokens/azure-identity-token
 ```
 
-cat /var/run/secrets/tokens/azure-identity-token
+
+## Managed Identity
+
+```
+KUBE_NAME=
+KUBE_GROUP=
+SERVICE_ACCOUNT_NAMESPACE=app1ns
+SERVICE_ACCOUNT_NAME=app1
+kubectl create ns $SERVICE_ACCOUNT_NAMESPACE
+
+az identity create --name $SERVICE_ACCOUNT_NAME --resource-group $KUBE_GROUP -o none
+
+export USER_ASSIGNED_CLIENT_ID="$(az identity show --resource-group "${KUBE_GROUP}" --name "$SERVICE_ACCOUNT_NAME" --query 'clientId' -o tsv)"
+
+AKS_OIDC_ISSUER="$(az aks show -n $KUBE_NAME -g $KUBE_GROUP --query "oidcIssuerProfile.issuerUrl" -o tsv)"
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    azure.workload.identity/client-id: ${USER_ASSIGNED_CLIENT_ID}
+  labels:
+    azure.workload.identity/use: "true"
+  name: ${SERVICE_ACCOUNT_NAME}
+  namespace: ${SERVICE_ACCOUNT_NAMESPACE}
+EOF
+
+az identity federated-credential create --name ${SERVICE_ACCOUNT_NAME} --identity-name "${SERVICE_ACCOUNT_NAME}" --resource-group $KUBE_GROUP --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:${SERVICE_ACCOUNT_NAMESPACE}:${SERVICE_ACCOUNT_NAME}
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: idstart
+  namespace: ${SERVICE_ACCOUNT_NAMESPACE}
+  labels:
+    azure.workload.identity/use: "true"
+  annotations:
+    azure.workload.identity/inject-proxy-sidecar: "true"
+    azure.workload.identity/proxy-sidecar-port: "8080"
+spec:
+  serviceAccountName: ${SERVICE_ACCOUNT_NAME}
+  containers:
+    - image: centos
+      name: centos
+      command:
+      - sleep
+      - "3600"
+  nodeSelector:
+    kubernetes.io/os: linux
+EOF
+
+kubectl exec -it centos-token -- /bin/bash  
+
+cat /var/run/secrets/azure/tokens/azure-identity-token
+
+
+curl  --silent -H Metadata:True --noproxy "*" "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/"
+```
