@@ -1,0 +1,9 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: demo2-service
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: demo2.d-code.de
+spec:
+  type: ExternalName
+  externalName: 111.2.2.1

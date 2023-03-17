@@ -106,6 +106,8 @@ az feature register --namespace "Microsoft.ContainerService" --name "AKSNodeless
 az feature register --namespace "Microsoft.ContainerService" --name "AKS-ExtensionManager"
 az feature register --namespace "Microsoft.ContainerService" --name "CiliumDataplanePreview"
 az feature register --namespace "Microsoft.ContainerService" --name "EnableAPIServerVnetIntegrationPreview" 
+az feature register --namespace "Microsoft.ContainerService" --name "NRGLockdownPreview" 
+
 
 az feature register --name PrivatePreview --namespace Microsoft.Dashboard
 

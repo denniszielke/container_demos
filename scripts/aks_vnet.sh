@@ -8,7 +8,7 @@
 
 set -e
 
-DEPLOYMENT_NAME="dztrffic3" # here enter unique deployment name (ideally short and with letters for global uniqueness)
+DEPLOYMENT_NAME="dzlock3" # here enter unique deployment name (ideally short and with letters for global uniqueness)
 USE_PRIVATE_API="false" # use to deploy private master endpoint
 USE_POD_SUBNET="false"
 USE_OVERLAY="false"
@@ -271,7 +271,7 @@ if [ "$AKS_ID" == "" ]; then
     
     #az aks nodepool add --scale-down-mode Deallocate --node-count 2 --name marinerpool2 --cluster-name $KUBE_NAME --resource-group $KUBE_GROUP --os-sku CBLMariner
 
-    az aks maintenanceconfiguration add -g $KUBE_GROUP --cluster-name $KUBE_NAME --name tuesday --weekday Tuesday  --start-hour 13
+    # az aks maintenanceconfiguration add -g $KUBE_GROUP --cluster-name $KUBE_NAME --name tuesday --weekday Tuesday  --start-hour 13
     
     #az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name armpool --node-count 2 --mode system --node-vm-size Standard_D4ps_v5 --pod-subnet-id $KUBE_POD_SUBNET_ID
     #az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name one --node-count 1 --mode system --node-vm-size Standard_B2ms --pod-subnet-id $KUBE_POD_SUBNET_ID
@@ -311,5 +311,5 @@ fi
 # az aks nodepool add --node-count 1 --scale-down-mode Deallocate --node-osdisk-type Managed --max-pods 30 --mode System --name nodepool2 --cluster-name $KUBE_NAME --resource-group $KUBE_GROUP
 
 echo "created this AKS cluster:"
-
+az aks update -n $KUBE_NAME -g $KUBE_GROUP --nrg-lockdown-restriction-level ReadOnly
 az aks show  --resource-group=$KUBE_GROUP --name=$KUBE_NAME

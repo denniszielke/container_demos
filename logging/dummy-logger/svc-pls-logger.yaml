@@ -11,6 +11,7 @@ metadata:
     service.beta.kubernetes.io/azure-pls-ip-configuration-subnet: "ing-4-subnet"
     service.beta.kubernetes.io/azure-pls-ip-configuration-ip-address-count: "4"
     service.beta.kubernetes.io/azure-pls-visibility: "*"
+    service.beta.kubernetes.io/azure-pls-fqdns: "dzadf3llk2"
 spec:
   ports:
   - port: 80
