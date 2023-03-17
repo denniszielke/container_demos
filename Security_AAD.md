@@ -803,7 +803,7 @@ spec:
     kubernetes.io/os: linux
 EOF
 
-kubectl exec -it centos-token -- /bin/bash  
+kubectl exec -it idstart -- /bin/bash  
 
 cat /var/run/secrets/azure/tokens/azure-identity-token
 
