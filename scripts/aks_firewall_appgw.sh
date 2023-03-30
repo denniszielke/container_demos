@@ -4,7 +4,7 @@
 
 SUBSCRIPTION_ID=$(az account show --query id -o tsv) #subscriptionid
 LOCATION="westeurope" # here enter the datacenter location
-VNET_GROUP="securevnets1" # here enter the network resource group name
+VNET_GROUP="vnets" # here enter the network resource group name
 HUB_VNET_NAME="hubnet1" # here enter the name of your hub net
 KUBE_VNET_NAME="k8snet1" # here enter the name of your k8s vnet
 PREM_VNET_NAME="onpremnet1" # here enter the name of your onprem vnet
