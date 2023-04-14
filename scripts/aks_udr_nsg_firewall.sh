@@ -32,7 +32,7 @@ MY_OWN_OBJECT_ID=$(az ad signed-in-user show --query objectId --output tsv) # th
 SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
 TENANT_ID=$(az account show --query tenantId -o tsv)
 
-USE_PRIVATE_LINK="true" # use to deploy private master endpoint
+USE_PRIVATE_LINK="false" # use to deploy private master endpoint
 USE_FW="true"
 USE_POD_SUBNET="true"
 

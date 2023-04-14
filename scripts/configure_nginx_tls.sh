@@ -87,7 +87,7 @@ apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
   name: letsencrypt
-  namespace: ingress
+  namespace: cert-manager
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
@@ -97,7 +97,7 @@ spec:
     solvers:
     - http01:
         ingress:
-          class: nginx
+          class: webapprouting.kubernetes.azure.com
 EOF
 
 sleep 5

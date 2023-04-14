@@ -55,6 +55,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: centos
+  namespace: calculator
 spec:
   containers:
   - name: centos
@@ -97,26 +98,41 @@ kubectl scale deployment crashing-app -n crashing-app --replicas=4
 
 ```
 
+## nginx
+
+```
+
+helm upgrade --install ingress-nginx ingress-nginx \
+  --repo https://kubernetes.github.io/ingress-nginx \
+  --namespace ingress-nginx --create-namespace
+
+```
+
 ## calc
 ```
-AZURE_CONTAINER_REGISTRY_NAME=charts
+
+helm repo add phoenix 'https://raw.githubusercontent.com/denniszielke/phoenix/master/'
+helm repo upgrade
+helm search repo phoenix 
+
+AZURE_CONTAINER_REGISTRY_NAME=phoenix
 KUBERNETES_NAMESPACE=calculator
 BUILD_BUILDNUMBER=latest
 AZURE_CONTAINER_REGISTRY_URL=denniszielke
-APPINSIGHTY_KEY=
-AZURE_REDIS_HOST=.redis.cache.windows.net
+APPINSIGHTY_KEY=InstrumentationKey=
+AZURE_REDIS_HOST=dzcache.redis.cache.windows.net
 AZURE_REDIS_KEY=
-DNS=.uksouth.cloudapp.azure.com
+DNS=calculator.northeurope.cloudapp.azure.com
 
 kubectl create namespace $KUBERNETES_NAMESPACE
 
+helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=false --set ingress.enabled=true --set ingress.tls=true --set ingress.host=$DNS  --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=3 --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$AZURE_REDIS_HOST --set dependencies.redisKeyValue=$AZURE_REDIS_KEY --set ingress.class=webapprouting.kubernetes.azure.com --wait 
+
 osm namespace add calculator --mesh-name osm --enable-sidecar-injection 
 
-helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=true --set ingress.enabled=true --set ingress.tls=true --set ingress.host=$DNS  --set noProbes=true --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2 --wait --timeout 45s
+helm upgrade calculatornotls $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace calculatornotls --install --create-namespace --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=false --set ingress.enabled=true --set ingress.tls=false --set ingress.host=20.93.52.206.nip.io  --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2  --set ingress.class=webapprouting.kubernetes.azure.com --wait --timeout 45s
 
 helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=true --set ingress.enabled=true --set ingress.tls=true --set ingress.host=$DNS  --set noProbes=true --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2 --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --wait --timeout 45s
-
-helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=true --set ingress.enabled=true --set ingress.tls=true --set ingress.host=$DNS  --set noProbes=true --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2 --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$AZURE_REDIS_HOST --set dependencies.redisKeyValue=$AZURE_REDIS_KEY --set dependencies.usePodRedis=false  --wait --timeout 45s
 
 helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=false --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --set ingress.enabled=false --set service.type=LoadBalancer --set noProbes=true --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2 --wait --timeout 45s
 
