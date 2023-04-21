@@ -122,11 +122,11 @@ AZURE_CONTAINER_REGISTRY_URL=denniszielke
 APPINSIGHTY_KEY=InstrumentationKey=
 AZURE_REDIS_HOST=dzcache.redis.cache.windows.net
 AZURE_REDIS_KEY=
-DNS=calculator.northeurope.cloudapp.azure.com
+DNS=ndzcilium3.northeurope.cloudapp.azure.com
 
 kubectl create namespace $KUBERNETES_NAMESPACE
 
-helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=false --set ingress.enabled=true --set ingress.tls=true --set ingress.host=$DNS  --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=3 --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$AZURE_REDIS_HOST --set dependencies.redisKeyValue=$AZURE_REDIS_KEY --set ingress.class=webapprouting.kubernetes.azure.com --wait 
+helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=false --set ingress.enabled=true --set ingress.tls=true --set ingress.host=$DNS  --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=3 --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$AZURE_REDIS_HOST --set dependencies.redisKeyValue=$AZURE_REDIS_KEY --set ingress.class=nginx --wait 
 
 osm namespace add calculator --mesh-name osm --enable-sidecar-injection 
 
@@ -143,6 +143,36 @@ helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespa
 helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=1 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$AZURE_REDIS_HOST --set dependencies.redisKeyValue=$AZURE_REDIS_KEY --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --set dependencies.useIngress=true --set ingress.enabled=true --set ingress.tls=false --set ingress.host=$DNS --set service.type=ClusterIP --set noProbes=false --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=3 --set deployRequester=true --wait --timeout 45s
 
 helm delete calculator -n $KUBERNETES_NAMESPACE
+
+```
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allowed
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEntities:
+        - cluster
+  egress:
+    - toFQDNs:
+        - matchPattern: "*.in.applicationinsights.azure.com"
+      toPorts:
+        - ports:
+            - port: "443"
+    - toFQDNs:
+        - matchPattern: "*.livediagnostics.monitor.azure.com"
+      toPorts:
+        - ports:
+            - port: "443"
+    - toFQDNs:
+        - matchName: dzcache.redis.cache.windows.net
+      toPorts:
+        - ports:
+            - port: "443"
+```
+
+
 ```
 ## crashing
 ```

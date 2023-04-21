@@ -1,0 +1,48 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: calculatornp
+  namespace: calculator
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - {}
+    - fromEntities:
+        - cluster
+  egress:
+    - toFQDNs:
+        - matchPattern: "*.in.applicationinsights.azure.com"
+      toPorts:
+        - ports:
+            - port: "443"
+    - toFQDNs:
+        - matchPattern: "*.livediagnostics.monitor.azure.com"
+      toPorts:
+        - ports:
+            - port: "443"
+    - toFQDNs:
+        - matchName: dc.services.visualstudio.com
+      toPorts:
+        - ports:
+            - port: "443"
+    - toFQDNs:
+        - matchName: dzcache.redis.cache.windows.net
+      toPorts:
+        - ports:
+            - port: "6380"
+    - toEndpoints:
+        - {}
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*"
+
+# https://editor.networkpolicy.io/?id=CdS2pNcXavoskQpE

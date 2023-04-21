@@ -64,9 +64,9 @@ helm repo add jetstack https://charts.jetstack.io
 helm repo update
 
 
-# helm upgrade cert-manager jetstack/cert-manager \
-#   --namespace ingress --install \
-#   --set installCRDs=true  --wait
+helm upgrade cert-manager jetstack/cert-manager \
+  --namespace ingress --install \
+  --set installCRDs=true  --wait
 
 helm upgrade nginx-ingress ingress-nginx/ingress-nginx --install \
     --namespace ingress \
@@ -97,7 +97,7 @@ spec:
     solvers:
     - http01:
         ingress:
-          class: webapprouting.kubernetes.azure.com
+          class: nginx
 EOF
 
 sleep 5
