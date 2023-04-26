@@ -4,13 +4,26 @@ const config = require('./config');
 const express = require('express');
 const app = express();
 const morgan = require('morgan');
-
+const client = require('prom-client');
 const OS = require('os');
+
+const register = new client.Registry();
+client.collectDefaultMetrics({
+    app: 'node-application-monitoring-app',
+    prefix: 'node_',
+    timeout: 10000,
+    gcDurationBuckets: [0.001, 0.01, 0.1, 1, 2, 5],
+    register
+});
 
 // add logging middleware
 app.use(morgan('dev'));
 
 // Routes
+app.get('/metrics', async (req, res) => {
+    res.setHeader('Content-Type', register.contentType);
+    res.send(await register.metrics());
+});
 
 app.get('/', function(req, res) {
     console.log('base received request');
@@ -50,7 +63,7 @@ app.get('/leak', function(req, res) {
 console.log(config);
 console.log(OS.hostname());
 app.listen(config.port);
-console.log('Listening on localhost:'+ config.port);
+console.log('Listening on localhost:'+ config.port + ', metrics are exposed on http://localhost:' + config.port  + '/metrics');
 
 if (process.env.LEAK){
     console.log('Leaking automatically');
