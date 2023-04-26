@@ -35,6 +35,13 @@ app.get('/ping', function(req, res) {
     process.stdout.write('received ping - send Pong');
     res.send('Pong');
 });
+app.get('/healthz', function(req, res) { 
+    res.send('OK');
+});
+
+app.head('/healthz', function(req, res) {  
+    res.send('OK');
+});
 
 app.get('/crash', function(req, res) {
     console.log('received crash request - crashing');
