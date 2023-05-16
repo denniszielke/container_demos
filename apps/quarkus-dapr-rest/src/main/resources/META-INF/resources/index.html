@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quarkus JobEngine on Azure Container Apps</title>
+    <style>
+        h1, h2, h3, h4, h5, h6 {
+            margin-bottom: 0.5rem;
+            font-weight: 400;
+            line-height: 1.5;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+        }
+
+        h2 {
+            font-size: 2rem
+        }
+
+        h3 {
+            font-size: 1.75rem
+
+        }
+
+        h4 {
+            font-size: 1.5rem
+        }
+
+        h5 {
+            font-size: 1.25rem
+        }
+
+        h6 {
+            font-size: 1rem
+        }
+
+        .lead {
+            font-weight: 300;
+            font-size: 2rem;
+        }
+
+        .banner {
+            font-size: 2.7rem;
+            margin: 0;
+            padding: 2rem 1rem;
+            background-color: #0d1c2c;
+            color: white;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+        }
+
+        code {
+            font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 87.5%;
+            color: #e83e8c;
+            word-break: break-word;
+        }
+
+        .left-column {
+            padding: .75rem;
+            max-width: 75%;
+            min-width: 55%;
+        }
+
+        .right-column {
+            padding: .75rem;
+            max-width: 25%;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+        }
+
+        li {
+            margin: 0.75rem;
+        }
+
+        .right-section {
+            margin-left: 1rem;
+            padding-left: 0.5rem;
+        }
+
+        .right-section h3 {
+            padding-top: 0;
+            font-weight: 200;
+        }
+
+        .right-section ul {
+            border-left: 0.3rem solid #71aeef;
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .provided-code {
+            border-left: 0.3rem solid #71aeef;
+            padding-left: 10px;
+        }
+
+        .provided-code h3 {
+            font-weight: 200;
+        }
+    </style>
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.6.0.min.js"></script>
+    <script src="client.js"></script>
+</head>
+<body>
+
+<div class="banner lead">
+    Serverless Job Engine with Azure Container Apps, Quarkus and Dapr
+</div>
+
+<div class="container">
+    <div class="left-column">
+        <h2>What is this page?</h2>
+
+        <p>You can submit a new request.</p>
+        <input id="message"></input>
+        <p>
+        <button>Add new request</button></p>
+
+        <div class="provided-code">
+            <h3 id="result"></h3>
+        </div>
+    </div>
+    <div class="right-column">
+        <div class="right-section">
+            <h3 id="counter"></h3>
+            <ul id="hosts">
+                <li>GroupId</li>
+            </ul>
+        </div>
+        <div class="right-section">
+            <h3>More reading</h3>
+            <ul>
+                <li>Quarkus on <a href="https://github.com/quarkusio/quarkus">GitHub</a>.</li>
+                <li>Dapr on <a href="https://github.com/dapr/dapr">GitHub</a>.</li>
+                <li>Demo on <a href="https://github.com/denniszielke/serverless-job-engine">GitHub</a>.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -302,3 +302,243 @@ spec:
        notNamespaces: ["foo"]
 EOF
 ```
+
+
+## Custom Auth
+https://istio.io/latest/blog/2021/better-external-authz/
+
+example auth policy
+```
+cat <<EOF | kubectl apply -f -
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: ext-authz
+  namespace: istio-system
+spec:
+  # The selector applies to the ingress gateway in the istio-system namespace.
+  selector:
+    matchLabels:
+      app: istio-ingressgateway
+  # The action "CUSTOM" delegates the access control to an external authorizer, this is different from
+  # the ALLOW/DENY action that enforces the access control right inside the proxy.
+  action: CUSTOM
+  # The provider specifies the name of the external authorizer defined in the meshconfig, which tells where and how to
+  # talk to the external auth service. We will cover this more later.
+  provider:
+    name: "my-ext-authz-service"
+  # The rule specifies that the access control is triggered only if the request path has the prefix "/admin/".
+  # This allows you to easily enable or disable the external authorization based on the requests, avoiding the external
+  # check request if it is not needed.
+  rules:
+  - to:
+    - operation:
+        paths: ["/admin/*"]
+EOF
+```
+
+
+```
+cat > policy.rego <<EOF
+package envoy.authz
+
+import input.attributes.request.http as http_request
+
+default allow = false
+
+token = {"valid": valid, "payload": payload} {
+    [_, encoded] := split(http_request.headers.authorization, " ")
+    [valid, _, payload] := io.jwt.decode_verify(encoded, {"secret": "secret"})
+}
+
+allow {
+    is_token_valid
+    action_allowed
+}
+
+is_token_valid {
+  token.valid
+  now := time.now_ns() / 1000000000
+  token.payload.nbf <= now
+  now < token.payload.exp
+}
+
+action_allowed {
+  startswith(http_request.path, base64url.decode(token.payload.path))
+}
+EOF
+
+kubectl create ns opasvc
+
+kubectl label ns opademo istio-injection=enabled
+
+kubectl label namespace opasvc istio.io/rev=asm-1-17
+
+
+kubectl create secret generic opa-policy -n opasvc --from-file policy.rego
+
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: opa
+  namespace: opasvc
+  labels:
+    app: opa
+spec:
+  ports:
+  - name: grpc
+    port: 9191
+    targetPort: 9191
+  selector:
+    app: opa
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: opa
+  namespace: opasvc
+  labels:
+    app: opa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opa
+  template:
+    metadata:
+      labels:
+        app: opa
+    spec:
+      containers:
+        - name: opa
+          image: openpolicyagent/opa:latest-envoy
+          securityContext:
+            runAsUser: 1111
+          volumeMounts:
+          - readOnly: true
+            mountPath: /policy
+            name: opa-policy
+          args:
+          - "run"
+          - "--server"
+          - "--addr=localhost:8181"
+          - "--diagnostic-addr=0.0.0.0:8282"
+          - "--set=plugins.envoy_ext_authz_grpc.addr=:9191"
+          - "--set=plugins.envoy_ext_authz_grpc.query=data.envoy.authz.allow"
+          - "--set=decision_logs.console=true"
+          - "--ignore=.*"
+          - "/policy/policy.rego"
+          ports:
+          - containerPort: 9191
+          livenessProbe:
+            httpGet:
+              path: /health?plugins
+              scheme: HTTP
+              port: 8282
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health?plugins
+              scheme: HTTP
+              port: 8282
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: proxy-config
+          configMap:
+            name: proxy-config
+        - name: opa-policy
+          secret:
+            secretName: opa-policy
+EOF
+
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.17/samples/httpbin/httpbin.yaml -n opasvc
+
+```
+
+define external authorizer
+
+```
+kubectl edit configmap istio-asm-1-17 -n aks-istio-system
+
+apiVersion: v1
+data:
+  mesh: |-
+    defaultConfig:
+      discoveryAddress: istiod-asm-1-17.aks-istio-system.svc:15012
+      gatewayTopology:
+        numTrustedProxies: 1
+      image:
+        imageType: distroless
+      tracing:
+        zipkin:
+          address: zipkin.aks-istio-system:9411
+    enablePrometheusMerge: true
+    rootNamespace: aks-istio-system
+    trustDomain: cluster.local
+  meshNetworks: 'networks: {}'
+kind: ConfigMap
+metadata:
+  annotations:
+    meta.helm.sh/release-name: azure-service-mesh-istio-discovery
+    meta.helm.sh/release-namespace: aks-istio-system
+  creationTimestamp: "2023-05-03T14:38:16Z"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    helm.toolkit.fluxcd.io/name: azure-service-mesh-istio-discovery-helmrelease
+    helm.toolkit.fluxcd.io/namespace: 64523969922c4900013c0af0
+    install.operator.istio.io/owning-resource: unknown
+    istio.io/rev: asm-1-17
+    operator.istio.io/component: Pilot
+    release: azure-service-mesh-istio-discovery
+  name: istio-asm-1-17
+  namespace: aks-istio-system
+  resourceVersion: "57453"
+  uid: 1481ce3d-e8c6-4ff9-90ba-dd2371691ef5
+
+apiVersion: v1
+data:
+  mesh: |-
+    # Add the following contents:
+    extensionProviders:
+    - name: "opa.opasvc"
+      envoyExtAuthzGrpc:
+        service: "opa.opasvc.svc.cluster.local"
+        port: "9191"
+
+kubectl apply -f - <<EOF
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: httpbin-opa
+  namespace: opasvc
+spec:
+  selector:
+    matchLabels:
+      app: httpbin
+  action: CUSTOM
+  provider:
+    name: "opa.opasvc"
+  rules:
+  - to:
+    - operation:
+        notPaths: ["/ip"]
+EOF
+
+```
+
+
+test the policy
+
+```
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.17/samples/sleep/sleep.yaml
+
+export SLEEP_POD=$(kubectl get pod -l app=sleep -o jsonpath={.items..metadata.name})
+
+export TOKEN_PATH_HEADERS="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXRoIjoiTDJobFlXUmxjbk09IiwibmJmIjoxNTAwMDAwMDAwLCJleHAiOjE5MDAwMDAwMDB9.9yl8LcZdq-5UpNLm0Hn0nnoBHXXAnK4e8RSl9vn6l98
+
+kubectl exec ${SLEEP_POD} -c sleep  -- curl http://httpbin-with-opa:8000/headers -s -o /dev/null -w "%{http_code}\n"
+
+```

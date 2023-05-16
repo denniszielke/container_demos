@@ -22,6 +22,8 @@ kubectl patch svc dummy-logger-pub-lb  --type='json' -p='[{"op": "add", "path": 
 
 kubectl patch svc dummy-logger-pub-lb -p '{"metadata": {"annotations":{"service.beta.kubernetes.io/azure-load-balancer-internal":"true"}} }'
 
+kubectl patch svc azure-vote-front -p '{"metadata": {"annotations":{"service.beta.kubernetes.io/azure-load-balancer-internal":"true"}} }'
+
 
 curl -X POST http://$DUMMY_LOGGER_IP/api/log -H "message: {more: content}" 
 curl -X POST http://$DUMMY_LOGGER_IP/api/log -H "message: hi" 
@@ -126,7 +128,7 @@ DNS=ndzcilium3.northeurope.cloudapp.azure.com
 
 kubectl create namespace $KUBERNETES_NAMESPACE
 
-helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=false --set ingress.enabled=true --set ingress.tls=true --set ingress.host=$DNS  --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=3 --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$AZURE_REDIS_HOST --set dependencies.redisKeyValue=$AZURE_REDIS_KEY --set ingress.class=nginx --wait 
+helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=8 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=false --set ingress.enabled=false --set service.type=LoadBalancer --set ingress.tls=false  --set introduceRandomResponseLag=false --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --set dependencies.useAzureRedis=false --wait 
 
 osm namespace add calculator --mesh-name osm --enable-sidecar-injection 
 
