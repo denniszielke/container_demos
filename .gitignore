@@ -31,6 +31,7 @@ manifests/*
 logging/grafana-values.yaml
 deployment/acsengvnet_out.json
 multi-calculator/.DS_Store
+arm/kubic.json
 multi-calculator/go-calc-backend/.DS_Store
 multi-calculator/js-calc-backend/.DS_Store
 .DS_Store

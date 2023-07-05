@@ -8,7 +8,7 @@ param workspaceResourceId string
 param aksAdminGroupId string
 
 // https://learn.microsoft.com/en-us/azure/templates/microsoft.containerservice/managedclusters?pivots=deployment-language-bicep
-resource aks 'Microsoft.ContainerService/managedClusters@2022-09-01' = {
+resource aks 'Microsoft.ContainerService/managedClusters@2023-05-02-preview' = {
   name: clusterName
   location: location
   identity: {
@@ -31,13 +31,8 @@ resource aks 'Microsoft.ContainerService/managedClusters@2022-09-01' = {
       ]
       managed: true
     }
-    kubernetesVersion: '1.25'
+    kubernetesVersion: '1.26'
     nodeResourceGroup: '${clusterName}-infra'
-    ingressProfile: {
-      webAppRouting: {
-        enabled: true
-      }
-    }
     apiServerAccessProfile: {
       enablePrivateCluster: true
       enablePrivateClusterPublicFQDN: true
@@ -73,6 +68,23 @@ resource aks 'Microsoft.ContainerService/managedClusters@2022-09-01' = {
       dnsServiceIP: '10.1.0.10'
       serviceCidr: '10.1.0.0/16'
     }
+    azureMonitorProfile: {
+      enabled: true
+    }
+    ingressProfile: {
+      webAppRouting: {
+        enabled: true
+      }
+    }
+    guardrailsProfile: {
+      enabled: true
+      systemExcludedNamespaces: [ 'kube-system']
+      level: 'Enforce'
+      excludedNamespaces: 'istio-system'
+    }
+    serviceMeshProfile : {
+      enabled: true
+    }
     addonProfiles: {
       omsagent: {
         enabled: true
@@ -83,5 +95,6 @@ resource aks 'Microsoft.ContainerService/managedClusters@2022-09-01' = {
     }
     publicNetworkAccess: 'Disabled'
     disableLocalAccounts: true
+    
   }
 }

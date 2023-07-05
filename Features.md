@@ -113,6 +113,7 @@ az feature register --namespace "Microsoft.ContainerService" --name "NetworkObse
 az feature register --namespace "Microsoft.ContainerService" --name "AKSLockingDownEgressPreview" 
 az feature register --namespace "Microsoft.ContainerService" --name "GuardrailsPreview" 
 
+az feature list --namespace Microsoft.ContainerService -o table
 
 az feature register --name PrivatePreview --namespace Microsoft.Dashboard
 

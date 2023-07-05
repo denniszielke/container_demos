@@ -146,6 +146,22 @@ spec:
     - "3600"
 EOF
 
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: centos1
+spec:
+  containers:
+  - name: centos
+    image: centos
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+
 
 httpbin.org/get
 ipinfo.io/ip

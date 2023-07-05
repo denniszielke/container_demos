@@ -60,20 +60,11 @@ openssl rand -hex 32
 create config.yaml with content
 ```
 cat  <<EOF >config.yaml
-proxy:
-  secretToken: "774629f880afc0302830c19a9f09be4f59e98b242b65983cea7560e828df2978"
-hub:
-  uid: 1000
-  cookieSecret: "774629f880afc0302830c19a9f09be4f59e98b242b65983cea7560e828df2978"
-  db:
-    type: postgres
-    url: postgres+psycopg2://myadmin@$KUBE_NAME:$PSQL_PASSWORD@$KUBE_NAME.postgres.database.azure.com:5432/jupyterhub
 singleuser:
   storage:
+    capacity: 1Gi
     dynamic:
-      storageClass: azurefile
-rbac:
-   enabled: false
+      storageClass: acstor-azuredisk
 EOF
 
 cat  <<EOF >config.yaml
@@ -99,10 +90,11 @@ helm upgrade --cleanup-on-fail \
   --install $RELEASE jupyterhub/jupyterhub \
   --namespace $NAMESPACE \
   --create-namespace \
-  --version=0.9.0 \
   --values config.yaml
 
 kubectl get service --namespace jhub
+
+kubectl --namespace=jhub1 port-forward service/proxy-public 8080:http
 
 ```
 

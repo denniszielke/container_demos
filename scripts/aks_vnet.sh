@@ -8,15 +8,15 @@
 
 set -e
 
-DEPLOYMENT_NAME="dzlegcy124" # here enter unique deployment name (ideally short and with letters for global uniqueness)
+DEPLOYMENT_NAME="dzatc2" # here enter unique deployment name (ideally short and with letters for global uniqueness)
 USE_PRIVATE_API="false" # use to deploy private master endpoint
-USE_POD_SUBNET="false"
+USE_POD_SUBNET="true"
 USE_OVERLAY="false"
 USE_CILIUM="" #"--enable-cilium-dataplane"
 VNET_PREFIX="0"
 
 AAD_GROUP_ID="0644b510-7b35-41aa-a9c6-4bfc3f644c58 --enable-azure-rbac" # here the AAD group that will be used to lock down AKS authentication
-LOCATION="northeurope" # "northcentralus" "northeurope" #"southcentralus" #"eastus2euap" #"westeurope" # here enter the datacenter location can be eastus or westeurope
+LOCATION="northcentralus" # "northcentralus" "northeurope" #"southcentralus" #"eastus2euap" #"westeurope" # here enter the datacenter location can be eastus or westeurope
 KUBE_GROUP=$DEPLOYMENT_NAME # here enter the resources group name of your AKS cluster
 KUBE_NAME=$DEPLOYMENT_NAME # here enter the name of your kubernetes resource
 NODE_GROUP=$KUBE_GROUP"_"$KUBE_NAME"_nodes_"$LOCATION # name of the node resource group
@@ -33,12 +33,14 @@ VAULT_NAME=dzkv$KUBE_NAME
 SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
 TENANT_ID=$(az account show --query tenantId -o tsv)
 KUBE_VERSION=$(az aks get-versions -l $LOCATION --query 'orchestrators[?default == `true`].orchestratorVersion' -o tsv) # here enter the kubernetes version of your AKS
-KUBE_VERSION="1.24.10"
+#KUBE_VERSION="1.24.10"
 KUBE_CNI_PLUGIN="azure" # azure # kubenet
 MY_OWN_OBJECT_ID=$(az ad signed-in-user show --query objectId --output tsv) # this will be your own aad object id
 #DNS_ID=$(az network dns zone list -g appconfig -o tsv --query "[].id")
 OUTBOUNDTYPE=""
 #az account set --subscription $SUBSCRIPTION_ID
+
+
 PROM_RESOURCE_ID="/subscriptions/$SUBSCRIPTION_ID/resourcegroups/observability/providers/microsoft.monitor/accounts/observability"
 GF_WORKSPACE="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/observability/providers/Microsoft.Dashboard/grafana/gfdashboards"
 
@@ -246,7 +248,7 @@ if [ "$AKS_ID" == "" ]; then
 
     if [ "$USE_OVERLAY" == "true" ]; then
         echo "using overlay subnet $KUBE_POD_SUBNET_ID"
-        az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub --node-count 2 --min-count 2 --max-count 5 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --vm-set-type VirtualMachineScaleSets --network-plugin azure --network-plugin-mode overlay --pod-cidr 100.64.0.0/10 --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID  --node-vm-size "Standard_D2s_v3" --aad-tenant-id $TENANT_ID $USE_CILIUM -o none
+        az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub --node-count 2 --min-count 2 --max-count 5 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --vm-set-type VirtualMachineScaleSets --network-plugin azure --network-plugin-mode overlay --pod-cidr 100.64.0.0/10 --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID  --node-vm-size "standard_d4s_v5" --aad-tenant-id $TENANT_ID $USE_CILIUM -o none
 
     else
         if [ "$USE_POD_SUBNET" == "true" ]; then
@@ -261,6 +263,7 @@ if [ "$AKS_ID" == "" ]; then
    
     AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
     echo "created AKS $AKS_ID"
+    az aks update -n $KUBE_NAME -g $KUBE_GROUP  --enable-oidc-issuer --enable-workload-identity --yes
 else
     echo "AKS $AKS_ID already exists"
     az aks mesh enable --resource-group ${KUBE_GROUP} --name ${KUBE_NAME}
@@ -288,27 +291,31 @@ else
     #az aks nodepool add --scale-down-mode Deallocate --node-count 2 --name marinerpool2 --cluster-name $KUBE_NAME --resource-group $KUBE_GROUP --os-sku CBLMariner
 
     # az aks maintenanceconfiguration add -g $KUBE_GROUP --cluster-name $KUBE_NAME --name tuesday --weekday Tuesday  --start-hour 13
-    
+    # az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name strpool1 --node-count 3 --mode user  --node-vm-size standard_d4s_v5
+    # az aks nodepool update --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --name strpool1 --labels acstor.azure.com/io-engine=acstor
     #az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name armpool --node-count 2 --mode system --node-vm-size Standard_D4ps_v5 --pod-subnet-id $KUBE_POD_SUBNET_ID
     #az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name one --node-count 1 --mode system --node-vm-size Standard_B2ms --pod-subnet-id $KUBE_POD_SUBNET_ID
     #az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name mariner22 --node-count 2 --mode system --node-vm-size Standard_D2s_v3 --pod-subnet-id $KUBE_POD_SUBNET_ID --os-sku CBLMariner
     #az aks update -g $KUBE_GROUP --name $KUBE_NAME --enable-apiserver-vnet-integration --apiserver-subnet-id $KUBE_API_SUBNET_ID
     #az aks update --resource-group $KUBE_GROUP --name $KUBE_NAME --auto-upgrade-channel rapid --yes
+    #az aks nodepool update --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --name nodepool1 --labels acstor.azure.com/io-engine=acstor
+    #az k8s-extension create --cluster-type managedClusters --cluster-name $KUBE_NAME --resource-group $KUBE_GROUP --name azurecontainerstorage --extension-type microsoft.azurecontainerstorage --scope cluster --release-train prod --release-namespace acstor
+
 fi
 
 echo "setting up azure monitor"
 
 az aks get-credentials --resource-group=$KUBE_GROUP --name=$KUBE_NAME --admin --overwrite-existing 
-
+export  AZURE_CORE_USE_COMMAND_INDEX=False
 WORKSPACE_RESOURCE_ID=$(az monitor log-analytics workspace list --resource-group $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME')].id" -o tsv)
 if [ "$WORKSPACE_RESOURCE_ID" == "" ]; then
     echo "creating workspace $KUBE_NAME in $KUBE_GROUP"
     az monitor log-analytics workspace create --resource-group $KUBE_GROUP --workspace-name $KUBE_NAME --location $LOCATION -o none
     WORKSPACE_RESOURCE_ID=$(az monitor log-analytics workspace show --resource-group $KUBE_GROUP --workspace-name $KUBE_NAME -o json | jq '.id' -r)
-    az aks enable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME --addons monitoring --workspace-resource-id $WORKSPACE_RESOURCE_ID
-    az aks update --enable-azuremonitormetrics --resource-group $KUBE_GROUP --name $KUBE_NAME --azure-monitor-workspace-resource-id $PROM_RESOURCE_ID --grafana-resource-id $GF_WORKSPACE
-    OMS_CLIENT_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query addonProfiles.omsagent.identity.clientId -o tsv)
-    az role assignment create --assignee $OMS_CLIENT_ID --scope $AKS_ID --role "Monitoring Metrics Publisher"
+    az aks enable-addons --resource-group $KUBE_GROUP --name $KUBE_NAME --enable-msi-auth-for-monitoring --addons monitoring --workspace-resource-id $WORKSPACE_RESOURCE_ID
+    az aks update --enable-azure-monitor-metrics --resource-group $KUBE_GROUP --name $KUBE_NAME --azure-monitor-workspace-resource-id $PROM_RESOURCE_ID --grafana-resource-id $GF_WORKSPACE
+    #OMS_CLIENT_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query addonProfiles.omsagent.identity.clientId -o tsv)
+    #az role assignment create --assignee $OMS_CLIENT_ID --scope $AKS_ID --role "Monitoring Metrics Publisher"
     az monitor app-insights component create --app $KUBE_NAME-ai --location $LOCATION --resource-group $KUBE_GROUP --application-type web --kind web --workspace $WORKSPACE_RESOURCE_ID
     az monitor log-analytics workspace table update --resource-group $KUBE_GROUP  --workspace-name $KUBE_NAME --name ContainerLogV2  --plan Basic
     kubectl apply -f logging/container-azm-ms-agentconfig-v2.yaml 

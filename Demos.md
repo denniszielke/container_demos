@@ -128,9 +128,9 @@ DNS=ndzcilium3.northeurope.cloudapp.azure.com
 
 kubectl create namespace $KUBERNETES_NAMESPACE
 
-helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=8 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=false --set ingress.enabled=false --set service.type=LoadBalancer --set ingress.tls=false  --set introduceRandomResponseLag=false --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --set dependencies.useAzureRedis=false --wait 
+kubectl label namespace $KUBERNETES_NAMESPACE istio.io/rev=asm-1-17
 
-osm namespace add calculator --mesh-name osm --enable-sidecar-injection 
+helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=2 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=false --set ingress.enabled=false --set service.type=LoadBalancer --set ingress.tls=false  --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2 --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --set dependencies.useAzureRedis=false --wait 
 
 helm upgrade calculatornotls $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace calculatornotls --install --create-namespace --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=false --set ingress.enabled=true --set ingress.tls=false --set ingress.host=20.93.52.206.nip.io  --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2  --set ingress.class=webapprouting.kubernetes.azure.com --wait --timeout 45s
 
@@ -145,6 +145,44 @@ helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespa
 helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=1 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$AZURE_REDIS_HOST --set dependencies.redisKeyValue=$AZURE_REDIS_KEY --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --set dependencies.useIngress=true --set ingress.enabled=true --set ingress.tls=false --set ingress.host=$DNS --set service.type=ClusterIP --set noProbes=false --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=3 --set deployRequester=true --wait --timeout 45s
 
 helm delete calculator -n $KUBERNETES_NAMESPACE
+
+kubectl apply -f - <<EOF
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: calculator-gateway-external
+  namespace: $KUBERNETES_NAMESPACE
+spec:
+  selector:
+    istio: aks-istio-ingressgateway-external
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: calculator-vs-external
+  namespace: $KUBERNETES_NAMESPACE
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - calculator-gateway-external
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: calculator-multicalculator-frontend-svc
+        port:
+          number: 80
+EOF
 
 ```
 apiVersion: cilium.io/v2

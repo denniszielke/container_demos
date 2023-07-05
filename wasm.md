@@ -11,7 +11,70 @@ az aks nodepool add \
 
 az aks nodepool show -g $KUBE_GROUP --cluster-name $KUBE_GROUP -n mywasipool
 
+cat <<EOF | kubectl apply -f -
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: "wasmtime-slight-v1"
+handler: "slight"
+scheduling:
+  nodeSelector:
+    "kubernetes.azure.com/wasmtime-slight-v1": "true"
+---
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: "wasmtime-spin-v1"
+handler: "spin"
+scheduling:
+  nodeSelector:
+    "kubernetes.azure.com/wasmtime-spin-v1": "true"
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wasm-slight
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wasm-slight
+  template:
+    metadata:
+      labels:
+        app: wasm-slight
+    spec:
+      runtimeClassName: wasmtime-slight-v1
+      containers:
+        - name: hello-slight
+          image: ghcr.io/deislabs/containerd-wasm-shims/examples/slight-rust-hello:v0.3.3
+          command: ["/"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 10Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wasm-slight
+spec:
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  selector:
+    app: wasm-slight
+EOF
 ```
+
+
 
 
 ## Deploy demo app

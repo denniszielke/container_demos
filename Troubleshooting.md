@@ -78,6 +78,48 @@ az group create -n $KUBE_GROUP-1 -l $LOCATION -o none
 az aks create -g $KUBE_GROUP -n $KUBE_NAME --kubernetes-version $KUBE_VERSION --snapshot-id "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$KUBE_GROUP-1/providers/Microsoft.ContainerService/snapshots/$KUBE_NAME-1"
 
 
+# Kappie
+
+kubectl port-forward $(kubectl get po -l dsName=ama-metrics-node -o name -n kube-system | head -n 1) 9090:9090 -n kube-system
+helm install kappie ./deploy/manifests/controller/helm/kappie/ --namespace kube-system --dependency-update
+
+kubectl create configmap ama-metrics-prometheus-config-node --from-file=logging/ama-cilium-configmap.yaml -n kube-system
+
+
+http://localhost:9090/targets
+SAS=''
+
+kubectl-kappie capture create --blob-upload $SAS --namespace capture --pod-selectors="k8s-app=kube-dns" --namespace-selectors="kubernetes.io/metadata.name=kube-system" --duration=2m --no-wait=false
+
+kubectl apply -f - <<EOF
+apiVersion: v1
+data:
+  blob-upload-url: $SAS
+kind: Secret
+metadata:
+  name: blob-sas-url
+  namespace: default
+type: Opaque
+EOF
+
+kubectl apply -f - <<EOF
+apiVersion: kappie.io/v1alpha1
+kind: Capture
+metadata:
+  name: capture-test
+spec:
+  captureConfiguration:
+    captureOption:
+      duration: 30
+    captureTarget:
+      nodeSelector:
+        matchLabels:
+          kubernetes.io/hostname: aks-nodepool1-30398778-vmss000000
+  outputConfiguration:
+    hostPath: "/tmp/kappie"
+    blockUpload: blob-sas-url
+EOF
+
 # Diagnostics
 
 
