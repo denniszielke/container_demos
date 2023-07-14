@@ -114,7 +114,7 @@ helm upgrade --install ingress-nginx ingress-nginx \
 ```
 
 helm repo add phoenix 'https://raw.githubusercontent.com/denniszielke/phoenix/master/'
-helm repo upgrade
+helm repo update
 helm search repo phoenix 
 
 AZURE_CONTAINER_REGISTRY_NAME=phoenix
@@ -130,7 +130,7 @@ kubectl create namespace $KUBERNETES_NAMESPACE
 
 kubectl label namespace $KUBERNETES_NAMESPACE istio.io/rev=asm-1-17
 
-helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=2 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=false --set ingress.enabled=false --set service.type=LoadBalancer --set ingress.tls=false  --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2 --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --set dependencies.useAzureRedis=false --wait 
+helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=2 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=false --set ingress.enabled=false --set service.type=LoadBalancer --set ingress.tls=false  --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2 --set dependencies.useAppInsights=false --set dependencies.useAzureRedis=false --wait 
 
 helm upgrade calculatornotls $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace calculatornotls --install --create-namespace --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=false --set ingress.enabled=true --set ingress.tls=false --set ingress.host=20.93.52.206.nip.io  --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2  --set ingress.class=webapprouting.kubernetes.azure.com --wait --timeout 45s
 
@@ -210,6 +210,24 @@ spec:
       toPorts:
         - ports:
             - port: "443"
+
+kubectl apply -f - <<EOF
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: backend-policy
+  namespace: calculator
+spec:
+  podSelector:
+    matchLabels:
+      role: backend
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          role: frontend
+EOF
+
 ```
 
 

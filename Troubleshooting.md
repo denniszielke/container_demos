@@ -80,6 +80,8 @@ az aks create -g $KUBE_GROUP -n $KUBE_NAME --kubernetes-version $KUBE_VERSION --
 
 # Kappie
 
+kubectl create configmap ama-metrics-prometheus-config-node --from-file=./logging/ama-cilium-configmap.yaml  -n kube-system
+
 kubectl port-forward $(kubectl get po -l dsName=ama-metrics-node -o name -n kube-system | head -n 1) 9090:9090 -n kube-system
 helm install kappie ./deploy/manifests/controller/helm/kappie/ --namespace kube-system --dependency-update
 
@@ -89,7 +91,13 @@ kubectl create configmap ama-metrics-prometheus-config-node --from-file=logging/
 http://localhost:9090/targets
 SAS=''
 
-kubectl-kappie capture create --blob-upload $SAS --namespace capture --pod-selectors="k8s-app=kube-dns" --namespace-selectors="kubernetes.io/metadata.name=kube-system" --duration=2m --no-wait=false
+kappie capture create --blob-upload $SAS --namespace capture --pod-selectors="k8s-app=kube-dns" --namespace-selectors="kubernetes.io/metadata.name=kube-system" --duration=2m --no-wait=false
+
+kappie capture create --blob-upload  $SAS --node-selectors "kubernetes.io/os=linux" --namespace calculator 
+
+kubectl create secret generic blob-sas-url --from-literal blob-upload-url=$SAS
+
+echo $SAS | base64 --encode
 
 kubectl apply -f - <<EOF
 apiVersion: v1
@@ -114,7 +122,7 @@ spec:
     captureTarget:
       nodeSelector:
         matchLabels:
-          kubernetes.io/hostname: aks-nodepool1-30398778-vmss000000
+          kubernetes.io/hostname: aks-nodepool1-22452897-vmss000000
   outputConfiguration:
     hostPath: "/tmp/kappie"
     blockUpload: blob-sas-url

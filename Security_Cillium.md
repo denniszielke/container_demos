@@ -211,3 +211,65 @@ kubectl annotate pod calculator-multicalculator-frontend-86c8866b47-fvmmw -n cal
 
 
 ```
+
+## Enterprise
+
+```
+az k8s-extension update -c $CLUSTER_NAME -t managedClusters -g $RG_NAME -n cilium --configuration-settings namespace=kube-system hubble.enabled=true
+
+az k8s-extension update -c $CLUSTER_NAME -t managedClusters -g $RG_NAME -n cilium --configuration-settings hubble.relay.enabled=true
+
+az k8s-extension show --cluster-name $CLUSTER_NAME --resource-group $RG_NAME --cluster-type managedClusters -n cilium
+
+kubectl --namespace=kube-system exec -i -t ds/cilium  -- cilium version
+
+# cee = cilium enterprise edition
+
+
+cilium status
+
+kubectl -n kube-system exec ds/cilium -- cilium-health status
+
+kubectl describe deploy cilium-operator -n kube-system | grep "Image:"
+
+ 
+
+# Temporary work around to install Hubble UI OSS version in Enterprise version (this will be available soon)
+
+helm install --namespace kube-system cilium cilium/cilium --version 1.13.4 -f hubble-standalone-values.yaml
+
+```
+
+hubble stand alone values
+
+````
+
+agent: false
+operator:
+  enabled: false
+cni:
+  install: false
+hubble:
+  enabled: false
+  relay:
+    # set this to false as Hubble relay is already installed
+    enabled: false
+    tls:
+      server:
+        # set this to true if tls is enabled on Hubble relay server side
+        enabled: false
+  ui:
+    # enable Hubble UI
+    enabled: true
+    standalone:
+      # enable Hubble UI standalone deployment
+      enabled: true
+```
+
+cilium hubble port-forward
+
+# In another terminal
+
+cilium hubble ui
+
+ℹ️  Opening "http://localhost:12000" in your browser.

@@ -14,7 +14,7 @@ data:
     [log_collection_settings]
        [log_collection_settings.stdout]
           # In the absense of this configmap, default value for enabled is true
-          enabled = true
+          enabled = false
           # exclude_namespaces setting holds good only if enabled is set to true
           # kube-system log collection is disabled by default in the absence of 'log_collection_settings.stdout' setting. If you want to enable kube-system, remove it from the following setting.
           # If you want to continue to disable kube-system log collection keep this namespace in the following setting and add any other namespace you want to disable log collection to the array.
@@ -23,7 +23,7 @@ data:
 
        [log_collection_settings.stderr]
           # Default value for enabled is true
-          enabled = true
+          enabled = false
           # exclude_namespaces setting holds good only if enabled is set to true
           # kube-system log collection is disabled by default in the absence of 'log_collection_settings.stderr' setting. If you want to enable kube-system, remove it from the following setting.
           # If you want to continue to disable kube-system log collection keep this namespace in the following setting and add any other namespace you want to disable log collection to the array.
@@ -32,7 +32,7 @@ data:
 
        [log_collection_settings.env_var]
           # In the absense of this configmap, default value for enabled is true
-          enabled = true
+          enabled = false
        [log_collection_settings.enrich_container_logs]
           # In the absense of this configmap, default value for enrich_container_logs is false
           enabled = false

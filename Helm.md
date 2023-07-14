@@ -106,7 +106,7 @@ helm delete $APP_IN --purge
 
 ```
 cd phoenix
-helm package ~/charts/multicalculator  #This will create tgz file with chart in current directory
+helm package ./charts/multicalculator  #This will create tgz file with chart in current directory
 helm repo index . #This will create index.yaml file which references my-app-chart.yaml
 git add .
 git commit -m "my-app-chart"
