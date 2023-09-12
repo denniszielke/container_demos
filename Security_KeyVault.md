@@ -709,3 +709,128 @@ ls -l /mnt/secrets-store/
 
 cat /mnt/secrets-store/supersecret1
 ```
+
+
+## WL
+
+
+```
+
+
+```
+KUBE_NAME=
+KUBE_GROUP=
+SERVICE_ACCOUNT_NAMESPACE=app1ns
+SERVICE_ACCOUNT_NAME=app1
+KEYVAULT_NAME=dzkv$KUBE_NAME
+AZURE_TENANT_ID=$(az account show --query tenantId -o tsv)
+kubectl create ns $SERVICE_ACCOUNT_NAMESPACE
+
+az identity create --name $SERVICE_ACCOUNT_NAME --resource-group $KUBE_GROUP -o none
+
+export USER_ASSIGNED_CLIENT_ID="$(az identity show --resource-group "${KUBE_GROUP}" --name "$SERVICE_ACCOUNT_NAME" --query 'clientId' -o tsv)"
+
+AKS_OIDC_ISSUER="$(az aks show -n $KUBE_NAME -g $KUBE_GROUP --query "oidcIssuerProfile.issuerUrl" -o tsv)"
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    azure.workload.identity/client-id: ${USER_ASSIGNED_CLIENT_ID}
+  labels:
+    azure.workload.identity/use: "true"
+  name: ${SERVICE_ACCOUNT_NAME}
+  namespace: ${SERVICE_ACCOUNT_NAMESPACE}
+EOF
+
+az identity federated-credential create --name ${SERVICE_ACCOUNT_NAME} --identity-name "${SERVICE_ACCOUNT_NAME}" --resource-group $KUBE_GROUP --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:${SERVICE_ACCOUNT_NAMESPACE}:${SERVICE_ACCOUNT_NAME}
+
+az keyvault set-policy -n $KEYVAULT_NAME --key-permissions get --spn $USER_ASSIGNED_CLIENT_ID
+az keyvault set-policy -n $KEYVAULT_NAME --secret-permissions get --spn $USER_ASSIGNED_CLIENT_ID
+az keyvault set-policy -n $KEYVAULT_NAME --certificate-permissions get --spn $USER_ASSIGNED_CLIENT_ID
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: idstart
+  namespace: ${SERVICE_ACCOUNT_NAMESPACE}
+  labels:
+    azure.workload.identity/use: "true"
+  annotations:
+    azure.workload.identity/inject-proxy-sidecar: "true"
+    azure.workload.identity/proxy-sidecar-port: "8080"
+spec:
+  serviceAccountName: ${SERVICE_ACCOUNT_NAME}
+  containers:
+    - image: centos
+      name: centos
+      command:
+      - sleep
+      - "3600"
+  nodeSelector:
+    kubernetes.io/os: linux
+EOF
+
+kubectl exec -it idstart -n ${SERVICE_ACCOUNT_NAMESPACE}  -- /bin/bash  
+
+cat /var/run/secrets/azure/tokens/azure-identity-token
+
+
+curl  --silent -H Metadata:True --noproxy "*" "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/"
+
+
+cat <<EOF | kubectl apply -f -
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: azure-kvname-workload-identity # needs to be unique per namespace
+  namespace: ${SERVICE_ACCOUNT_NAMESPACE}
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    useVMManagedIdentity: "false"          
+    clientID: "${USER_ASSIGNED_CLIENT_ID}" # Setting this to use workload identity
+    keyvaultName: ${KEYVAULT_NAME}       # Set to the name of your key vault
+    cloudName: ""                         # [OPTIONAL for Azure] if not provided, the Azure environment defaults to AzurePublicCloud
+    objects:  |
+      array:
+        - |
+          objectName: mySecret
+          objectType: secret              # object types: secret, key, or cert
+          objectVersion: ""               # [OPTIONAL] object versions, default to latest if empty
+    tenantId: "${AZURE_TENANT_ID}"        # The tenant ID of the key vault
+EOF
+
+cat <<EOF | kubectl apply -f -
+kind: Pod
+apiVersion: v1
+metadata:
+  name: busybox-secrets-store-inline-user-msi
+  namespace: ${SERVICE_ACCOUNT_NAMESPACE}
+  labels:
+    azure.workload.identity/use: "true"
+spec:
+  serviceAccountName: ${SERVICE_ACCOUNT_NAME}
+  containers:
+    - name: busybox
+      image: registry.k8s.io/e2e-test-images/busybox:1.29-1 
+      command:
+        - "/bin/sleep"
+        - "10000"
+      volumeMounts:
+      - name: secrets-store01-inline
+        mountPath: "/mnt/secrets-store"
+        readOnly: true
+  volumes:
+    - name: secrets-store01-inline
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: "azure-kvname-workload-identity"
+EOF
+
+```

@@ -1,57 +1,21 @@
 global:
   scrape_interval: 30s
 scrape_configs:
-- job_name: "cilium-pods"
+- job_name: "istio-wl"
+  scheme: http
   kubernetes_sd_configs:
-    - role: pod
+    - role: endpoints
   relabel_configs:
-    - source_labels: [__meta_kubernetes_pod_container_name]
+    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
       action: keep
-      regex: cilium(.*)
+      regex: true
+    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+      action: replace
+      target_label: __metrics_path__
+      regex: (.+)
     - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
       separator: ":"
-      regex: ([^:]+)(?::\d+)?
+      regex: ([^:]+)(?::\d+)?;(\d+)
       target_label: __address__
-      replacement: ${1}:${2}
+      replacement: $1:$2
       action: replace
-    - source_labels: [__meta_kubernetes_pod_node_name]
-      action: replace
-      target_label: instance
-    - source_labels: [__meta_kubernetes_pod_label_k8s_app]
-      action: replace
-      target_label: k8s_app
-    - source_labels: [__meta_kubernetes_pod_name]
-      action: replace
-      regex: (.*)
-      target_label: pod
-    - source_labels: [__meta_kubernetes_namespace]
-      separator: ;
-      regex: (.*)
-      target_label: namespace
-      replacement: $1
-      action: replace
-    - source_labels: [__meta_kubernetes_pod_label_io_cilium_app]
-      action: replace
-      target_label: io_cilium_app
-    - source_labels: [__meta_kubernetes_service_name]
-      separator: ;
-      regex: (.*)
-      target_label: service
-      replacement: $1
-      action: replace
-    - source_labels: [__meta_kubernetes_pod_name]
-      separator: ;
-      regex: (.*)
-      target_label: pod
-      replacement: $1
-      action: replace
-    - source_labels: [__meta_kubernetes_pod_container_name]
-      separator: ;
-      regex: (.*)
-      target_label: container
-      replacement: $1
-      action: replace
-  metric_relabel_configs:
-    - source_labels: [__name__]
-      action: keep
-      regex: (.*)

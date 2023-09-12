@@ -122,7 +122,7 @@ KUBERNETES_NAMESPACE=calculator
 BUILD_BUILDNUMBER=latest
 AZURE_CONTAINER_REGISTRY_URL=denniszielke
 APPINSIGHTY_KEY=InstrumentationKey=
-AZURE_REDIS_HOST=dzcache.redis.cache.windows.net
+AZURE_REDIS_HOST=.redis.cache.windows.net
 AZURE_REDIS_KEY=
 DNS=ndzcilium3.northeurope.cloudapp.azure.com
 
@@ -130,9 +130,12 @@ kubectl create namespace $KUBERNETES_NAMESPACE
 
 kubectl label namespace $KUBERNETES_NAMESPACE istio.io/rev=asm-1-17
 
+echo "without anything"
 helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=2 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=false --set ingress.enabled=false --set service.type=LoadBalancer --set ingress.tls=false  --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2 --set dependencies.useAppInsights=false --set dependencies.useAzureRedis=false --wait 
 
-helm upgrade calculatornotls $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace calculatornotls --install --create-namespace --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=false --set ingress.enabled=true --set ingress.tls=false --set ingress.host=20.93.52.206.nip.io  --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2  --set ingress.class=webapprouting.kubernetes.azure.com --wait --timeout 45s
+echo "without AI but with Redis"
+helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=2 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=false --set ingress.enabled=false --set service.type=LoadBalancer --set ingress.tls=false  --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=1 --set dependencies.useAppInsights=false --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$AZURE_REDIS_HOST --set dependencies.redisKeyValue=$AZURE_REDIS_KEY --wait 
+
 
 helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=true --set ingress.enabled=true --set ingress.tls=true --set ingress.host=$DNS  --set noProbes=true --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2 --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --wait --timeout 45s
 
@@ -181,7 +184,7 @@ spec:
     - destination:
         host: calculator-multicalculator-frontend-svc
         port:
-          number: 80
+          number: 8080
 EOF
 
 ```
@@ -231,7 +234,30 @@ EOF
 ```
 
 
+
 ```
+## Health model
+
+```
+AppRequests
+| where TimeGenerated < ago(10m)
+| where Success == true
+| where AppRoleName == "calculator-multicalculator-frontend.calculator"
+| summarize avg(DurationMs)
+
+AppRequests
+| where TimeGenerated < ago(10m)
+| where Success == true
+| where AppRoleName == "calculator-multicalculator-backend.calculator"
+| summarize avg(DurationMs)
+
+requests
+| where timestamp < ago(10m)
+| where cloud_RoleName == "calculator-multicalculator-backend.calculator"
+| summarize avg(duration)
+
+```
+
 ## crashing
 ```
 kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/crashing-app/crashing-app.yaml

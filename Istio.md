@@ -5,6 +5,8 @@ curl -L https://git.io/getLatestIstio | sh -
 
 export PATH="$PATH:/Users/dennis/lib/istio-1.8.0/bin"
 
+export PATH="$PATH:/Users/dennis/lib/istio-1.18.2/bin"
+
 https://istio.io/docs/setup/kubernetes/helm-install/
 
 
@@ -18,6 +20,7 @@ kubectl -n istio-system port-forward $(kubectl -n istio-system get pod -l app=gr
 kubectl label namespace default istio-injection=enabled
 kubectl label namespace calculator istio-injection=disabled
 
+:9411
 
 kubernetes.azure.com/mode=system
 

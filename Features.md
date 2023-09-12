@@ -161,7 +161,8 @@ az provider register --namespace Microsoft.Insights
 az provider register --namespace Microsoft.AlertsManagement
 az provider register --namespace Microsoft.OperationsManagement
 az provider register --namespace Microsoft.ServiceNetworking
-
+az provider register --namespace Microsoft.EventGrid
+ 
 az provider show -n Microsoft.ServiceNetworking
 
 az provider unregister --namespace Microsoft.ContainerService

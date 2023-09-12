@@ -8,19 +8,20 @@
 
 set -e
 
-DEPLOYMENT_NAME="dzobsnat1" # here enter unique deployment name (ideally short and with letters for global uniqueness)
+DEPLOYMENT_NAME="dzobs4all" # here enter unique deployment name (ideally short and with letters for global uniqueness)
 USE_PRIVATE_API="false" # use to deploy private master endpoint
 USE_POD_SUBNET="false"
-USE_OVERLAY="true"
-USE_CILIUM="" #--enable-cilium-dataplane"
+USE_OVERLAY="false"
+USE_CILIUM="--enable-cilium-dataplane" #--network-policy calico" #--enable-cilium-dataplane"
 VNET_PREFIX="0"
-
-AAD_GROUP_ID="0644b510-7b35-41aa-a9c6-4bfc3f644c58 --enable-azure-rbac" # here the AAD group that will be used to lock down AKS authentication
-LOCATION="northeurope" # "northcentralus" "northeurope" #"southcentralus" #"eastus2euap" #"westeurope" # here enter the datacenter location can be eastus or westeurope
 KUBE_GROUP=$DEPLOYMENT_NAME # here enter the resources group name of your AKS cluster
 KUBE_NAME=$DEPLOYMENT_NAME # here enter the name of your kubernetes resource
 NODE_GROUP=$KUBE_GROUP"_"$KUBE_NAME"_nodes_"$LOCATION # name of the node resource group
 KUBE_VNET_NAME="$DEPLOYMENT_NAME-vnet"
+
+AAD_GROUP_ID="0644b510-7b35-41aa-a9c6-4bfc3f644c58 --enable-azure-rbac" # here the AAD group that will be used to lock down AKS authentication
+LOCATION="northeurope" # "northcentralus" "northeurope" #"southcentralus" #"eastus2euap" #"westeurope" # here enter the datacenter location can be eastus or westeurope
+
 KUBE_FW_SUBNET_NAME="AzureFirewallSubnet" # this you cannot change
 BASTION_SUBNET_NAME="AzureBastionSubnet" # this you cannot change
 APPGW_SUBNET_NAME="gw-1-subnet"
@@ -36,7 +37,7 @@ KUBE_VERSION=$(az aks get-versions -l $LOCATION --query 'orchestrators[?default 
 KUBE_VERSION="1.26.3"
 KUBE_CNI_PLUGIN="azure" # azure # kubenet
 MY_OWN_OBJECT_ID=$(az ad signed-in-user show --query objectId --output tsv) # this will be your own aad object id
-#DNS_ID=$(az network dns zone list -g appconfig -o tsv --query "[].id")
+#DNS_ID=$(az network dns zone list -g blobs -o tsv --query "[].id")
 OUTBOUNDTYPE=""
 #az account set --subscription $SUBSCRIPTION_ID
 
@@ -277,6 +278,7 @@ else
     #az aks enable-addons --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --addons="web_application_routing" --dns-zone-resource-id $DNS_ID
     #az aks update --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --enable-keda --yes
     az aks update -n $KUBE_NAME -g $KUBE_GROUP  --enable-oidc-issuer --enable-workload-identity --yes
+    #az aks update -n $KUBE_NAME -g $KUBE_GROUP  --enable-oidc-issuer --enable-network-observability --yes
     #az aks enable-addons --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --addons="virtual-node" --subnet-name $ACI_AGENT_SUBNET_NAME
     #az aks nodepool add --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --name mywasipool --node-count 1  --workload-runtime WasmWasi 
     #az aks nodepool add --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --name ociwasmpool --node-count 1  --workload-runtime ocicontainer
