@@ -320,3 +320,7 @@ http://aka.ms/AMPMonitoring
 
 https://aka.ms/smartinsights
 
+export OPENAI_API_KEY=
+export OPENAI_API_BASE=
+export OPENAI_API_DEPLOYMENT=gpt4
+export OPENAI_API_TYPE=azure

@@ -8,11 +8,13 @@
 
 set -e
 
-DEPLOYMENT_NAME="dzobs4all" # here enter unique deployment name (ideally short and with letters for global uniqueness)
+DEPLOYMENT_NAME="dzapimv2s" # here enter unique deployment name (ideally short and with letters for global uniqueness)
+LOCATION="southcentralus" # "northcentralus" "northeurope" #"southcentralus" #"eastus2euap" #"westeurope" # here enter the datacenter location can be eastus or westeurope
+
 USE_PRIVATE_API="false" # use to deploy private master endpoint
 USE_POD_SUBNET="false"
 USE_OVERLAY="false"
-USE_CILIUM="--enable-cilium-dataplane" #--network-policy calico" #--enable-cilium-dataplane"
+USE_CILIUM="" #--enable-cilium-dataplane" #--network-policy calico" #--enable-cilium-dataplane"
 VNET_PREFIX="0"
 KUBE_GROUP=$DEPLOYMENT_NAME # here enter the resources group name of your AKS cluster
 KUBE_NAME=$DEPLOYMENT_NAME # here enter the name of your kubernetes resource
@@ -20,7 +22,6 @@ NODE_GROUP=$KUBE_GROUP"_"$KUBE_NAME"_nodes_"$LOCATION # name of the node resourc
 KUBE_VNET_NAME="$DEPLOYMENT_NAME-vnet"
 
 AAD_GROUP_ID="0644b510-7b35-41aa-a9c6-4bfc3f644c58 --enable-azure-rbac" # here the AAD group that will be used to lock down AKS authentication
-LOCATION="northeurope" # "northcentralus" "northeurope" #"southcentralus" #"eastus2euap" #"westeurope" # here enter the datacenter location can be eastus or westeurope
 
 KUBE_FW_SUBNET_NAME="AzureFirewallSubnet" # this you cannot change
 BASTION_SUBNET_NAME="AzureBastionSubnet" # this you cannot change
@@ -34,7 +35,7 @@ VAULT_NAME=dzkv$KUBE_NAME
 SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
 TENANT_ID=$(az account show --query tenantId -o tsv)
 KUBE_VERSION=$(az aks get-versions -l $LOCATION --query 'orchestrators[?default == `true`].orchestratorVersion' -o tsv) # here enter the kubernetes version of your AKS
-KUBE_VERSION="1.26.3"
+KUBE_VERSION="1.26.6"
 KUBE_CNI_PLUGIN="azure" # azure # kubenet
 MY_OWN_OBJECT_ID=$(az ad signed-in-user show --query objectId --output tsv) # this will be your own aad object id
 #DNS_ID=$(az network dns zone list -g blobs -o tsv --query "[].id")
@@ -83,7 +84,7 @@ if [ "$VNET_RESOURCE_ID" == "" ]; then
     az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $BASTION_SUBNET_NAME --address-prefix 10.$VNET_PREFIX.0.0/24  -o none 
     az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_API_SUBNET_NAME --address-prefix 10.$VNET_PREFIX.1.0/24 --delegations Microsoft.ContainerService/managedClusters  -o none
     az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_FW_SUBNET_NAME --address-prefix 10.$VNET_PREFIX.3.0/24  -o none
-    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $APPGW_SUBNET_NAME --address-prefix 10.$VNET_PREFIX.2.0/24  -o none
+    az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $APPGW_SUBNET_NAME --address-prefix 10.$VNET_PREFIX.2.0/24 --delegations Microsoft.Web/serverFarms -o none
     az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_ING_SUBNET_NAME --address-prefix 10.$VNET_PREFIX.4.0/23 --delegations Microsoft.ServiceNetworking/trafficControllers -o none
     az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $KUBE_AGENT_SUBNET_NAME --address-prefix 10.$VNET_PREFIX.6.0/23   -o none
     az network vnet subnet create -g $KUBE_GROUP --vnet-name $KUBE_VNET_NAME -n $POD_AGENT_SUBNET_NAME --address-prefix 10.$VNET_PREFIX.8.0/22   -o none
