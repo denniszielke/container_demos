@@ -454,3 +454,193 @@ spec:
         - containerPort: 9001
 EOF
 ```
+
+## Letsencrypt
+
+```
+AKS_NAME="dzatc4" #cluster name
+RESOURCE_GROUP="dzatc4" #cluster resource group
+
+KUBE_NAME="dznetgw"    
+KUBE_GROUP="$KUBE_NAME"
+AKS_NAME="$KUBE_NAME"
+RESOURCE_GROUP="$KUBE_NAME"
+ALB="atc1" #alb resource name
+IDENTITY_RESOURCE_NAME='azure-alb-identity' # alb controller identity
+
+DNS_ZONE_ID=$(az network dns zone list -g blobs -o tsv --query "[].id")
+DNS_ZONE=$(az network dns zone list -g blobs -o tsv --query "[].name")
+
+SUB_ID=$(az account show --query id -o tsv) #subscriptionid             
+ALB_SUBNET_ID="/subscriptions/$SUB_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Network/virtualNetworks/$RESOURCE_GROUP-vnet/subnets/ing-4-subnet" #subnet resource id of your ALB subnet
+NODE_GROUP=$(az aks show --resource-group $RESOURCE_GROUP --name $AKS_NAME --query "nodeResourceGroup" -o tsv) #infrastructure resource group of your cluster
+NODE_GROUP_ID="/subscriptions/$SUB_ID/resourceGroups/$NODE_GROUP"
+KUBE_GROUP_ID="/subscriptions/$SUB_ID/resourceGroups/$RESOURCE_GROUP"
+AKS_OIDC_ISSUER="$(az aks show -n "$AKS_NAME" -g "$RESOURCE_GROUP" --query "oidcIssuerProfile.issuerUrl" -o tsv)" # oidc issuer url of your cluster
+
+az identity create --resource-group $RESOURCE_GROUP --name $IDENTITY_RESOURCE_NAME
+ALB_PRINCIPAL_ID="$(az identity show -g $RESOURCE_GROUP -n $IDENTITY_RESOURCE_NAME --query principalId -o tsv)"
+
+echo "Waiting 60 seconds to allow for replication of the identity..."
+sleep 60
+
+az network alb create -g $RESOURCE_GROUP -n $ALB
+
+az network alb frontend create -g $RESOURCE_GROUP -n $ALB-frontend --alb-name $ALB
+
+az role assignment create --assignee-object-id $ALB_PRINCIPAL_ID --scope $KUBE_GROUP_ID --role "AppGw for Containers Configuration Manager"
+az role assignment create --assignee-object-id $ALB_PRINCIPAL_ID --scope $ALB_SUBNET_ID --role "Network Contributor"
+
+az network alb association create -g $RESOURCE_GROUP -n $ALB-link --alb-name $ALB --subnet $ALB_SUBNET_ID
+
+az identity federated-credential create --name $IDENTITY_RESOURCE_NAME \
+     --identity-name "azure-alb-identity" \
+     --resource-group $RESOURCE_GROUP \
+     --issuer "$AKS_OIDC_ISSUER" \
+     --subject "system:serviceaccount:azure-alb-system:alb-controller-sa"
+
+ALB_WL_ID=$(az identity show -g $RESOURCE_GROUP -n azure-alb-identity --query clientId -o tsv)
+
+helm upgrade  \
+  --install alb-controller oci://mcr.microsoft.com/application-lb/charts/alb-controller \
+  --namespace azure-alb-system --create-namespace \
+  --version 0.6.3 \
+  --set albController.namespace=azure-alb-system \
+  --set albController.podIdentity.clientID=$ALB_WL_ID
+
+ALB_RESOURCE_ID=$(az network alb show --resource-group $RESOURCE_GROUP --name $ALB --query id -o tsv)
+
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: $ALB-infra
+EOF
+
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+metadata:
+  name: gateway-01
+  namespace: $ALB-infra
+  annotations:
+    alb.networking.azure.io/alb-id: $ALB_RESOURCE_ID
+spec:
+  gatewayClassName: azure-alb-external
+  listeners:
+  - name: http
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            shared-gateway-access: "true"
+  addresses:
+  - type: alb.networking.azure.io/alb-frontend
+    value: $ALB-frontend
+EOF
+
+https://cert-manager.io/docs/configuration/acme/http01/
+
+kubectl apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.0.0/standard-install.yaml"
+
+helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace \
+  --set "extraArgs={--feature-gates=ExperimentalGatewayAPISupport=true}" --version v1.14.2 --set installCRDs=true
+
+kubectl label namespace $ALB-infra shared-gateway-access=true 
+
+kubectl apply -f - <<EOF
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: letsencrypt
+  namespace: $ALB-infra
+spec:
+  acme:
+    email: mail@$DNS_ZONE
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: my-issuer-account-key
+    solvers:
+      - http01:
+          gatewayHTTPRoute:
+            parentRefs:
+              - name: gateway-01
+                namespace: $ALB-infra
+                kind: Gateway
+EOF
+
+
+kubectl apply -f - <<EOF
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: example-tls
+  namespace: $ALB-infra
+spec:
+  issuerRef:
+    name: letsencrypt
+  secretName: my-cert
+  dnsNames:
+  - events.$DNS_ZONE
+EOF
+
+
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+metadata:
+  name: gateway-01
+  namespace: $ALB-infra
+  annotations:
+    alb.networking.azure.io/alb-id: $ALB_RESOURCE_ID
+spec:
+  gatewayClassName: azure-alb-external
+  listeners:
+  - name: http
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            shared-gateway-access: "true"
+  - name: https
+    port: 443
+    protocol: HTTPS
+    hostname: "events.$DNS_ZONE"
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: my-cert
+    allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            shared-gateway-access: "true"
+  addresses:
+  - type: alb.networking.azure.io/alb-frontend
+    value: $ALB-frontend
+EOF
+
+helm repo add phoenix 'https://raw.githubusercontent.com/denniszielke/phoenix/master/'
+helm repo update
+helm search repo phoenix 
+
+AZURE_CONTAINER_REGISTRY_NAME=phoenix
+KUBERNETES_NAMESPACE=calculator
+BUILD_BUILDNUMBER=latest
+AZURE_CONTAINER_REGISTRY_URL=denniszielke
+
+kubectl create namespace $KUBERNETES_NAMESPACE
+kubectl label namespace $KUBERNETES_NAMESPACE shared-gateway-access=true 
+
+helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=5 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set gateway.enabled=true --set gateway.name=gateway-01 --set gateway.namespace=$ALB-infra --set slot=blue
+
+curl http://$fqdn/ping
+```

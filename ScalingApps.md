@@ -75,41 +75,57 @@ hey -z 20m http://$PUBLIC_IP
 https://github.com/kedacore/sample-hello-world-azure-functions
 
 ```
-KEDA_STORAGE=dzmesh33
-LOCATION=westeurope
+KEDA_STORAGE=dzmesh34
+LOCATION=uksouth
 
 az group create -l $LOCATION -n $KUBE_GROUP
 az storage account create --sku Standard_LRS --location $LOCATION -g $KUBE_GROUP -n $KEDA_STORAGE
 
 CONNECTION_STRING=$(az storage account show-connection-string --name $KEDA_STORAGE --query connectionString)
 
-az storage queue create -n js-queue-items --connection-string $CONNECTION_STRING
+az storage queue create -n queue-items --connection-string $CONNECTION_STRING
 
 az storage account show-connection-string --name $KEDA_STORAGE --query connectionString
 
 kubectl create namespace keda-app
-helm install --name vn-affinity ./charts/vn-affinity-admission-controller
 
-kubectl label namespace keda vn-affinity-injection=disabled --overwrite
+kubectl apply -f https://raw.githubusercontent.com/denniszielke/container_demos/master/logging/dummy-logger/depl-logger.yaml -n keda-app
 
-KEDA_NS=keda-app
-KEDA_IN=hello-keda
+kubectl create secret generic storagesecret --from-literal=connection="$CONNECTION_STRING" -n keda-app
 
-func kubernetes install --namespace $KEDA_NS
+cat <<EOF | kubectl apply -f -
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: azure-queue-auth
+  namespace: keda-app
+spec:
+  secretTargetRef:
+  - parameter: connection
+    name: storagesecret
+    key: connection
+EOF
 
-func kubernetes deploy --name $KEDA_IN --registry denniszielke --namespace $KEDA_NS --polling-interval 5 --cooldown-period 30
+cat <<EOF | kubectl apply -f -
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: storage-queue-scaledobject
+  namespace: keda-app
+spec:
+  scaleTargetRef:
+    name: dummy-logger
+  triggers:
+  - type: azure-queue
+    metadata:
+      queueName: queue-items
+      accountName: $KEDA_STORAGE
+      queueLength: "5"
+      connection: azure-queue-auth
+    authenticationRef:
+        name: azure-queue-auth
+EOF
 
-kubectl get ScaledObject $KEDA_IN --namespace $KEDA_NS -o yaml
-
-kubectl delete deploy $KEDA_IN --namespace $KEDA_NS
-kubectl delete ScaledObject $KEDA_IN --namespace $KEDA_NS
-kubectl delete Secret $KEDA_IN --namespace $KEDA_NS
-
-helm install --name vn-affinity ./charts/vn-affinity-admission-controller
-kubectl label namespace default vn-affinity-injection=enabled
-
-
-helm install ./charts/online-store --name online-store --set counter.specialNodeName=$VK_NODE_NAME,app.ingress.host=store.$INGRESS_EXTERNAL_IP.nip.io,appInsight.enabled=false,app.ingress.annotations."kubernetes\.io/ingress\.class"=$INGRESS_CLASS_ANNOTATION
 ```
 
 ## Cluster autoscaler test

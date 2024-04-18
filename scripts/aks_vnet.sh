@@ -8,20 +8,22 @@
 
 set -e
 
-DEPLOYMENT_NAME="dzapimv2s" # here enter unique deployment name (ideally short and with letters for global uniqueness)
-LOCATION="southcentralus" # "northcentralus" "northeurope" #"southcentralus" #"eastus2euap" #"westeurope" # here enter the datacenter location can be eastus or westeurope
+DEPLOYMENT_NAME="dzdet17" # here enter unique deployment name (ideally short and with letters for global uniqueness)
+LOCATION="uksouth" # "northcentralus" "northeurope" #"southcentralus" #"eastus2euap" #"westeurope" # here enter the datacenter location can be eastus or westeurope
 
 USE_PRIVATE_API="false" # use to deploy private master endpoint
 USE_POD_SUBNET="false"
-USE_OVERLAY="false"
-USE_CILIUM="" #--enable-cilium-dataplane" #--network-policy calico" #--enable-cilium-dataplane"
+USE_OVERLAY="true"
+USE_CILIUM="--network-dataplane cilium" #--network-policy calico" #--enable-cilium-dataplane"
 VNET_PREFIX="0"
 KUBE_GROUP=$DEPLOYMENT_NAME # here enter the resources group name of your AKS cluster
 KUBE_NAME=$DEPLOYMENT_NAME # here enter the name of your kubernetes resource
 NODE_GROUP=$KUBE_GROUP"_"$KUBE_NAME"_nodes_"$LOCATION # name of the node resource group
 KUBE_VNET_NAME="$DEPLOYMENT_NAME-vnet"
 
-AAD_GROUP_ID="0644b510-7b35-41aa-a9c6-4bfc3f644c58 --enable-azure-rbac" # here the AAD group that will be used to lock down AKS authentication
+AAD_GROUP_ID="0644b510-7b35-41aa-a9c6-4bfc3f644c58,b1304022-08e6-447d-b094-15370597c6b6 --enable-azure-rbac" # here the AAD group that will be used to lock down AKS authentication
+# AAD_GROUP_ID="b1304022-08e6-447d-b094-15370597c6b6 --enable-azure-rbac" # here the AAD group that will be used to lock down AKS authentication
+# az aks update -g $KUBE_GROUP -n $KUBE_NAME --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --disable-local-accounts
 
 KUBE_FW_SUBNET_NAME="AzureFirewallSubnet" # this you cannot change
 BASTION_SUBNET_NAME="AzureBastionSubnet" # this you cannot change
@@ -34,8 +36,8 @@ ACI_AGENT_SUBNET_NAME="aci-7-subnet"
 VAULT_NAME=dzkv$KUBE_NAME 
 SUBSCRIPTION_ID=$(az account show --query id -o tsv) # here enter your subscription id
 TENANT_ID=$(az account show --query tenantId -o tsv)
-KUBE_VERSION=$(az aks get-versions -l $LOCATION --query 'orchestrators[?default == `true`].orchestratorVersion' -o tsv) # here enter the kubernetes version of your AKS
-KUBE_VERSION="1.26.6"
+KUBE_VERSION=$(az aks get-versions -l $LOCATION --query 'values[?isDefault == `true`].version' -o tsv) # here enter the kubernetes version of your AKS
+# KUBE_VERSION="1.27.7"
 KUBE_CNI_PLUGIN="azure" # azure # kubenet
 MY_OWN_OBJECT_ID=$(az ad signed-in-user show --query objectId --output tsv) # this will be your own aad object id
 #DNS_ID=$(az network dns zone list -g blobs -o tsv --query "[].id")
@@ -141,6 +143,8 @@ if [ "$NSG_RESOURCE_ID" == "" ]; then
     az network vnet subnet update --resource-group $KUBE_GROUP --network-security-group $POD_AGENT_SUBNET_NSG --ids $POD_AGENT_SUBNET_ID
     #az lock create --name $POD_AGENT_SUBNET_NAME --lock-type ReadOnly --resource-group $KUBE_GROUP --resource-name $POD_AGENT_SUBNET_NAME --resource-type Microsoft.Network/networkSecurityGroups
 
+    #https://learn.microsoft.com/en-us/azure/api-management/api-management-using-with-vnet?tabs=stv2#configure-nsg-rules
+
     echo "cread and locked nsgs "
 else
     echo "nsg $NSG_RESOURCE_ID already exists"
@@ -237,12 +241,14 @@ echo "setting up aks"
 AKS_ID=$(az aks list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME')].id" -o tsv)
 
 if [ "$USE_PRIVATE_API" == "true" ]; then
-    ACTIVATE_PRIVATE_LINK=" --enable-private-cluster --enable-apiserver-vnet-integration --apiserver-subnet-id $KUBE_API_SUBNET_ID "
+    ACTIVATE_PRIVATE_LINK=" --enable-private-cluster --enable-apiserver-vnet-integration --apiserver-subnet-id $KUBE_API_SUBNET_ID " # --disable-public-fqdn
 else
     ACTIVATE_PRIVATE_LINK=""
 fi
 # enable-overlay-mode", "true
 echo "setting up aks"
+echo "waiting 5"
+sleep 2
 AKS_ID=$(az aks list -g $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME')].id" -o tsv)
 
 if [ "$AKS_ID" == "" ]; then
@@ -251,14 +257,14 @@ if [ "$AKS_ID" == "" ]; then
 
     if [ "$USE_OVERLAY" == "true" ]; then
         echo "using overlay subnet $KUBE_POD_SUBNET_ID"
-        az aks create --enable-network-observability --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub --node-count 2 --min-count 2 --max-count 5 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --vm-set-type VirtualMachineScaleSets --network-plugin azure --network-plugin-mode overlay --pod-cidr 100.64.0.0/10 --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID  --node-vm-size "standard_d4s_v5" --aad-tenant-id $TENANT_ID $USE_CILIUM -o none
+        az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub --enable-oidc-issuer --enable-workload-identity --node-count 2 --node-resource-group $NODE_GROUP --load-balancer-sku standard --vm-set-type VirtualMachineScaleSets --network-plugin azure --network-plugin-mode overlay --pod-cidr 100.64.0.0/10 --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --enable-managed-identity --node-vm-size "Standard_D4s_v3" --os-sku AzureLinux $USE_CILIUM --node-provisioning-mode Auto -o none
 
     else
         if [ "$USE_POD_SUBNET" == "true" ]; then
             echo "using pod subnet $KUBE_POD_SUBNET_ID"
-            az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub --node-count 2 --min-count 2 --max-count 5 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --vm-set-type VirtualMachineScaleSets --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --node-osdisk-size 300 --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID --pod-subnet-id $KUBE_POD_SUBNET_ID $ACTIVATE_PRIVATE_LINK $USE_CILIUM --node-vm-size "Standard_D4s_v3" -o none
+            az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub --enable-oidc-issuer --enable-workload-identity --node-count 2 --min-count 2 --max-count 5 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --vm-set-type VirtualMachineScaleSets --network-plugin azure --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.2.0.10 --service-cidr 10.2.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --node-osdisk-size 300 --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID --pod-subnet-id $KUBE_POD_SUBNET_ID $ACTIVATE_PRIVATE_LINK $USE_CILIUM --node-vm-size "Standard_D2s_v3" --os-sku AzureLinux -o none
         else
-            az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub --node-count 2 --min-count 2 --max-count 3 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --vm-set-type VirtualMachineScaleSets --network-plugin $KUBE_CNI_PLUGIN --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.3.0.10 --service-cidr 10.3.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --node-osdisk-size 300 --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID $ACTIVATE_PRIVATE_LINK --node-osdisk-size 300 --node-vm-size "Standard_B2ms" -o none
+            az aks create --resource-group $KUBE_GROUP --name $KUBE_NAME$AKS_POSTFIX --ssh-key-value ~/.ssh/id_rsa.pub --enable-oidc-issuer --enable-workload-identity --node-count 2 --min-count 2 --max-count 3 --enable-cluster-autoscaler --node-resource-group $NODE_GROUP --load-balancer-sku standard --vm-set-type VirtualMachineScaleSets --network-plugin $KUBE_CNI_PLUGIN --vnet-subnet-id $KUBE_AGENT_SUBNET_ID --docker-bridge-address 172.17.0.1/16 --dns-service-ip 10.3.0.10 --service-cidr 10.3.0.0/24 --kubernetes-version $KUBE_VERSION --assign-identity $AKS_CONTROLLER_RESOURCE_ID --node-osdisk-size 300 --enable-managed-identity --enable-aad --aad-admin-group-object-ids $AAD_GROUP_ID --aad-tenant-id $TENANT_ID $ACTIVATE_PRIVATE_LINK --node-osdisk-size 300 --node-vm-size "Standard_D2s_v3" --os-sku AzureLinux -o none
         fi
     fi
     sleep 10
@@ -266,20 +272,24 @@ if [ "$AKS_ID" == "" ]; then
    
     AKS_ID=$(az aks show -g $KUBE_GROUP -n $KUBE_NAME --query id -o tsv)
     echo "created AKS $AKS_ID"
-    az aks update -n $KUBE_NAME -g $KUBE_GROUP  --enable-oidc-issuer --enable-workload-identity --yes
+    # az aks update -n $KUBE_NAME -g $KUBE_GROUP  --enable-oidc-issuer --enable-workload-identity --yes
 else
     echo "AKS $AKS_ID already exists"
-    az aks mesh enable --resource-group ${KUBE_GROUP} --name ${KUBE_NAME}
-    az aks mesh enable-ingress-gateway --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --ingress-gateway-type external
-
+    # az aks update -n $KUBE_NAME -g $KUBE_GROUP  --enable-oidc-issuer --enable-workload-identity --yes
+    # az aks mesh enable --resource-group ${KUBE_GROUP} --name ${KUBE_NAME}
+    # az aks mesh enable-ingress-gateway --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --ingress-gateway-type external
+    # az aks --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --enable-addons azure-policy --safeguards-level Warning
     #az aks enable-addons --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --addons="azure-keyvault-secrets-provider"
     #az aks update --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --enable-secret-rotation --yes
     #az aks update --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --syncSecret.enabled --yes
     #az aks enable-addons --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --addons="open-service-mesh"
     #az aks enable-addons --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --addons="web_application_routing" --dns-zone-resource-id $DNS_ID
-    #az aks update --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --enable-keda --yes
-    az aks update -n $KUBE_NAME -g $KUBE_GROUP  --enable-oidc-issuer --enable-workload-identity --yes
-    #az aks update -n $KUBE_NAME -g $KUBE_GROUP  --enable-oidc-issuer --enable-network-observability --yes
+    az aks update --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --tier standard --yes
+    az aks update --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --enable-keda --yes
+    az aks update --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --enable-network-observability --yes
+    az aks update --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --enable-cost-analysis --yes
+    az aks approuting enable --resource-group="$KUBE_GROUP" --name="$KUBE_NAME"
+    #az aks update -n $KUBE_NAME -g $KUBE_GROUP  --enable-oidc-issuer --node-provisioning-mode auto
     #az aks enable-addons --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --addons="virtual-node" --subnet-name $ACI_AGENT_SUBNET_NAME
     #az aks nodepool add --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --name mywasipool --node-count 1  --workload-runtime WasmWasi 
     #az aks nodepool add --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --name ociwasmpool --node-count 1  --workload-runtime ocicontainer
@@ -292,25 +302,26 @@ else
     #az aks update --resource-group="$KUBE_GROUP" --name="$KUBE_NAME" --enable-image-cleaner --yes
     #az aks upgrade -n $KUBE_NAME -g $KUBE_GROUP --aks-custom-headers EnableCloudControllerManager=True
     
-    #az aks nodepool add --scale-down-mode Deallocate --node-count 2 --name marinerpool2 --cluster-name $KUBE_NAME --resource-group $KUBE_GROUP --os-sku CBLMariner
+    #az aks nodepool add --scale-down-mode Deallocate --node-count 2 --name marinerpool2 --cluster-name $KUBE_NAME --resource-group $KUBE_GROUP --os-sku AzureLinux
 
     # az aks maintenanceconfiguration add -g $KUBE_GROUP --cluster-name $KUBE_NAME --name tuesday --weekday Tuesday  --start-hour 13
-    # az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name strpool1 --node-count 3 --mode user  --node-vm-size standard_d4s_v5
+    # az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name azurelinux5 --node-count 3 --mode user  --node-vm-size standard_d4s_v5 --os-sku AzureLinux
     # az aks nodepool update --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --name strpool1 --labels acstor.azure.com/io-engine=acstor
     #az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name armpool --node-count 2 --mode system --node-vm-size Standard_D4ps_v5 --pod-subnet-id $KUBE_POD_SUBNET_ID
-    #az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name one --node-count 1 --mode system --node-vm-size Standard_B2ms --pod-subnet-id $KUBE_POD_SUBNET_ID
-    #az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name mariner22 --node-count 2 --mode system --node-vm-size Standard_D2s_v3 --pod-subnet-id $KUBE_POD_SUBNET_ID --os-sku CBLMariner
+    #az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name one --node-count 1 --mode system --node-vm-size Standard_B2ms --vnet-subnet-id $KUBE_POD_SUBNET_ID
+    #az aks nodepool add  -g $KUBE_GROUP --cluster-name $KUBE_NAME --name mariner22 --node-count 2 --mode system --node-vm-size Standard_D2s_v3 --pod-subnet-id $KUBE_POD_SUBNET_ID --os-sku AzureLinux
     #az aks update -g $KUBE_GROUP --name $KUBE_NAME --enable-apiserver-vnet-integration --apiserver-subnet-id $KUBE_API_SUBNET_ID
     #az aks update --resource-group $KUBE_GROUP --name $KUBE_NAME --auto-upgrade-channel rapid --yes
-    #az aks nodepool update --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --name nodepool1 --labels acstor.azure.com/io-engine=acstor
-    #az k8s-extension create --cluster-type managedClusters --cluster-name $KUBE_NAME --resource-group $KUBE_GROUP --name azurecontainerstorage --extension-type microsoft.azurecontainerstorage --scope cluster --release-train prod --release-namespace acstor
+    # az aks nodepool update --resource-group $KUBE_GROUP --cluster-name $KUBE_NAME --name nodepool1 --labels acstor.azure.com/io-engine=acstor
+    # az k8s-extension create --cluster-type managedClusters --cluster-name $KUBE_NAME --resource-group $KUBE_GROUP --name azurecontainerstorage --extension-type microsoft.azurecontainerstorage --scope cluster --release-train prod --release-namespace acstor
 
 fi
 
 echo "setting up azure monitor"
 
 az aks get-credentials --resource-group=$KUBE_GROUP --name=$KUBE_NAME --admin --overwrite-existing 
-export  AZURE_CORE_USE_COMMAND_INDEX=False
+
+export AZURE_CORE_USE_COMMAND_INDEX=False
 WORKSPACE_RESOURCE_ID=$(az monitor log-analytics workspace list --resource-group $KUBE_GROUP --query "[?contains(name, '$KUBE_NAME')].id" -o tsv)
 if [ "$WORKSPACE_RESOURCE_ID" == "" ]; then
     echo "creating workspace $KUBE_NAME in $KUBE_GROUP"
@@ -332,3 +343,6 @@ az aks update --disable-defender --resource-group $KUBE_GROUP --name $KUBE_NAME
 echo "created this AKS cluster:"
 # az aks update -n $KUBE_NAME -g $KUBE_GROUP --nrg-lockdown-restriction-level ReadOnly
 az aks show  --resource-group=$KUBE_GROUP --name=$KUBE_NAME
+
+
+az aks check-network outbound --resource-group $KUBE_GROUP --name $KUBE_NAME --custom-endpoints ipinfo.io

@@ -508,3 +508,46 @@ kubectl config use-context dennis-context
 az aks command invoke --resource-group $KUBE_GROUP --name $KUBE_NAME --command "kubectl get pods -n kube-system"
 
 ```
+
+## RBAC ACS
+
+```
+
+az account 
+az ad sp create-for-rbac --skip-assignment --name "acs-sp"
+
+
+DataActions
+Return the embeddings for a given prompt.
+Microsoft.CognitiveServices/accounts/OpenAI/deployments/embeddings/action
+
+Creates or cancels adaptation of a model.
+Microsoft.CognitiveServices/accounts/OpenAI/fine-tunes/write
+
+Create or update deployments.
+Microsoft.CognitiveServices/accounts/OpenAI/deployments/write
+
+Create a completion from a chosen model. 
+Microsoft.CognitiveServices/accounts/OpenAI/deployments/completions/action
+
+Actions:
+Write Deployment 
+Microsoft.CognitiveServices/accounts/deployments/write
+
+az account get-access-token https://search.azure.com/.default
+
+{
+	"Name": "OpenAI  Deployment Viewer",
+	"Description": "Lets you view all deployments in cluster/namespace.",
+    "Actions": [],
+    "NotActions": [],
+    "DataActions": [
+        "Microsoft.ContainerService/managedClusters/apps/deployments/read"	
+    ],
+    "NotDataActions": [],
+	"assignableScopes": [
+		"/subscriptions/165165156//namespaces/aadsecured"
+	]	
+}
+
+```
