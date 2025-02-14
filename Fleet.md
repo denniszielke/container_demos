@@ -18,6 +18,8 @@ export KUBECONFIG=$HOME/.kube/fleet
 export KUBECONFIG=$HOME/.kube/dzfleet4
 export KUBECONFIG=$HOME/.kube/dzfleet5
 
+export KUBECONFIG=$HOME/.kube/$KUBE_NAME
+
 kubectl create namespace kuard-demo
 
 export FLEET_ID=/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP}/providers/Microsoft.ContainerService/fleets/fleet
@@ -118,6 +120,76 @@ spec:
           - labelSelector:
               matchLabels:
                 fleet.azure.com/location: eastus
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: fleet.azure.com/v1alpha1
+kind: ClusterResourcePlacement
+metadata:
+  name: calculator-backend
+spec:
+  policy:
+    placementType: PickAll
+    tolerations:
+      - key: test-key1
+        operator: Exists
+  resourceSelectors:
+    - group: ""
+      kind: Namespace
+      name: test-ns
+      version: v1
+  revisionHistoryLimit: 10
+  strategy:
+    type: RollingUpdate
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: placement.kubernetes-fleet.io/v1beta1
+kind: ClusterResourcePlacement
+metadata:
+  name: crp
+spec:
+  resourceSelectors:
+    - group: ""
+      kind: Namespace
+      name: test-ns
+      version: v1
+  policy:
+    placementType: PickAll
+    affinity:
+        clusterAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+                clusterSelectorTerms:
+                - propertySelector:
+                    matchExpressions:
+                    - name: "kubernetes.azure.com/node-count"
+                      operator: Ge
+                      values:
+                      - "5"
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: placement.kubernetes-fleet.io/v1beta1
+kind: ClusterResourcePlacement
+metadata:
+  name: crp
+spec:
+  resourceSelectors:
+    - group: ""
+      kind: Namespace
+      name: test-ns
+      version: v1
+  policy:
+    placementType: PickN
+    numberOfClusters: 10
+    affinity:
+        clusterAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 20
+              preference:
+                metricSorter:
+                  name: kubernetes.azure.com/node-count
+                  sortOrder: Descending
 EOF
 
 cat <<EOF | kubectl apply -f -

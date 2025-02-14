@@ -136,6 +136,8 @@ helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespa
 echo "without AI but with Redis"
 helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=2 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=false --set ingress.enabled=false --set service.type=LoadBalancer --set ingress.tls=false  --set introduceRandomResponseLag=false --set introduceRandomResponseLagValue=1 --set dependencies.useAppInsights=false --set dependencies.useAzureRedis=true --set dependencies.redisHostValue=$AZURE_REDIS_HOST --set dependencies.redisKeyValue=$AZURE_REDIS_KEY --wait 
 
+echo "with AI but nothing else"
+helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=true --set service.type=LoadBalancer --set ingress.tls=false --set noProbes=false --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2 --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --wait --timeout 60s
 
 helm upgrade calculator $AZURE_CONTAINER_REGISTRY_NAME/multicalculator --namespace $KUBERNETES_NAMESPACE --install --create-namespace --set replicaCount=4 --set image.frontendTag=$BUILD_BUILDNUMBER --set image.backendTag=$BUILD_BUILDNUMBER --set image.repository=$AZURE_CONTAINER_REGISTRY_URL --set dependencies.usePodRedis=true --set ingress.enabled=true --set ingress.tls=true --set ingress.host=$DNS  --set noProbes=true --set introduceRandomResponseLag=true --set introduceRandomResponseLagValue=2 --set dependencies.useAppInsights=true --set dependencies.appInsightsSecretValue=$APPINSIGHTY_KEY --wait --timeout 45s
 
@@ -188,16 +190,19 @@ spec:
 EOF
 
 ```
+kubectl apply -f - <<EOF
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: allowed
+  name: frontend-policy
+  namespace: calculator
 spec:
-  endpointSelector: {}
-  ingress:
-    - fromEntities:
-        - cluster
+  endpointSelector:
+    matchLabels:
+      role: frontend
   egress:
+    - toEntities:
+      - cluster
     - toFQDNs:
         - matchPattern: "*.in.applicationinsights.azure.com"
       toPorts:
@@ -213,6 +218,7 @@ spec:
       toPorts:
         - ports:
             - port: "443"
+EOF
 
 kubectl apply -f - <<EOF
 kind: NetworkPolicy

@@ -202,8 +202,8 @@ kubectl annotate pod foo -n bar policy.cilium.io/proxy-visibility="<Egress/53/UD
 
 kubectl annotate pod calculator-multicalculator-backend-b7d75c597-5vvwg -n calculator policy.cilium.io/proxy-visibility="<Egress/53/UDP/DNS>,<Egress/80/TCP/HTTP>"
 kubectl annotate pod calculator-multicalculator-backend-b7d75c597-dzzhv  -n calculator policy.cilium.io/proxy-visibility="<Egress/53/UDP/DNS>,<Egress/80/TCP/HTTP>"
-kubectl annotate pod calculator-multicalculator-backend-b7d75c597-frbj4 -n calculator policy.cilium.io/proxy-visibility="<Egress/53/UDP/DNS>,<Egress/80/TCP/HTTP>"
-kubectl annotate pod calculator-multicalculator-backend-b7d75c597-qqfp6 -n calculator policy.cilium.io/proxy-visibility="<Egress/53/UDP/DNS>,<Egress/80/TCP/HTTP>"
+kubectl annotate pod calculator-multicalculator-backend-5b4b6977d4-htmjh  -n calculator policy.cilium.io/proxy-visibility="<Egress/53/UDP/DNS>,<Egress/80/TCP/HTTP>"
+kubectl annotate pod calculator-multicalculator-backend-5b4b6977d4-kznn5 -n calculator policy.cilium.io/proxy-visibility="<Egress/53/UDP/DNS>,<Egress/80/TCP/HTTP>"
 kubectl annotate pod calculator-multicalculator-frontend-86c8866b47-6ftqz -n calculator policy.cilium.io/proxy-visibility="<Egress/53/UDP/DNS>,<Egress/80/TCP/HTTP>"
 kubectl annotate pod calculator-multicalculator-frontend-86c8866b47-6zhhj -n calculator policy.cilium.io/proxy-visibility="<Egress/53/UDP/DNS>,<Egress/80/TCP/HTTP>"
 kubectl annotate pod calculator-multicalculator-frontend-86c8866b47-dm2w2 -n calculator policy.cilium.io/proxy-visibility="<Egress/53/UDP/DNS>,<Egress/80/TCP/HTTP>"

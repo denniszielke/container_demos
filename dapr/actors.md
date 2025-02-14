@@ -21,6 +21,14 @@ REDIS_HOST=dzactors.redis.cache.windows.net:6379
 REDIS_PASSWORD=
 
 
+az k8s-extension create --cluster-type managedClusters \
+--cluster-name $KUBE_NAME \
+--resource-group $KUBE_GROUP \
+--name dapr \
+--extension-type Microsoft.Dapr \
+--auto-upgrade-minor-version false
+
+
 https://github.com/dapr/dapr/blob/master/docs/decision_records/api/API-008-multi-state-store-api-design.md
 
 cat <<EOF | kubectl apply -f -

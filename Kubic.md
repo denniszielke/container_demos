@@ -134,7 +134,7 @@ ip=$(az network public-ip show --id $publicIPAddressId --query "ipAddress" -o ts
 kubectl apply -f https://trafficcontrollerdocs.blob.core.windows.net/examples/http-scenario/deployment.yaml
 
 kubectl apply -f - <<EOF
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: gateway-01
@@ -154,7 +154,7 @@ spec:
 EOF
 
 kubectl apply -f - <<EOF
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: query-param-matching
@@ -183,7 +183,7 @@ EOF
 https://github.com/kubernetes-sigs/gateway-api/blob/main/site-src/geps/gep-1016.md
 https://gateway-api.sigs.k8s.io/v1alpha2/references/spec/#gateway.networking.k8s.io/v1alpha2.GRPCBackendRef
 kubectl apply -f - <<EOF
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 kind: GRPCRoute
 metadata:
   name: grpc
@@ -225,7 +225,7 @@ ip=$(az network public-ip show --id $publicIPAddressId --query "ipAddress" -o ts
 kubectl apply -f https://trafficcontrollerdocs.blob.core.windows.net/examples/http-scenario/deployment.yaml
 
 kubectl apply -f - <<EOF
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: gateway-02
@@ -242,7 +242,7 @@ EOF
 
 
 kubectl apply -f - <<EOF
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: query-param-matching
@@ -268,7 +268,7 @@ spec:
 EOF
 
 kubectl apply -f - <<EOF
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: dummy-matching
@@ -320,9 +320,53 @@ spec:
 ---
 EOF
 
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: gateway-01
+  namespace: $ALB-infra
+  annotations:
+    alb.networking.azure.io/alb-namespace: $ALB-infra
+    alb.networking.azure.io/alb-name: $ALB
+spec:
+  gatewayClassName: azure-alb-external
+  listeners:
+  - name: http
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            shared-gateway-access: 'true'
+EOF 
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: gateway-01
+  namespace: $ALB-infra
+  annotations:
+    alb.networking.azure.io/alb-namespace: $ALB-infra
+    alb.networking.azure.io/alb-name: $ALB
+spec:
+  gatewayClassName: azure-alb-external
+  listeners:
+  - name: http
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            shared-gateway-access: "true"
+
 
 cat <<EOF | kubectl apply -f -
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: bingSearch-gateway
@@ -374,7 +418,7 @@ az network kubic create --name prod-app-store --location "eastus"
 ## Traffic split
 ```
 kubectl apply -f - <<EOF
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: gateway-01
@@ -394,7 +438,7 @@ spec:
 EOF
 
 kubectl apply -f - <<EOF
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: traffic-split-route
@@ -518,7 +562,7 @@ metadata:
 EOF
 
 kubectl apply -f - <<EOF
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: gateway-01
@@ -589,7 +633,7 @@ EOF
 
 
 kubectl apply -f - <<EOF
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: gateway-01

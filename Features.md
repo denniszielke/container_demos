@@ -113,6 +113,9 @@ az feature register --namespace "Microsoft.ContainerService" --name "NetworkObse
 az feature register --namespace "Microsoft.ContainerService" --name "AKSLockingDownEgressPreview" 
 az feature register --namespace "Microsoft.ContainerService" --name "GuardrailsPreview" 
 az feature register --namespace "Microsoft.ContainerService" --name "ClusterCostAnalysis"
+az feature register --namespace "Microsoft.ContainerService" --name "EnableOutboundTypeNoneAndBlock"
+az feature register --namespace "Microsoft.ContainerService" --name "AKSLockingDownEgressPreview"
+ 
 
 az feature list --namespace Microsoft.ContainerService -o table
 

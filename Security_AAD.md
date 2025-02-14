@@ -603,6 +603,14 @@ curl 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-
 
 
 
+
+JIT_GROUP="600927c3"
+AKS_ID=""
+
+az role assignment create --assignee $JIT_GROUP --scope $AKS_ID --role "Azure Kubernetes Service Cluster User Role"
+
+az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee $JIT_GROUP --scope $AKS_ID/namespaces/jit1-only
+
 ```
 
 https://docs.microsoft.com/en-us/azure/developer/java/sdk/identity-azure-hosted-auth

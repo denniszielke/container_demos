@@ -410,7 +410,7 @@ echo $AZURE_TENANT_ID
 curl 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fmanagement.azure.com%2F&client_id=ff3756e7-f35e-4128-a352-4b5623c94d43' -H Metadata:true -s
 
 
-export SERVICE_ACCOUNT_NAMESPACE="default"
+export SERVICE_ACCOUNT_NAMESPACE="id-demo"
 export SERVICE_ACCOUNT_NAME="workload-identity-sa"
 AKS_OIDC_ISSUER="$(az aks show -n $KUBE_NAME -g $KUBE_GROUP --query "oidcIssuerProfile.issuerUrl" -o tsv)"
 SECRET_NAME="mySecret"
@@ -444,6 +444,8 @@ kind: Pod
 metadata:
   name: quick-start
   namespace: ${SERVICE_ACCOUNT_NAMESPACE}
+  labels:
+    azure.workload.identity/use: "true"
 spec:
   serviceAccountName: ${SERVICE_ACCOUNT_NAME}
   containers:
@@ -458,7 +460,7 @@ spec:
     kubernetes.io/os: linux
 EOF
 
-kubectl exec -it centos-token -- /bin/bash  
+kubectl exec -it quick-start -n ${SERVICE_ACCOUNT_NAMESPACE} -- /bin/bash  
 
 cat /var/run/secrets/azure/tokens/azure-identity-token
 
@@ -468,6 +470,8 @@ kind: Pod
 metadata:
   name: centos-token
   namespace: ${SERVICE_ACCOUNT_NAMESPACE}
+  labels:
+    azure.workload.identity/use: "true"
 spec:
   serviceAccountName: ${SERVICE_ACCOUNT_NAME}
   containers:
@@ -479,6 +483,35 @@ spec:
     - sleep
     - "3600"
 EOF
+
+kubectl exec -it centos-token -n ${SERVICE_ACCOUNT_NAMESPACE} -- /bin/bash  
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: azurecli
+  namespace: ${SERVICE_ACCOUNT_NAMESPACE}
+  labels:
+    azure.workload.identity/use: "true"
+spec:
+  serviceAccountName: ${SERVICE_ACCOUNT_NAME}
+  containers:
+  - name: azure-cli
+    image: mcr.microsoft.com/azure-cli
+    ports:
+    - containerPort: 80
+    command:
+    - sleep
+    - "3600"
+EOF
+
+kubectl exec -it azurecli -n ${SERVICE_ACCOUNT_NAMESPACE} -- /bin/bash  
+
+USER_ASSIGNED_CLIENT_ID=
+az login --identity --username $USER_ASSIGNED_CLIENT_ID
+
+cat /var/run/secrets/azure/tokens/azure-identity-token
 
 cat <<EOF | kubectl apply -f -
 apiVersion: secrets-store.csi.x-k8s.io/v1alpha1

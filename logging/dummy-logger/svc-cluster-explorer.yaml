@@ -20,4 +20,4 @@ spec:
     targetPort: 3000
   selector:
     app: explorer
-  type: ClusterIP
+  type: LoadBalancer

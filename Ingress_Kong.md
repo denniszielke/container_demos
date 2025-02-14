@@ -319,4 +319,4 @@ curl -X POST "https://login.microsoftonline.com/<your_tenant_id>/oauth2/v2.0/tok
 --data client_secret="<your_client_secret>"
 
 
-curl --header 'Authorization: bearer <token_from_above>' '<admin-hostname>:8000/httpbin-azure'
+curl -X POST --header 'Authorization: bearer <token_from_above>' '<admin-hostname>:8000/httpbin-azure'
